@@ -7,7 +7,7 @@ import { deleteEntry, markReminderDone, saveEntry, syncVehicleOdometer } from '.
 import { ENTRY_KINDS, EXPENSE_CATEGORIES, FUEL_TYPES, SERVICE_CATEGORIES } from '../constants';
 import { currentOdometer } from '../lib/calc';
 import { today } from '../lib/dates';
-import { km, parseDecimal, parseInteger, toInput } from '../lib/format';
+import { km, MAX_KM_DIGITS, maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../lib/format';
 import type { Entry, EntryKind, Reminder, Vehicle } from '../types';
 import { btn, checkbox, checkField, error as errorText, field, form, grid2, hint, input, main, opt, splash } from '../ui';
 import { paths } from '../routes/paths';
@@ -83,20 +83,23 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
   const odoNum = parseInteger(odo);
   const odoBelow = odoNum != null && !entry && odoNum < lastKm;
 
-  // total ÷ preço → litros; litros × preço → total
-  function onAmount(s: string) {
+  // total ÷ preço → litros; litros × preço → total (tudo com duas casas, formatado ao digitar)
+  function onAmount(raw: string) {
+    const s = maskMoney(raw);
     setAmount(s);
     const t = parseDecimal(s);
     const p = parseDecimal(price);
     if (kind === 'fuel' && t && p) setLiters(toInput(t / p, 2));
   }
-  function onPrice(s: string) {
+  function onPrice(raw: string) {
+    const s = maskMoney(raw);
     setPrice(s);
     const t = parseDecimal(amount);
     const p = parseDecimal(s);
     if (t && p) setLiters(toInput(t / p, 2));
   }
-  function onLiters(s: string) {
+  function onLiters(raw: string) {
+    const s = maskMoney(raw);
     setLiters(s);
     const l = parseDecimal(s);
     const p = parseDecimal(price);
@@ -159,7 +162,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
             </label>
             <label className={field}>
               Km {kind !== 'fuel' && <span className={opt}>(opcional)</span>}
-              <input className={input} value={odo} onChange={(e) => setOdo(e.target.value)} inputMode="numeric" placeholder={String(lastKm)} />
+              <input className={input} value={odo} onChange={(e) => setOdo(maskKm(e.target.value))} inputMode="numeric" pattern="[0-9]*" maxLength={MAX_KM_DIGITS} placeholder={String(lastKm)} />
             </label>
           </div>
           {odoBelow && <p className="text-sm text-warn">Atenção: menor que o último km registrado ({km(lastKm)}).</p>}
@@ -177,16 +180,16 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
               <div className={grid2}>
                 <label className={field}>
                   Valor total (R$)
-                  <input className={input} value={amount} onChange={(e) => onAmount(e.target.value)} inputMode="decimal" placeholder="0,00" />
+                  <input className={input} value={amount} onChange={(e) => onAmount(e.target.value)} inputMode="numeric" placeholder="0,00" />
                 </label>
                 <label className={field}>
                   Preço / {unit}
-                  <input className={input} value={price} onChange={(e) => onPrice(e.target.value)} inputMode="decimal" placeholder="0,00" />
+                  <input className={input} value={price} onChange={(e) => onPrice(e.target.value)} inputMode="numeric" placeholder="0,00" />
                 </label>
               </div>
               <label className={field}>
                 Quantidade ({unit})
-                <input className={input} value={liters} onChange={(e) => onLiters(e.target.value)} inputMode="decimal" placeholder="calculado" />
+                <input className={input} value={liters} onChange={(e) => onLiters(e.target.value)} inputMode="numeric" placeholder="calculado" />
               </label>
               <label className={checkField}>
                 <input className={checkbox} type="checkbox" checked={fullTank} onChange={(e) => setFullTank(e.target.checked)} />
@@ -218,7 +221,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
               </label>
               <label className={field}>
                 Valor (R$)
-                <input className={input} value={amount} onChange={(e) => onAmount(e.target.value)} inputMode="decimal" placeholder="0,00" />
+                <input className={input} value={amount} onChange={(e) => onAmount(e.target.value)} inputMode="numeric" placeholder="0,00" />
               </label>
             </>
           )}

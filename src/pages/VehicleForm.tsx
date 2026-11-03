@@ -5,7 +5,7 @@ import { useUid } from '../auth';
 import { useVehicle } from '../hooks';
 import { deleteVehicle, saveVehicle } from '../db';
 import { VEHICLE_TYPES } from '../constants';
-import { parseInteger } from '../lib/format';
+import { MAX_KM_DIGITS, maskKm, parseInteger } from '../lib/format';
 import { selectVehicle } from '../selection';
 import type { Vehicle, VehicleType } from '../types';
 import { btn, error as errorText, field, form, hint, input, main, opt, splash } from '../ui';
@@ -82,7 +82,7 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
 
           <label className={field}>
             {vid ? 'Quilometragem no cadastro' : 'Quilometragem atual'}
-            <input className={input} value={odo} onChange={(e) => setOdo(e.target.value)} inputMode="numeric" placeholder="Ex: 125000" />
+            <input className={input} value={odo} onChange={(e) => setOdo(maskKm(e.target.value))} inputMode="numeric" pattern="[0-9]*" maxLength={MAX_KM_DIGITS} placeholder="Ex: 125000" />
             <small className={hint}>Ponto de partida para calcular km rodados e custo por km.</small>
           </label>
 

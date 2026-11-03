@@ -29,10 +29,33 @@ export function parseInteger(s: string): number | null {
   return t ? Number(t) : null;
 }
 
-/** Número → texto para inputs ("5,49"). */
+/** Número → texto para inputs, no mesmo formato da máscara ("1.234,56"). */
 export function toInput(n: number | null | undefined, decimals?: number): string {
   if (n == null) return '';
-  return decimals == null ? String(n).replace('.', ',') : n.toFixed(decimals).replace('.', ',');
+  return decimals == null ? String(n).replace('.', ',') : num(n, decimals);
+}
+
+// ---------- máscaras dos campos (aplicadas a cada tecla) ----------
+
+/** km: até 999.999 */
+export const MAX_KM_DIGITS = 6;
+/** valores: até 9.999.999,99 */
+const MAX_MONEY_DIGITS = 9;
+
+/** Só dígitos, cortando no limite: "12a.34" → "1234". */
+export function digitsOnly(s: string, max: number): string {
+  return s.replace(/\D/g, '').slice(0, max);
+}
+
+export const maskKm = (s: string) => digitsOnly(s, MAX_KM_DIGITS);
+
+/**
+ * Valor com duas casas, preenchido da direita para a esquerda (como em app de banco):
+ * "5" → "0,05", "549" → "5,49", "123456" → "1.234,56". Vazio continua vazio.
+ */
+export function maskMoney(s: string): string {
+  const digits = s.replace(/\D/g, '').replace(/^0+/, '').slice(0, MAX_MONEY_DIGITS);
+  return digits ? num(Number(digits) / 100, 2) : '';
 }
 
 /** "faltam 1.200 km · faltam 45 dias", "passou 300 km · vence hoje"… */

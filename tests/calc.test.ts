@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, sortEntriesByKm } from '../src/lib/calc.ts';
 import { addDays, addMonths, diffDays } from '../src/lib/dates.ts';
-import { parseDecimal, parseInteger } from '../src/lib/format.ts';
+import { maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../src/lib/format.ts';
 import type { Entry, Reminder } from '../src/types.ts';
 
 let n = 0;
@@ -105,4 +105,20 @@ test('números em formato brasileiro', () => {
   assert.equal(parseDecimal('6.19'), 6.19);
   assert.equal(parseDecimal(''), null);
   assert.equal(parseInteger('85.300 km'), 85300);
+});
+
+test('máscaras: km com até 6 dígitos, valores com duas casas', () => {
+  assert.equal(maskKm('1234567'), '123456');
+  assert.equal(maskKm('12a.3-4'), '1234');
+  // digitando 1, 2, 3, 4, 5, 6 um a um
+  const typed: string[] = [];
+  let v = '';
+  for (const d of '123456') typed.push((v = maskMoney(v + d)));
+  assert.deepEqual(typed, ['0,01', '0,12', '1,23', '12,34', '123,45', '1.234,56']);
+  assert.equal(maskMoney('1.234,5'), '123,45'); // apagar o último dígito
+  assert.equal(maskMoney('0,0'), ''); // apagou tudo
+  assert.equal(maskMoney('R$ 5,4x9'), '5,49'); // letras e símbolos ignorados
+  assert.equal(maskMoney('12345678901'), '1.234.567,89'); // limite de 9 dígitos
+  assert.equal(parseDecimal(maskMoney('123456')), 1234.56);
+  assert.equal(toInput(1234.5, 2), '1.234,50');
 });
