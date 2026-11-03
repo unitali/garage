@@ -17,6 +17,7 @@ export const PATTERNS = {
   history: '/historico',
   reminders: '/lembretes',
   more: '/mais',
+  /** endereços antigos (calculadora e configurações viraram parte de Abastecer e Mais): redirecionam para Mais */
   calculator: '/calculadora',
   settings: '/config',
   profile: '/config/perfil',
@@ -44,8 +45,6 @@ export const paths = {
   history: (tipo?: HistoryFilter) => withQuery(PATTERNS.history, { tipo }),
   reminders: () => PATTERNS.reminders,
   more: () => PATTERNS.more,
-  calculator: () => PATTERNS.calculator,
-  settings: () => PATTERNS.settings,
   profile: () => PATTERNS.profile,
   vehicles: () => PATTERNS.vehicles,
   categories: () => PATTERNS.categories,

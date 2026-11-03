@@ -36,7 +36,7 @@ export default function Profile() {
 
   return (
     <>
-      <Header title="Perfil" back={paths.settings()} />
+      <Header title="Perfil" back={paths.more()} />
       <main className={`${main} flex flex-col gap-4`}>
         <section className={`${card} flex flex-col items-center gap-2 py-6 text-center`}>
           <UserAvatar user={user} name={shownName} className="size-20 text-2xl ring-4 ring-brand-soft" />

@@ -1,28 +1,80 @@
-import { Calculator, Car, LogOut, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { BellRing, Car, ChevronRight, Info, LogOut, Tags, UserRound } from 'lucide-react';
 import Header from '../components/Header';
-import { SettingsGroup, SettingsLink } from '../components/SettingsGroup';
-import { logout } from '../auth';
+import InstallCard from '../components/InstallCard';
+import UserAvatar from '../components/UserAvatar';
+import { SettingsGroup, SettingsInfo, SettingsLink } from '../components/SettingsGroup';
+import { logout, useAuth } from '../auth';
+import { useAlertWindow, useUserPrefs, useVehicles } from '../hooks';
+import { km } from '../lib/format';
+import { monthsLabel } from './ReminderSettings';
 import { paths } from '../routes/paths';
-import { btn, main } from '../ui';
+import { btn, card, main } from '../ui';
 
-/** Mais: atalhos que não cabem na barra de baixo. */
+/** Mais: conta, veículos, lembretes, personalização e o app — tudo direto aqui, sem tela intermediária. */
 export default function More() {
+  const { user } = useAuth();
+  const { data: vehicles } = useVehicles(user!.uid);
+  const { data: prefs } = useUserPrefs(user!.uid);
+  const alert = useAlertWindow(user!.uid);
+  const customCount = (prefs?.serviceCategories?.length ?? 0) + (prefs?.expenseCategories?.length ?? 0);
+  if (!user) return null;
+  const name = user.displayName || user.email || 'Você';
+
   return (
     <>
       <Header title="Mais" />
       <main className={`${main} flex flex-col gap-5`}>
-        <SettingsGroup title="Ferramentas">
-          <SettingsLink to={paths.calculator()} icon={Calculator} label="Calcular (etanol ou gasolina)" />
+        <Link to={paths.profile()} className={`${card} flex items-center gap-3`}>
+          <UserAvatar user={user} name={name} className="size-14 text-lg" />
+          <span className="flex min-w-0 flex-1 flex-col">
+            <strong className="text-lg break-words">{name}</strong>
+            {user.email && <span className="text-sm break-all text-muted">{user.email}</span>}
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-muted" />
+        </Link>
+
+        <SettingsGroup title="Conta">
+          <SettingsLink to={paths.profile()} icon={UserRound} label="Perfil" />
         </SettingsGroup>
-        <SettingsGroup title="Conta e garagem">
-          <SettingsLink to={paths.settings()} icon={Settings} label="Configurações" />
-          <SettingsLink to={paths.vehicles()} icon={Car} label="Veículos" />
+
+        <SettingsGroup title="Garagem">
+          <SettingsLink
+            to={paths.vehicles()}
+            icon={Car}
+            label="Veículos"
+            detail={vehicles.length === 1 ? '1 veículo' : `${vehicles.length} veículos`}
+          />
         </SettingsGroup>
+
+        <SettingsGroup title="Lembretes">
+          <SettingsLink
+            to={paths.reminderSettings()}
+            icon={BellRing}
+            label="Avisos e cores"
+            detail={`${km(alert.km)} · ${monthsLabel(alert.months)}`}
+          />
+        </SettingsGroup>
+
+        <SettingsGroup title="Personalizar">
+          <SettingsLink
+            to={paths.categories()}
+            icon={Tags}
+            label="Serviços e despesas"
+            detail={customCount > 0 ? `${customCount} criado${customCount === 1 ? '' : 's'}` : undefined}
+          />
+        </SettingsGroup>
+
+        <SettingsGroup title="Aplicativo">
+          <SettingsInfo icon={Info} label="Versão" value={`v${__APP_VERSION__}`} />
+        </SettingsGroup>
+
+        <InstallCard />
+
         <button className={`${btn('danger')} w-full gap-2`} onClick={() => confirm('Sair da conta?') && logout()}>
-          <LogOut className="size-5" aria-hidden />
-          Sair
+          <LogOut className="size-5" />
+          Sair da conta
         </button>
-        <p className="text-center text-xs text-muted">Unitali Garage v{__APP_VERSION__}</p>
       </main>
     </>
   );

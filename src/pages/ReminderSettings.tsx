@@ -39,7 +39,7 @@ export default function ReminderSettings() {
 
   return (
     <>
-      <Header title="Lembretes" back={paths.settings()} />
+      <Header title="Lembretes" back={paths.more()} />
       <main className={`${main} flex flex-col gap-4`}>
         <section className={`${card} flex flex-col gap-3`}>
           <h2 className={sectionTitle}>Avisar com antecedência</h2>

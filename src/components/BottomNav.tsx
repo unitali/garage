@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Bell, Ellipsis, House, List, Plus, type LucideIcon } from 'lucide-react';
 import AddSheet from './AddSheet';
 import { useGarage } from '../garage';
-import { paths } from '../routes/paths';
+import { PATTERNS, paths } from '../routes/paths';
 
 /**
  * Barra de baixo: Início, Histórico, + (abre o painel "Adicionar"), Lembretes (badge com os vencidos) e Mais.
@@ -15,7 +15,8 @@ export default function BottomNav() {
   const [adding, setAdding] = useState(false);
   const plus = useRef<HTMLButtonElement>(null);
 
-  const inMore = [paths.more(), paths.calculator(), paths.settings()].some((p) => pathname.startsWith(p));
+  // Mais e as telas que abrem a partir dele (/config/…)
+  const inMore = [paths.more(), PATTERNS.settings].some((p) => pathname.startsWith(p));
 
   return (
     <>

@@ -18,7 +18,7 @@ export default function Vehicles() {
 
   return (
     <>
-      <Header title="Veículos" back={paths.settings()} />
+      <Header title="Veículos" back={paths.more()} />
       <main className={main}>
         {loading ? (
           <p className={emptyText}>Carregando…</p>

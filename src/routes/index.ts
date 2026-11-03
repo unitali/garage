@@ -6,8 +6,6 @@ import RemindersPage from '../pages/RemindersPage';
 import More from '../pages/More';
 import OdometerForm from '../pages/OdometerForm';
 import Profile from '../pages/Profile';
-import Settings from '../pages/Settings';
-import Calculator from '../pages/Calculator';
 import Vehicles from '../pages/Vehicles';
 import Categories from '../pages/Categories';
 import ReminderSettings from '../pages/ReminderSettings';
@@ -25,6 +23,7 @@ export interface RouteHandle {
 }
 
 const tabBar: RouteHandle = { bottomNav: true };
+const toMore = () => createElement(Navigate, { to: paths.more(), replace: true });
 
 /** Todas as telas do app (usuário logado). */
 export const routes: RouteObject[] = [
@@ -32,8 +31,9 @@ export const routes: RouteObject[] = [
   { path: PATTERNS.history, Component: History, handle: tabBar },
   { path: PATTERNS.reminders, Component: RemindersPage, handle: tabBar },
   { path: PATTERNS.more, Component: More, handle: tabBar },
-  { path: PATTERNS.calculator, Component: Calculator, handle: tabBar },
-  { path: PATTERNS.settings, Component: Settings, handle: tabBar },
+  // links antigos: a calculadora está no abastecimento e as configurações no Mais
+  { path: PATTERNS.calculator, Component: toMore },
+  { path: PATTERNS.settings, Component: toMore },
   { path: PATTERNS.profile, Component: Profile, handle: tabBar },
   { path: PATTERNS.vehicles, Component: Vehicles, handle: tabBar },
   { path: PATTERNS.categories, Component: Categories, handle: tabBar },

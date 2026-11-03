@@ -22,7 +22,7 @@ export default function Categories() {
 
   return (
     <>
-      <Header title="Serviços e despesas" back={paths.settings()} />
+      <Header title="Serviços e despesas" back={paths.more()} />
       <main className={`${main} flex flex-col gap-5`}>
         <p className="text-sm text-muted">
           Tipos que você criou, além dos padrões. Aparecem na lista de categoria ao registrar um serviço ou uma despesa, em
