@@ -2,6 +2,16 @@
 
 Todas as versões do Unitali Garage, geradas a partir dos commits.
 
+## [0.3.0](https://github.com/unitali/garage/compare/v0.2.0...v0.3.0) (2026-11-03)
+
+### ✨ Novidades
+
+- **config:** aba Configurações com Perfil e Veículos ([5eb2781](https://github.com/unitali/garage/commit/5eb2781cda84f9ce0a194bdd9e603997ddd0c5ef))
+
+### 🔧 Manutenção
+
+- Vercel só faz build da release (preview) e da main (produção) ([240223f](https://github.com/unitali/garage/commit/240223fa023bd3a2b025a0d2a93d66c09b532555))
+
 ## [0.2.0](https://github.com/unitali/garage/compare/v0.1.0...v0.2.0) (2026-11-03)
 
 ### ✨ Novidades
