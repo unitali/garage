@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BellRing } from 'lucide-react';
 import Header from '../components/Header';
 import { useUid } from '../auth';
@@ -6,7 +7,8 @@ import { useAlertWindow } from '../hooks';
 import { ALERT_KM_OPTIONS, ALERT_MONTH_OPTIONS, URGENT_DAY_OPTIONS, URGENT_KM_OPTIONS } from '../constants';
 import { km } from '../lib/format';
 import { paths } from '../routes/paths';
-import { card, chip, main, sectionTitle } from '../ui';
+import { btn, card, chip, main, sectionTitle } from '../ui';
+import type { AlertWindow } from '../lib/calc';
 
 export const monthsLabel = (m: number) => `${m} ${m === 1 ? 'mês' : 'meses'}`;
 const daysLabel = (d: number) => `${d} ${d === 1 ? 'dia' : 'dias'}`;
@@ -14,7 +16,30 @@ const daysLabel = (d: number) => `${d} ${d === 1 ? 'dia' : 'dias'}`;
 /** Configurações → Lembretes: quando um lembrete aparece no histórico e quando fica laranja. */
 export default function ReminderSettings() {
   const uid = useUid();
-  const alert = useAlertWindow(uid);
+  const saved = useAlertWindow(uid);
+  // rascunho local: os badges só mudam a tela; grava tudo de uma vez no Salvar
+  const [draft, setDraft] = useState<AlertWindow | null>(null);
+  const [justSaved, setJustSaved] = useState(false);
+  const alert = draft ?? saved;
+  const changed = (Object.keys(saved) as (keyof AlertWindow)[]).filter((k) => alert[k] !== saved[k]);
+
+  function set(patch: Partial<AlertWindow>) {
+    setDraft({ ...alert, ...patch });
+    setJustSaved(false);
+  }
+
+  function save() {
+    // uma escrita só, com os campos que mudaram
+    const field: Record<keyof AlertWindow, 'alertKm' | 'alertMonths' | 'urgentKm' | 'urgentDays'> = {
+      km: 'alertKm',
+      months: 'alertMonths',
+      urgentKm: 'urgentKm',
+      urgentDays: 'urgentDays',
+    };
+    savePrefs(uid, Object.fromEntries(changed.map((k) => [field[k], alert[k]])));
+    setDraft(null);
+    setJustSaved(true);
+  }
 
   return (
     <>
@@ -35,7 +60,7 @@ export default function ReminderSettings() {
                 role="radio"
                 aria-checked={alert.km === k}
                 className={chip(alert.km === k)}
-                onClick={() => savePrefs(uid, { alertKm: k })}
+                onClick={() => set({ km: k })}
               >
                 {km(k)}
               </button>
@@ -50,7 +75,7 @@ export default function ReminderSettings() {
                 role="radio"
                 aria-checked={alert.months === m}
                 className={chip(alert.months === m)}
-                onClick={() => savePrefs(uid, { alertMonths: m })}
+                onClick={() => set({ months: m })}
               >
                 {monthsLabel(m)}
               </button>
@@ -82,7 +107,7 @@ export default function ReminderSettings() {
                 role="radio"
                 aria-checked={alert.urgentKm === k}
                 className={chip(alert.urgentKm === k)}
-                onClick={() => savePrefs(uid, { urgentKm: k })}
+                onClick={() => set({ urgentKm: k })}
               >
                 {km(k)}
               </button>
@@ -97,13 +122,17 @@ export default function ReminderSettings() {
                 role="radio"
                 aria-checked={alert.urgentDays === d}
                 className={chip(alert.urgentDays === d)}
-                onClick={() => savePrefs(uid, { urgentDays: d })}
+                onClick={() => set({ urgentDays: d })}
               >
                 {daysLabel(d)}
               </button>
             ))}
           </div>
         </section>
+
+        <button className={`${btn('primary')} w-full`} onClick={save} disabled={changed.length === 0}>
+          {changed.length === 0 && justSaved ? '✓ Salvo' : 'Salvar'}
+        </button>
       </main>
     </>
   );
