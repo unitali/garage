@@ -2,25 +2,31 @@ import { Link } from 'react-router-dom';
 import { Plus, Settings2 } from 'lucide-react';
 import Header from '../components/Header';
 import BillRow from '../components/BillRow';
+import SeriesCard from '../components/SeriesCard';
 import { markReminderDone } from '../db';
 import { useGarage } from '../garage';
 import { today } from '../lib/dates';
 import { date, dueText, km } from '../lib/format';
-import { proximaAcao } from '../lib/summary';
+import { isPaid, proximaAcao, seriesDe } from '../lib/summary';
 import { paths } from '../routes/paths';
 import { badge, btn, card, emptyText, iconCircle, LEVEL_BADGE, LEVEL_LABEL, LEVEL_TEXT, main, REMINDER_ICON, REMINDER_SOFT, splash } from '../ui';
 
 const groupTitle = 'mb-2 px-1 text-xs font-bold tracking-wider text-muted uppercase';
 
-/** Lembretes: contas dentro do aviso (com "Pago") e lembretes de manutenção (com "Feito"), do mais urgente ao menos. */
+/**
+ * Lembretes (o que está por vir): contas dentro do aviso (com "Pago"), parcelados/recorrentes com parcelas
+ * em aberto e lembretes de manutenção (com "Feito"), do mais urgente ao menos.
+ */
 export default function RemindersPage() {
-  const { uid, vehicle, reminders, current, rate, alert, due, bills, loading } = useGarage();
+  const { uid, vehicle, entries, reminders, current, rate, alert, due, bills, loading } = useGarage();
   if (loading) return <div className={splash}>Carregando…</div>;
 
   // o mais urgente (o mesmo do card "Próxima manutenção") primeiro; depois vencido > próximo > o resto
   const top = proximaAcao(reminders, current, today(), rate, alert);
   const rest = due.filter((d) => d.r.id !== top?.r.id).sort((a, b) => rank(a.s.level) - rank(b.s.level));
   const ordered = top ? [top, ...rest] : rest;
+  // séries com alguma parcela ainda em aberto (as já quitadas só aparecem no Histórico)
+  const openSeries = seriesDe(entries).filter((parcelas) => parcelas.some((e) => !isPaid(e)));
 
   return (
     <>
@@ -36,6 +42,17 @@ export default function RemindersPage() {
                 <div className={`${card} divide-y divide-line py-0`}>
                   {bills.map((b) => (
                     <BillRow key={b.e.id} uid={uid} vid={vehicle.id} bill={b} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {openSeries.length > 0 && (
+              <section>
+                <h2 className={groupTitle}>Parcelados e recorrentes</h2>
+                <div className="flex flex-col gap-3">
+                  {openSeries.map((parcelas) => (
+                    <SeriesCard key={parcelas[0].series!.id} uid={uid} vid={vehicle.id} parcelas={parcelas} />
                   ))}
                 </div>
               </section>

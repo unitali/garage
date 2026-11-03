@@ -2,13 +2,12 @@ import { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import EntryRow from '../components/EntryRow';
-import SeriesCard from '../components/SeriesCard';
 import { ENTRY_KINDS } from '../constants';
 import { useGarage } from '../garage';
 import { fuelStats, sortEntriesByKm } from '../lib/calc';
 import { today } from '../lib/dates';
 import { brl } from '../lib/format';
-import { isPaid, seriesDe } from '../lib/summary';
+import { isPaid } from '../lib/summary';
 import { FILTER_KIND, type HistoryFilter } from '../routes/paths';
 import type { Entry } from '../types';
 import { card, chip, chips, emptyText, KIND_ICON, main, sectionTitle, splash } from '../ui';
@@ -24,17 +23,16 @@ const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'jul
 const monthTitle = (ym: string) => `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`;
 const sum = (list: Entry[]) => list.reduce((c, e) => c + Math.round(e.amount * 100), 0) / 100;
 
-/** Histórico: séries parceladas/recorrentes e os registros já realizados, por mês. */
+/** Histórico: só o que já aconteceu (abastecido, feito, pago), por mês. O que está por vir fica em Lembretes. */
 export default function History() {
-  const { uid, vehicle, entries, current, loading } = useGarage();
+  const { vehicle, entries, current, loading } = useGarage();
   const [params, setParams] = useSearchParams();
   const tipo = params.get('tipo') as HistoryFilter | null;
   const kind = tipo && FILTER_KIND[tipo] ? FILTER_KIND[tipo] : null;
   const ref = today();
 
   const consumption = useMemo(() => fuelStats(entries).byEntry, [entries]);
-  const series = useMemo(() => (kind && kind !== 'expense' ? [] : seriesDe(entries)), [entries, kind]);
-  // só o que já foi realizado/pago; parcelas em aberto ficam no card da série (e nos lembretes)
+  // só o que já foi realizado/pago (data até hoje ou marcado "Pago"); o resto fica em Lembretes
   const done = useMemo(() => entries.filter((e) => isPaid(e, ref) && (!kind || e.kind === kind)), [entries, kind, ref]);
   const months = useMemo(() => {
     const map = new Map<string, Entry[]>();
@@ -78,17 +76,6 @@ export default function History() {
           <p className={emptyText}>Cadastre um veículo para começar.</p>
         ) : (
           <>
-            {series.length > 0 && (
-              <section>
-                <h2 className="mb-2 text-xs font-bold tracking-wider text-muted uppercase">Parcelados e recorrentes</h2>
-                <div className="flex flex-col gap-3">
-                  {series.map((parcelas) => (
-                    <SeriesCard key={parcelas[0].series!.id} uid={uid} vid={vehicle.id} parcelas={parcelas} />
-                  ))}
-                </div>
-              </section>
-            )}
-
             {byCategory.length > 1 && (
               <section className={card}>
                 <h2 className={sectionTitle}>Por categoria</h2>
@@ -103,7 +90,7 @@ export default function History() {
               </section>
             )}
 
-            {months.length === 0 && series.length === 0 ? (
+            {months.length === 0 ? (
               <p className={emptyText}>{entries.length === 0 ? 'Nada registrado ainda. Toque em + para começar.' : 'Nenhum registro deste tipo.'}</p>
             ) : (
               months.map(([ym, list]) => (
