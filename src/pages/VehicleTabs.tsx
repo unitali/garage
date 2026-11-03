@@ -2,9 +2,10 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import EntryItem from '../components/EntryItem';
 import ReminderCarousel from '../components/ReminderCarousel';
+import BillCard from '../components/BillCard';
 import { markReminderDone } from '../db';
 import { ENTRY_KINDS } from '../constants';
-import { costSummary, fuelStats, sortEntriesByKm, type DueReminder } from '../lib/calc';
+import { costSummary, fuelStats, isOpenBill, sortEntriesByKm, type DueBill, type DueReminder } from '../lib/calc';
 import { today } from '../lib/dates';
 import { brl, date, dueText, km, num } from '../lib/format';
 import { paths } from '../routes/paths';
@@ -33,11 +34,12 @@ const kvRow = 'flex justify-between gap-3 border-b border-line py-1.5 last:borde
 
 /* ---------------- Histórico ---------------- */
 
-export function History({ v, entries, due }: { v: Vehicle; entries: Entry[]; due: DueReminder[] }) {
+export function History({ uid, v, entries, due, bills }: { uid: string; v: Vehicle; entries: Entry[]; due: DueReminder[]; bills: DueBill[] }) {
   const [filter, setFilter] = useState<EntryKind | 'all'>('all');
   const consumption = useMemo(() => fuelStats(entries).byEntry, [entries]);
   const sorted = useMemo(
-    () => sortEntriesByKm(entries, v.initialOdometer).filter((e) => filter === 'all' || e.kind === filter),
+    // contas em aberto ficam nos lembretes; entram no histórico depois de pagas
+    () => sortEntriesByKm(entries.filter((e) => !isOpenBill(e)), v.initialOdometer).filter((e) => filter === 'all' || e.kind === filter),
     [entries, v.initialOdometer, filter],
   );
 
@@ -46,7 +48,7 @@ export function History({ v, entries, due }: { v: Vehicle; entries: Entry[]; due
 
   return (
     <div className="flex flex-col gap-4">
-      {near.length > 0 && (
+      {(near.length > 0 || bills.length > 0) && (
         <section>
           <div className="mb-2 flex items-baseline justify-between">
             <h2 className={sectionTitle}>Lembretes próximos</h2>
@@ -54,7 +56,7 @@ export function History({ v, entries, due }: { v: Vehicle; entries: Entry[]; due
               Ver todos
             </Link>
           </div>
-          <ReminderCarousel vid={v.id} items={near} />
+          <ReminderCarousel uid={uid} vid={v.id} items={near} bills={bills} />
         </section>
       )}
 
@@ -226,37 +228,68 @@ export function Expenses({ v, entries }: { v: Vehicle; entries: Entry[] }) {
 
 /* ---------------- Lembretes ---------------- */
 
-export function Reminders({ uid, v, due, current }: { uid: string; v: Vehicle; due: DueReminder[]; current: number }) {
+export function Reminders({
+  uid,
+  v,
+  due,
+  bills,
+  current,
+}: {
+  uid: string;
+  v: Vehicle;
+  due: DueReminder[];
+  bills: DueBill[];
+  current: number;
+}) {
+  const billList = bills.length > 0 && (
+    <section className="mb-4">
+      <h2 className={sectionTitle}>Contas do mês</h2>
+      <ul className={list}>
+        {bills.map((b) => (
+          <li key={b.e.id}>
+            <BillCard uid={uid} vid={v.id} bill={b} />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+
   if (due.length === 0)
     return (
-      <div className="px-4 py-8 text-center">
-        <p className="my-1">Nenhum lembrete.</p>
-        <p className="my-1 text-muted">Toque no + para criar lembretes por km e/ou por tempo — troca de óleo, IPVA, revisão…</p>
-      </div>
+      <>
+        {billList}
+        <div className="px-4 py-8 text-center">
+          <p className="my-1">Nenhum lembrete.</p>
+          <p className="my-1 text-muted">Toque no + para criar lembretes por km e/ou por tempo — troca de óleo, IPVA, revisão…</p>
+        </div>
+      </>
     );
 
   return (
-    <ul className={list}>
-      {due.map(({ r, s, due: when, estimated }) => (
-        <li key={r.id} className={`${cardRow} border-l-4 ${LEVEL_BORDER[s.level]}`}>
-          <Link to={paths.reminder(v.id, r.id)} className={grow}>
-            <strong>{r.title}</strong>
-            <span className={`text-sm ${LEVEL_TEXT[s.level]}`}>{dueText(s)}</span>
-            <span className={`text-xs ${s.level === 'overdue' ? 'font-semibold text-danger' : 'text-muted'}`}>
-              Próximo:{' '}
-              {[s.nextKm != null ? km(s.nextKm) : null, when ? `${estimated ? '≈ ' : ''}${date(when)}` : null].filter(Boolean).join(' · ')}
-            </span>
-          </Link>
-          <button
-            className={btn('default', 'sm')}
-            onClick={() => {
-              if (confirm(`Marcar "${r.title}" como feito hoje com ${km(current)}?`)) markReminderDone(uid, v.id, r.id, current, today());
-            }}
-          >
-            Feito
-          </button>
-        </li>
-      ))}
-    </ul>
+    <>
+      {billList}
+      <ul className={list}>
+        {due.map(({ r, s, due: when, estimated }) => (
+          <li key={r.id} className={`${cardRow} border-l-4 ${LEVEL_BORDER[s.level]}`}>
+            <Link to={paths.reminder(v.id, r.id)} className={grow}>
+              <strong>{r.title}</strong>
+              <span className={`text-sm ${LEVEL_TEXT[s.level]}`}>{dueText(s)}</span>
+              <span className={`text-xs ${s.level === 'overdue' ? 'font-semibold text-danger' : 'text-muted'}`}>
+                Próximo:{' '}
+                {[s.nextKm != null ? km(s.nextKm) : null, when ? `${estimated ? '≈ ' : ''}${date(when)}` : null].filter(Boolean).join(' · ')}
+              </span>
+            </Link>
+            <button
+              className={btn('default', 'sm')}
+              onClick={() => {
+                if (confirm(`Marcar "${r.title}" como feito hoje com ${km(current)}?`)) markReminderDone(uid, v.id, r.id, current, today());
+              }}
+            >
+              Feito
+            </button>
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }

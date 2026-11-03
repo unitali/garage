@@ -8,7 +8,7 @@ import { Expenses, History, Reminders, Summary } from './VehicleTabs';
 import { useUid } from '../auth';
 import { syncVehicleOdometer } from '../db';
 import { useAlertWindow, useEntries, useReminders, useVehicles } from '../hooks';
-import { currentOdometer, kmPerDay, remindersByDue } from '../lib/calc';
+import { billsDue, currentOdometer, kmPerDay, remindersByDue } from '../lib/calc';
 import { paths, type VehicleTab } from '../routes/paths';
 import { useSelectedVehicle } from '../selection';
 import type { Vehicle } from '../types';
@@ -74,6 +74,9 @@ function VehicleHome({ uid, v, vehicles }: { uid: string; v: Vehicle; vehicles: 
     if (!entries.loading && v.odometer !== current) syncVehicleOdometer(uid, v.id, current);
   }, [v, uid, current, entries.loading]);
 
+  // contas do mês (parcelas/recorrentes em aberto) aparecem como lembrete
+  const bills = useMemo(() => billsDue(entries.data, undefined, alert), [entries.data, alert.urgentDays]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const loading = entries.loading || reminders.loading;
   // botão + só onde faz sentido: despesas e lembretes (abastecer/serviço ficam na barra de baixo)
   const add =
@@ -106,10 +109,10 @@ function VehicleHome({ uid, v, vehicles }: { uid: string; v: Vehicle; vehicles: 
           <p className={emptyText}>Carregando…</p>
         ) : (
           <>
-            {tab === 'historico' && <History v={v} entries={entries.data} due={due} />}
+            {tab === 'historico' && <History uid={uid} v={v} entries={entries.data} due={due} bills={bills} />}
             {tab === 'resumo' && <Summary v={v} entries={entries.data} due={due} current={current} />}
             {tab === 'despesas' && <Expenses v={v} entries={entries.data} />}
-            {tab === 'lembretes' && <Reminders uid={uid} v={v} due={due} current={current} />}
+            {tab === 'lembretes' && <Reminders uid={uid} v={v} due={due} bills={bills} current={current} />}
             {tab === 'historico' && <InstallCard className="mt-4" />}
           </>
         )}

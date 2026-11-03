@@ -1,5 +1,5 @@
 import type { Entry, Reminder, ServiceItem, Vehicle } from '../types';
-import { addDays, addMonths, diffDays, fromTimestamp, today } from './dates.ts';
+import { addDays, addMonths, diffDays, endOfMonth, fromTimestamp, startOfMonth, today } from './dates.ts';
 
 /** km atual = maior km entre o cadastro e os registros */
 export function currentOdometer(v: Pick<Vehicle, 'initialOdometer'> | null, entries: Entry[]): number {
@@ -236,4 +236,33 @@ export function buildSchedule(mode: ScheduleMode, firstDate: string, amount: num
   const base = Math.floor(cents / count);
   const rest = cents - base * count;
   return dates.map((date, i) => ({ date, amount: (base + (i < rest ? 1 : 0)) / 100 }));
+}
+
+/**
+ * Conta em aberto: despesa marcada como não paga. Parcelas antigas (sem o campo `paid`) contam
+ * como pagas antes do mês atual e em aberto a partir dele.
+ */
+export function isOpenBill(e: Entry, ref = today()): boolean {
+  if (e.kind !== 'expense' || e.paid === true) return false;
+  if (e.paid === false) return true;
+  return !!e.series && e.date >= startOfMonth(ref);
+}
+
+export interface DueBill {
+  e: Entry;
+  /** reaproveita o texto/cores dos lembretes: só `daysLeft` preenchido */
+  s: ReminderStatus;
+}
+
+/** Contas do mês (e vencidas não pagas), por vencimento: aparecem como lembrete até "Pago". */
+export function billsDue(entries: Entry[], ref = today(), alert = DEFAULT_ALERT): DueBill[] {
+  const last = endOfMonth(ref);
+  return entries
+    .filter((e) => isOpenBill(e, ref) && e.date <= last)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)
+    .map((e) => {
+      const daysLeft = diffDays(ref, e.date);
+      const level: ReminderLevel = daysLeft < 0 ? 'overdue' : daysLeft <= alert.urgentDays ? 'soon' : 'ok';
+      return { e, s: { nextKm: null, nextDate: e.date, kmLeft: null, daysLeft, level, near: true } };
+    });
 }

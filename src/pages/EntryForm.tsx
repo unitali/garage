@@ -9,7 +9,7 @@ import { useUid } from '../auth';
 import { useEntries, useReminders, useVehicle } from '../hooks';
 import { deleteEntries, deleteEntry, markReminderDone, saveEntry, saveEntrySeries, saveReminder, syncVehicleOdometer } from '../db';
 import { ENTRY_KINDS, EXPENSE_CATEGORIES, FUEL_TYPES, normalizeCategory, OIL_CHANGE, OIL_KM_OPTIONS, OIL_MONTH_OPTIONS, SERVICE_CATEGORIES } from '../constants';
-import { currentOdometer, serviceItems, sumItems } from '../lib/calc';
+import { currentOdometer, isOpenBill, serviceItems, sumItems } from '../lib/calc';
 import { today } from '../lib/dates';
 import { km, MAX_KM_DIGITS, maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../lib/format';
 import type { Entry, EntryKind, Reminder, Vehicle } from '../types';
@@ -93,6 +93,9 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
   const [count, setCount] = useState(DEFAULT_COUNT.installments);
   const [schedule, setSchedule] = useState<ScheduleRow[]>([]);
   const isNewSeries = kind === 'expense' && !entry && payMode !== 'single';
+  // despesa que é conta (parcela ou futura): pode marcar/desmarcar "Pago"
+  const isBill = kind === 'expense' && !!entry && (!!entry.series || entry.paid != null);
+  const [paid, setPaid] = useState(entry?.paid ?? !(entry && isOpenBill(entry)));
   // parcelas da mesma série (para "excluir todas")
   const seriesIds = entry?.series ? [entry.id, ...others.filter((o) => o.series?.id === entry.series!.id).map((o) => o.id)] : [];
   // troca de óleo (só em serviço novo): intervalo da próxima → lembrete
@@ -206,7 +209,12 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
         entry?.id,
         isService
           ? { ...base, title: title.trim() || undefined, items: serviceList.length > 1 ? serviceList : undefined }
-          : { ...base, series: entry?.series }, // parcela editada continua na série
+          : {
+              ...base,
+              series: entry?.series, // parcela editada continua na série
+              // conta: o que estiver marcado; despesa nova com vencimento futuro nasce em aberto
+              paid: isBill ? paid : !entry && kind === 'expense' && day > today() ? false : entry?.paid,
+            },
       );
       if (isService && reminderId) markReminderDone(uid, vid, reminderId, odoNum ?? lastKm, day);
       if (hasOilChange) upsertReminder(OIL_CHANGE, oilKm, oilMonths);
@@ -237,6 +245,8 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
         notes: notes.trim(),
         createdAt: now + i,
         series: { type: payMode as 'installments' | 'recurring', index: i + 1, count: list.length },
+        // contas: em aberto aparecem nos lembretes do mês até marcar "Pago"
+        paid: r.date < today(),
       })),
     );
     if (odoNum != null && odoNum > (vehicle.odometer ?? 0)) syncVehicleOdometer(uid, vid, odoNum);
@@ -363,6 +373,15 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
                     Valor (R$)
                     <input className={input} value={amount} onChange={(e) => onAmount(e.target.value)} inputMode="numeric" placeholder="0,00" />
                   </label>
+                  {isBill && (
+                    <label className={checkField}>
+                      <input className={checkbox} type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} />
+                      <span>
+                        Pago
+                        <small className={hint}> — em aberto, aparece nos lembretes do mês</small>
+                      </span>
+                    </label>
+                  )}
                 </>
               ) : (
                 <ExpensePaymentField

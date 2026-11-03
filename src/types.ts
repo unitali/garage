@@ -36,6 +36,8 @@ export interface Entry {
   items?: ServiceItem[];
   /** só despesa parcelada/recorrente: cada parcela é um registro, ligados pelo `id` */
   series?: EntrySeries;
+  /** conta (despesa a vencer): false = em aberto, aparece nos lembretes do mês até marcar "Pago" */
+  paid?: boolean;
   createdAt: number;
 }
 

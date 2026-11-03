@@ -69,6 +69,11 @@ export function deleteEntries(uid: string, vid: string, ids: string[]) {
   fire(batch.commit());
 }
 
+/** Conta paga (ou desfeito): sai dos lembretes do mês. */
+export function markPaid(uid: string, vid: string, id: string, paid = true) {
+  fire(updateDoc(doc(entriesCol(uid, vid), id), { paid }));
+}
+
 export function deleteEntry(uid: string, vid: string, id: string) {
   fire(deleteDoc(doc(entriesCol(uid, vid), id)));
 }

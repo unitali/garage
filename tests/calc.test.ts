@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSchedule, costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, serviceItems, sortEntriesByKm, sumItems } from '../src/lib/calc.ts';
-import { addDays, addMonths, diffDays } from '../src/lib/dates.ts';
+import { billsDue, buildSchedule, costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, serviceItems, sortEntriesByKm, sumItems } from '../src/lib/calc.ts';
+import { addDays, addMonths, diffDays, endOfMonth } from '../src/lib/dates.ts';
 import { maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../src/lib/format.ts';
 import { categoryOptions } from '../src/constants.ts';
 import type { Entry, Reminder } from '../src/types.ts';
@@ -155,6 +155,27 @@ test('despesa parcelada e recorrente: datas mês a mês e centavos exatos', () =
   assert.equal(r.length, 12);
   assert.equal(r[11].date, '2027-10-10');
   assert.ok(r.every((x) => x.amount === 89.9));
+});
+
+test('contas do mês: só em aberto até o fim do mês, vencidas incluídas', () => {
+  const bill = (id: string, date: string, extra: Partial<Entry> = {}): Entry => ({
+    ...fuel(0, 0, true, date), id, kind: 'expense', odometer: null, amount: 100, category: 'IPVA', ...extra,
+  });
+  const series = { id: 's', type: 'installments' as const, index: 1, count: 3 };
+  const list = [
+    bill('pago', '2026-11-05', { paid: true, series }),
+    bill('futura', '2026-12-10', { paid: false, series }),
+    bill('urgente', '2026-11-08', { paid: false, series }),
+    bill('mes', '2026-11-25', { paid: false, series }),
+    bill('vencida', '2026-10-20', { paid: false }),
+    bill('antiga', '2026-10-10', { series }), // sem `paid`, antes deste mês: conta como paga
+    bill('legado', '2026-11-30', { series }), // sem `paid`, neste mês: em aberto
+    bill('comum', '2026-11-02'), // despesa normal
+  ];
+  const due = billsDue(list, '2026-11-03');
+  assert.deepEqual(due.map((x) => x.e.id), ['vencida', 'urgente', 'mes', 'legado']);
+  assert.deepEqual(due.map((x) => x.s.level), ['overdue', 'soon', 'ok', 'ok']);
+  assert.equal(endOfMonth('2028-02-10'), '2028-02-29');
 });
 
 test('máscaras: km com até 6 dígitos, valores com duas casas', () => {

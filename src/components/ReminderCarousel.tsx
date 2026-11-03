@@ -1,15 +1,30 @@
 import { Link } from 'react-router-dom';
 import { CalendarDays } from 'lucide-react';
-import type { DueReminder } from '../lib/calc';
+import BillCard from './BillCard';
+import type { DueBill, DueReminder } from '../lib/calc';
 import { date, dueText, km } from '../lib/format';
 import { LEVEL_BADGE, LEVEL_BORDER, LEVEL_LABEL, LEVEL_TEXT, card } from '../ui';
 import { paths } from '../routes/paths';
 
 /** Lembretes em cards com rolagem lateral, do que vence antes para o que vence depois; lateral na cor do nível. */
-export default function ReminderCarousel({ vid, items }: { vid: string; items: DueReminder[] }) {
+export default function ReminderCarousel({
+  uid,
+  vid,
+  items,
+  bills = [],
+}: {
+  uid: string;
+  vid: string;
+  items: DueReminder[];
+  /** contas do mês, mostradas como lembrete (antes dos de manutenção) */
+  bills?: DueBill[];
+}) {
   return (
     // -mx-4/px-4: os cards encostam na borda da tela ao rolar, mas começam alinhados ao conteúdo
     <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+      {bills.map((b) => (
+        <BillCard key={b.e.id} uid={uid} vid={vid} bill={b} className="w-60 shrink-0 snap-start" />
+      ))}
       {items.map(({ r, s, due, estimated }) => (
         <Link
           key={r.id}
