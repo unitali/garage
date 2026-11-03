@@ -66,6 +66,29 @@ O service worker já ignora `/__/*`, então o proxy não é interceptado pelo ca
 - **Android (Chrome):** abrir o site → menu ⋮ → *Instalar app*.
 - **iPhone (Safari):** compartilhar → *Adicionar à Tela de Início*.
 
+## Versões e releases
+
+```
+feature/* ──PR──▶ develop ──(automático)──▶ PR "chore(release): vX.Y.Z" ──aprovar + merge──▶ main
+                                                                                    └─▶ tag + Release + develop sincronizada
+```
+
+- Todo trabalho entra na **develop** (push direto ou PR). A **main** só recebe código pelo PR de release.
+- A cada push na develop, o workflow [`release.yml`](.github/workflows/release.yml) cria ou atualiza o PR **`chore(release): vX.Y.Z`** (branch `release` → `main`) com a versão nova no `package.json` e o [`CHANGELOG.md`](CHANGELOG.md). Ele vai acumulando tudo até ser aprovado.
+- Ao **aprovar e fazer o merge** (use *Create a merge commit*), o workflow cria a tag `vX.Y.Z`, publica a Release no GitHub e faz o merge da main de volta na develop.
+- A versão aparece no app, no fim da tela **Perfil**.
+
+**Mensagens de commit** ([Conventional Commits](https://www.conventionalcommits.org/pt-br/)) definem a versão e as seções do changelog:
+
+| Prefixo | Exemplo | Versão |
+|---|---|---|
+| `feat:` | `feat(home): aba de despesas` | 0.**X**.0 |
+| `fix:` | `fix: ordem do histórico por km` | 0.0.**X** |
+| `perf:` `refactor:` `docs:` `chore:` `ci:` `test:` `style:` | `docs: fluxo de release` | 0.0.**X** |
+| `!` ou `BREAKING CHANGE:` | `feat!: novo formato dos dados` | 0.**X**.0 enquanto for 0.x, depois **X**.0.0 |
+
+O cálculo fica em [`scripts/release.mjs`](scripts/release.mjs), sem dependências. O [`ci.yml`](.github/workflows/ci.yml) roda testes e build em todo PR e push na develop.
+
 ## Estrutura do código
 
 ```

@@ -1,0 +1,132 @@
+# Fluxo de versões
+#
+#   develop ──push──▶ PR "chore(release): vX.Y.Z" (branch release → main), atualizado a cada push
+#                     com a versão nova no package.json e o CHANGELOG.md
+#   aprovar + merge ─▶ main recebe tudo de uma vez → tag vX.Y.Z + Release no GitHub
+#                     → develop é sincronizada com a main (traz a versão e o changelog)
+#
+# A versão sai dos commits (Conventional Commits): feat → 0.X.0, fix e demais → 0.0.X, "!" → incompatível.
+
+name: Release
+
+on:
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  publish:
+    name: Publicar versão (tag + Release)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configurar git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Criar tag e Release
+        id: tag
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "v$version já publicada"
+            exit 0
+          fi
+          git tag -a "v$version" -m "v$version"
+          git push origin "v$version"
+          node scripts/release.mjs notes "$version" > notes.md
+          gh release create "v$version" --title "v$version" --notes-file notes.md --verify-tag
+          echo "released=v$version" >> "$GITHUB_OUTPUT"
+
+      - name: Sincronizar develop com a main
+        if: steps.tag.outputs.released
+        run: |
+          git fetch origin develop
+          git switch develop
+          git merge --no-ff origin/main -m "chore(release): sincroniza ${{ steps.tag.outputs.released }} na develop"
+          git push origin develop
+
+  release-pr:
+    name: PR de release (develop → main)
+    needs: publish
+    # roda no push da develop e também depois de publicar (pode haver commits novos na develop)
+    if: always() && needs.publish.result != 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configurar git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Calcular versão e changelog
+        id: prepare
+        run: |
+          version=$(node scripts/release.mjs prepare)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Versão: ${version:-nada a lançar}"
+
+      - name: Fechar PR de release sem conteúdo
+        if: steps.prepare.outputs.version == ''
+        run: |
+          pr=$(gh pr list --head release --base main --state open --json number --jq '.[0].number')
+          if [ -n "$pr" ]; then
+            gh pr close "$pr" --comment "A develop não tem nada novo em relação à main." --delete-branch
+          fi
+
+      - name: Criar ou atualizar o PR
+        if: steps.prepare.outputs.version != ''
+        env:
+          VERSION: ${{ steps.prepare.outputs.version }}
+        run: |
+          git switch -C release
+          git add package.json package-lock.json CHANGELOG.md
+          git commit -m "chore(release): v$VERSION"
+          git push --force origin release
+
+          {
+            echo "## 🚀 Unitali Garage v$VERSION"
+            echo
+            echo "Este PR junta tudo o que entrou na **develop** desde a última versão e é atualizado a cada push."
+            echo "**Aprove e faça o merge** (\"Create a merge commit\") para levar à **main** e publicar a tag \`v$VERSION\`."
+            echo
+            echo "---"
+            echo
+            sed '1d' RELEASE_NOTES.md
+          } > body.md
+
+          title="chore(release): v$VERSION"
+          pr=$(gh pr list --head release --base main --state open --json number --jq '.[0].number')
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --title "$title" --body-file body.md
+          else
+            gh pr create --head release --base main --title "$title" --body-file body.md
+          fi
