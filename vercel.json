@@ -1,6 +1,7 @@
 {
   "installCommand": "unset npm_config_cache_dir NPM_CONFIG_CACHE_DIR && npm ci --no-audit --no-fund",
   "buildCommand": "unset npm_config_cache_dir NPM_CONFIG_CACHE_DIR && npm run build",
+  "ignoreCommand": "[ -n \"$VERCEL_GIT_COMMIT_REF\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != main ] && [ \"$VERCEL_GIT_COMMIT_REF\" != release ]",
   "rewrites": [
     {
       "source": "/__/auth/:path*",
