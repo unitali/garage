@@ -1,0 +1,45 @@
+import { useEffect, type ReactNode } from 'react';
+import { matchRoutes, useLocation, useRoutes } from 'react-router-dom';
+import { useAuth } from './auth';
+import { watchConnection } from './sync';
+import { splash } from './ui';
+import { routes, type RouteHandle } from './routes';
+import TabBar from './components/TabBar';
+import Login from './pages/Login';
+
+/** Coluna do app: ocupa a tela toda no celular e para no tamanho de um tablet (768px). */
+function Shell({ children }: { children: ReactNode }) {
+  return <div className="mx-auto min-h-dvh max-w-3xl bg-bg md:border-x md:border-line">{children}</div>;
+}
+
+export default function App() {
+  const { user, loading } = useAuth();
+  const uid = user?.uid;
+  const location = useLocation();
+  const page = useRoutes(routes);
+
+  useEffect(() => (uid ? watchConnection(uid) : undefined), [uid]);
+
+  const matches = matchRoutes(routes, location);
+  const showTabs = !!(matches?.[matches.length - 1]?.route.handle as RouteHandle | undefined)?.tabBar;
+
+  if (loading)
+    return (
+      <Shell>
+        <div className={splash}>Carregando…</div>
+      </Shell>
+    );
+  if (!user)
+    return (
+      <Shell>
+        <Login />
+      </Shell>
+    );
+
+  return (
+    <Shell>
+      <div className={showTabs ? 'pb-16' : ''}>{page}</div>
+      {showTabs && <TabBar />}
+    </Shell>
+  );
+}
