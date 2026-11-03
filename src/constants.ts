@@ -88,3 +88,8 @@ export function categoryOptions(defaults: string[], custom: string[] = [], curre
     .sort((a, b) => a.localeCompare(b, 'pt-BR'));
   return [...base, ...extra, ...(defaults.includes(OTHER) ? [OTHER] : [])];
 }
+
+/** Troca de óleo: ao registrar, escolhe-se o intervalo da próxima e o lembrete é criado/atualizado. */
+export const OIL_CHANGE = 'Troca de óleo';
+export const OIL_KM_OPTIONS = [5000, 10000, 15000];
+export const OIL_MONTH_OPTIONS = [6, 12, 18];

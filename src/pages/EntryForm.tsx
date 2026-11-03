@@ -3,10 +3,11 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import CategorySelect from '../components/CategorySelect';
 import ServiceItemsField, { newItem, type ItemDraft } from '../components/ServiceItemsField';
+import OilChangeField from '../components/OilChangeField';
 import { useUid } from '../auth';
 import { useEntries, useReminders, useVehicle } from '../hooks';
-import { deleteEntry, markReminderDone, saveEntry, syncVehicleOdometer } from '../db';
-import { ENTRY_KINDS, EXPENSE_CATEGORIES, FUEL_TYPES, SERVICE_CATEGORIES } from '../constants';
+import { deleteEntry, markReminderDone, saveEntry, saveReminder, syncVehicleOdometer } from '../db';
+import { ENTRY_KINDS, EXPENSE_CATEGORIES, FUEL_TYPES, normalizeCategory, OIL_CHANGE, SERVICE_CATEGORIES } from '../constants';
 import { currentOdometer, serviceItems, sumItems } from '../lib/calc';
 import { today } from '../lib/dates';
 import { km, MAX_KM_DIGITS, maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../lib/format';
@@ -81,12 +82,18 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
     kind !== 'service' ? [] : entry ? serviceItems(entry).map((i) => newItem(i.category, toInput(i.amount, 2))) : [newItem()],
   );
   const [reminderId, setReminderId] = useState('');
+  // troca de óleo (só em serviço novo): intervalo da próxima → lembrete
+  const [oilKm, setOilKm] = useState<number | null>(null);
+  const [oilMonths, setOilMonths] = useState<number | null>(null);
   const [error, setError] = useState('');
 
   const electric = fuelType === 'Recarga elétrica';
   const unit = electric ? 'kWh' : 'L';
   const odoNum = parseInteger(odo);
   const odoBelow = odoNum != null && !entry && odoNum < lastKm;
+  const isOil = (c: string) => normalizeCategory(c) === normalizeCategory(OIL_CHANGE);
+  const hasOilChange = kind === 'service' && !entry && items.some((i) => isOil(i.category));
+  const oilMissing = hasOilChange && (oilKm == null || oilMonths == null);
 
   // total ÷ preço → litros; litros × preço → total (tudo com duas casas, formatado ao digitar)
   function onAmount(raw: string) {
@@ -116,6 +123,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
     const isService = kind === 'service';
     const serviceList = items.map((i) => ({ category: i.category, amount: Math.round((parseDecimal(i.amount) ?? 0) * 100) / 100 }));
     if (isService && serviceList.some((i) => !i.category)) return setError('Escolha o serviço de cada item.');
+    if (oilMissing) return setError('Escolha o intervalo da próxima troca de óleo: um de km e um de meses.');
     const value = isService ? sumItems(serviceList) : parseDecimal(amount);
     if (!value || value <= 0) return setError(isService ? 'Informe o valor de pelo menos um item.' : 'Informe o valor.');
     if (!day) return setError('Informe a data.');
@@ -146,6 +154,18 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
       // um item só: grava como antes (sem lista); vários: a lista, e amount/category resumem
       saveEntry(uid, vid, entry?.id, isService && serviceList.length > 1 ? { ...base, items: serviceList } : base);
       if (isService && reminderId) markReminderDone(uid, vid, reminderId, odoNum ?? lastKm, day);
+      if (hasOilChange && oilKm != null && oilMonths != null) {
+        // atualiza o lembrete de troca de óleo do veículo, ou cria — nunca duplica
+        const oil = reminders.find((r) => isOil(r.title));
+        saveReminder(uid, vid, oil?.id, {
+          title: oil?.title ?? OIL_CHANGE,
+          intervalKm: oilKm,
+          intervalMonths: oilMonths,
+          lastKm: odoNum ?? lastKm,
+          lastDate: day,
+          createdAt: oil?.createdAt ?? Date.now(),
+        });
+      }
     }
     if (odoNum != null && odoNum > (vehicle.odometer ?? 0)) syncVehicleOdometer(uid, vid, odoNum);
     navigate(back, { replace: true });
@@ -213,6 +233,16 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
           {kind === 'service' && (
             <>
               <ServiceItemsField uid={uid} items={items} onChange={setItems} />
+              {hasOilChange && (
+                <OilChangeField
+                  km={oilKm}
+                  months={oilMonths}
+                  onKm={setOilKm}
+                  onMonths={setOilMonths}
+                  fromKm={odoNum ?? lastKm}
+                  fromDate={day || today()}
+                />
+              )}
               <label className={field}>
                 Descrição <span className={opt}>(opcional)</span>
                 <input
@@ -249,7 +279,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
               Concluir lembrete <span className={opt}>(opcional)</span>
               <select className={input} value={reminderId} onChange={(e) => setReminderId(e.target.value)}>
                 <option value="">— nenhum —</option>
-                {reminders.map((r) => (
+                {reminders.filter((r) => !(hasOilChange && isOil(r.title))).map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.title}
                   </option>
@@ -265,7 +295,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
           </label>
 
           {error && <p className={errorText}>{error}</p>}
-          <button className={`${btn('primary')} w-full`} type="submit">
+          <button className={`${btn('primary')} w-full`} type="submit" disabled={oilMissing}>
             Salvar
           </button>
           {entry && (
