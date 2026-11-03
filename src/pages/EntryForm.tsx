@@ -2,7 +2,7 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import CategorySelect from '../components/CategorySelect';
-import ServiceItemsField, { newItem, type ItemDraft } from '../components/ServiceItemsField';
+import ServiceItemsField, { findReminder, isOilChange, newItem, type ItemDraft } from '../components/ServiceItemsField';
 import OilChangeField from '../components/OilChangeField';
 import { useUid } from '../auth';
 import { useEntries, useReminders, useVehicle } from '../hooks';
@@ -91,9 +91,29 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
   const unit = electric ? 'kWh' : 'L';
   const odoNum = parseInteger(odo);
   const odoBelow = odoNum != null && !entry && odoNum < lastKm;
-  const isOil = (c: string) => normalizeCategory(c) === normalizeCategory(OIL_CHANGE);
-  const hasOilChange = kind === 'service' && !entry && items.some((i) => isOil(i.category));
+  // lembretes da próxima troca: só em serviço novo (contam a partir do km e da data dele)
+  const allowReminders = kind === 'service' && !entry;
+  const hasOilChange = allowReminders && items.some((i) => isOilChange(i.category));
   const oilMissing = hasOilChange && (oilKm == null || oilMonths == null);
+  const reminderItems = allowReminders ? items.filter((i) => i.remind && i.category && !isOilChange(i.category)) : [];
+  // serviços com lembrete próprio já reiniciam ao salvar: fora do "Concluir lembrete"
+  const handled = (title: string) =>
+    (hasOilChange && isOilChange(title)) || reminderItems.some((i) => normalizeCategory(i.category) === normalizeCategory(title));
+
+  const otherReminders = reminders.filter((r) => !handled(r.title));
+
+  /** Cria ou atualiza o lembrete do veículo com este nome — nunca duplica. */
+  function upsertReminder(title: string, intervalKm: number | null, intervalMonths: number | null) {
+    const existing = findReminder(reminders, title);
+    saveReminder(uid, vid, existing?.id, {
+      title: existing?.title ?? title,
+      intervalKm,
+      intervalMonths,
+      lastKm: odoNum ?? lastKm,
+      lastDate: day,
+      createdAt: existing?.createdAt ?? Date.now(),
+    });
+  }
 
   // total ÷ preço → litros; litros × preço → total (tudo com duas casas, formatado ao digitar)
   function onAmount(raw: string) {
@@ -124,6 +144,13 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
     const serviceList = items.map((i) => ({ category: i.category, amount: Math.round((parseDecimal(i.amount) ?? 0) * 100) / 100 }));
     if (isService && serviceList.some((i) => !i.category)) return setError('Escolha o serviço de cada item.');
     if (oilMissing) return setError('Escolha o intervalo da próxima troca de óleo: um de km e um de meses.');
+    const itemReminders = reminderItems.map((i) => ({
+      title: i.category,
+      km: parseInteger(i.remindKm) || null,
+      months: parseInteger(i.remindMonths) || null,
+    }));
+    const incomplete = itemReminders.find((r) => !r.km && !r.months);
+    if (incomplete) return setError(`Informe em quantos km ou meses lembrar de "${incomplete.title}" (ou desligue o lembrete).`);
     const value = isService ? sumItems(serviceList) : parseDecimal(amount);
     if (!value || value <= 0) return setError(isService ? 'Informe o valor de pelo menos um item.' : 'Informe o valor.');
     if (!day) return setError('Informe a data.');
@@ -154,18 +181,8 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
       // um item só: grava como antes (sem lista); vários: a lista, e amount/category resumem
       saveEntry(uid, vid, entry?.id, isService && serviceList.length > 1 ? { ...base, items: serviceList } : base);
       if (isService && reminderId) markReminderDone(uid, vid, reminderId, odoNum ?? lastKm, day);
-      if (hasOilChange && oilKm != null && oilMonths != null) {
-        // atualiza o lembrete de troca de óleo do veículo, ou cria — nunca duplica
-        const oil = reminders.find((r) => isOil(r.title));
-        saveReminder(uid, vid, oil?.id, {
-          title: oil?.title ?? OIL_CHANGE,
-          intervalKm: oilKm,
-          intervalMonths: oilMonths,
-          lastKm: odoNum ?? lastKm,
-          lastDate: day,
-          createdAt: oil?.createdAt ?? Date.now(),
-        });
-      }
+      if (hasOilChange) upsertReminder(OIL_CHANGE, oilKm, oilMonths);
+      for (const r of itemReminders) upsertReminder(r.title, r.km, r.months);
     }
     if (odoNum != null && odoNum > (vehicle.odometer ?? 0)) syncVehicleOdometer(uid, vid, odoNum);
     navigate(back, { replace: true });
@@ -232,7 +249,15 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
 
           {kind === 'service' && (
             <>
-              <ServiceItemsField uid={uid} items={items} onChange={setItems} />
+              <ServiceItemsField
+                uid={uid}
+                items={items}
+                onChange={setItems}
+                reminders={reminders}
+                allowReminders={allowReminders}
+                fromKm={odoNum ?? lastKm}
+                fromDate={day || today()}
+              />
               {hasOilChange && (
                 <OilChangeField
                   km={oilKm}
@@ -274,12 +299,12 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
             </>
           )}
 
-          {kind === 'service' && !entry && reminders.length > 0 && (
+          {kind === 'service' && !entry && otherReminders.length > 0 && (
             <label className={field}>
               Concluir lembrete <span className={opt}>(opcional)</span>
               <select className={input} value={reminderId} onChange={(e) => setReminderId(e.target.value)}>
                 <option value="">— nenhum —</option>
-                {reminders.filter((r) => !(hasOilChange && isOil(r.title))).map((r) => (
+                {otherReminders.map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.title}
                   </option>
