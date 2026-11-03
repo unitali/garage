@@ -1,0 +1,88 @@
+/*
+ * Tokens de design do Unitali Garage — fonte única das cores, raios e fonte.
+ * O styles.css expõe estes valores ao Tailwind (bg-brand, text-muted, bg-warn-bg…).
+ * Regras: vermelho só para vencido; âmbar só para "em breve"; futuro fica neutro.
+ * As cores por tipo valem só para o ícone, nunca como borda de status.
+ */
+:root {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  --color-primary: #0f2747;
+  --color-primary-600: #1d4e89;
+  --on-primary: #ffffff;
+  --primary-soft: #e8eef7;
+
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --text: #0f172a;
+  --muted: #5b6575;
+  --border: #e2e7ee;
+  --outside: #d5dce6; /* fora da coluna do app, em telas maiores que um tablet */
+
+  /* barra do topo (azul-marinho nos dois temas) */
+  --bar: #0f2747;
+  --bar-ink: #ffffff;
+
+  --danger: #b42318;
+  --danger-bg: #fef3f2;
+  --warning: #b54708;
+  --warning-bg: #fffaeb;
+  --warning-border: #fedf89;
+  --success: #067647;
+  --success-bg: #e6f4ea;
+
+  /* tipo de registro: só no ícone */
+  --type-fuel: #067647;
+  --type-fuel-bg: #e6f4ea;
+  --type-service: #b54708;
+  --type-service-bg: #fdf0e6;
+  --type-expense: #1d4e89;
+  --type-expense-bg: #eef2f7;
+  --type-reminder: #5b3fa8;
+  --type-reminder-bg: #f1ecfb;
+
+  /* faixa tricolor */
+  --flag-green: #009246;
+  --flag-white: #ffffff;
+  --flag-red: #ce2b37;
+}
+
+/* modo escuro: mesmos tokens, outros valores */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-primary: #8db7ec;
+    --color-primary-600: #b5d0f3;
+    --on-primary: #0b1b33;
+    --primary-soft: #16304f;
+
+    --bg: #0b1220;
+    --surface: #121b2b;
+    --text: #e8edf5;
+    --muted: #a3adbd;
+    --border: #233046;
+    --outside: #05080f;
+
+    --bar: #0b1b33;
+    --bar-ink: #ffffff;
+
+    --danger: #f97066;
+    --danger-bg: #3a1714;
+    --warning: #fdb022;
+    --warning-bg: #33250b;
+    --warning-border: #6b4e14;
+    --success: #47cd89;
+    --success-bg: #0f2e1f;
+
+    --type-fuel: #47cd89;
+    --type-fuel-bg: #0f2e1f;
+    --type-service: #f7a94a;
+    --type-service-bg: #3a250f;
+    --type-expense: #8db7ec;
+    --type-expense-bg: #16273d;
+    --type-reminder: #b69cf3;
+    --type-reminder-bg: #2a2145;
+
+    --flag-green: #2fbf71;
+    --flag-red: #ef5a63;
+  }
+}

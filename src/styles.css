@@ -1,54 +1,47 @@
 @import 'tailwindcss';
+@import './styles/tokens.css';
 
-/* Cores da marca Unitali (logo: azul-marinho com verde e vermelho da Itália) como tokens: bg-brand, text-muted… */
-@theme {
-  --color-outside: #d5dce6; /* fora da coluna do app, em telas maiores que um tablet */
-  --color-bg: #f3f5f8;
-  --color-surface: #ffffff;
-  --color-ink: #0f1b2b;
-  --color-muted: #64748b;
-  --color-line: #e1e7ef;
-  --color-brand: #073863;
-  --color-brand-contrast: #ffffff;
-  --color-brand-soft: #dde8f3;
-  /* barra do topo: azul-marinho também no tema escuro */
-  --color-bar: #073863;
-  --color-bar-ink: #ffffff;
-  --color-flag-green: #009247;
-  --color-flag-red: #cf2b36;
-  --color-danger: #cf2b36;
-  --color-warn: #ea580c; /* laranja: lembrete urgente, avisos */
-  --color-ok: #009247;
-  /* tipos de registro no histórico */
-  --color-fuel: #eab308;
-  --color-service: #2563eb;
-  --color-expense: #dc2626;
-}
+/*
+ * Tailwind lendo os tokens (src/styles/tokens.css). `inline`: as classes usam var(--…),
+ * então o modo escuro só troca os tokens.
+ */
+@theme inline {
+  --font-sans: var(--font-sans);
 
-/* Tema escuro: troca os tokens, as classes continuam as mesmas */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-outside: #03070d;
-    --color-bg: #0a1220;
-    --color-surface: #111c2e;
-    --color-ink: #e8eef6;
-    --color-muted: #94a3b8;
-    --color-line: #1e2b40;
-    /* o marinho some no fundo escuro: destaques usam um azul claro do mesmo tom */
-    --color-brand: #7fb2e5;
-    --color-brand-contrast: #04182c;
-    --color-brand-soft: #13304f;
-    --color-bar: #082a4a;
-    --color-bar-ink: #ffffff;
-    --color-flag-green: #2fbf71;
-    --color-flag-red: #ef5a63;
-    --color-danger: #ef5a63;
-    --color-warn: #fb923c;
-    --color-ok: #2fbf71;
-    --color-fuel: #facc15;
-    --color-service: #60a5fa;
-    --color-expense: #f87171;
-  }
+  --color-outside: var(--outside);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--text);
+  --color-muted: var(--muted);
+  --color-line: var(--border);
+
+  --color-brand: var(--color-primary);
+  --color-brand-600: var(--color-primary-600);
+  --color-brand-contrast: var(--on-primary);
+  --color-brand-soft: var(--primary-soft);
+  --color-bar: var(--bar);
+  --color-bar-ink: var(--bar-ink);
+
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-warn: var(--warning);
+  --color-warn-bg: var(--warning-bg);
+  --color-warn-border: var(--warning-border);
+  --color-ok: var(--success);
+  --color-ok-bg: var(--success-bg);
+
+  --color-fuel: var(--type-fuel);
+  --color-fuel-bg: var(--type-fuel-bg);
+  --color-service: var(--type-service);
+  --color-service-bg: var(--type-service-bg);
+  --color-expense: var(--type-expense);
+  --color-expense-bg: var(--type-expense-bg);
+  --color-reminder: var(--type-reminder);
+  --color-reminder-bg: var(--type-reminder-bg);
+
+  --color-flag-green: var(--flag-green);
+  --color-flag-white: var(--flag-white);
+  --color-flag-red: var(--flag-red);
 }
 
 @layer base {
