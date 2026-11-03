@@ -1,5 +1,5 @@
 import type { Entry, Reminder, ServiceItem, Vehicle } from '../types';
-import { addDays, addMonths, diffDays, endOfMonth, fromTimestamp, today } from './dates.ts';
+import { addDays, addMonths, diffDays, fromTimestamp, today } from './dates.ts';
 
 /** km atual = maior km entre o cadastro, o "Atualizar km" (manual) e os registros */
 export function currentOdometer(
@@ -259,11 +259,14 @@ export interface DueBill {
   s: ReminderStatus;
 }
 
-/** Contas do mês (e vencidas não pagas), por vencimento: aparecem como lembrete até "Pago". */
+/**
+ * Contas em aberto dentro da antecedência de aviso (e as vencidas), por vencimento: aparecem como
+ * lembrete até "Pago", com as mesmas cores (laranja na janela urgente, vermelho vencida).
+ */
 export function billsDue(entries: Entry[], ref = today(), alert = DEFAULT_ALERT): DueBill[] {
-  const last = endOfMonth(ref);
+  const until = addMonths(ref, alert.months);
   return entries
-    .filter((e) => isOpenBill(e, ref) && e.date <= last)
+    .filter((e) => isOpenBill(e, ref) && e.date <= until)
     .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)
     .map((e) => {
       const daysLeft = diffDays(ref, e.date);

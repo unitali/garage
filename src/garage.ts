@@ -22,7 +22,7 @@ export function useGarage() {
     () => remindersByDue(reminders.data, current, rate, undefined, alert),
     [reminders.data, current, rate, alert.km, alert.months, alert.urgentKm, alert.urgentDays], // eslint-disable-line react-hooks/exhaustive-deps
   );
-  /** contas do mês (parcelas/recorrentes/despesas em aberto) */
+  /** contas em aberto dentro do aviso (parcelas/recorrentes/despesas futuras) e vencidas */
   const bills = useMemo(
     () => billsDue(entries.data, undefined, alert),
     [entries.data, alert.urgentDays], // eslint-disable-line react-hooks/exhaustive-deps

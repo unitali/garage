@@ -13,7 +13,7 @@ import { badge, btn, card, emptyText, iconCircle, LEVEL_BADGE, LEVEL_LABEL, LEVE
 
 const groupTitle = 'mb-2 px-1 text-xs font-bold tracking-wider text-muted uppercase';
 
-/** Lembretes: contas do mês (com "Pago") e lembretes de manutenção (com "Feito"), do mais urgente ao menos. */
+/** Lembretes: contas dentro do aviso (com "Pago") e lembretes de manutenção (com "Feito"), do mais urgente ao menos. */
 export default function RemindersPage() {
   const { uid, vehicles, vehicle, reminders, current, rate, alert, due, bills, loading } = useGarage();
   if (loading) return <div className={splash}>Carregando…</div>;
@@ -36,7 +36,7 @@ export default function RemindersPage() {
           <>
             {bills.length > 0 && (
               <section>
-                <h2 className={groupTitle}>Contas do mês</h2>
+                <h2 className={groupTitle}>Contas</h2>
                 <div className={`${card} divide-y divide-line py-0`}>
                   {bills.map((b) => (
                     <BillRow key={b.e.id} uid={uid} vid={vehicle.id} bill={b} />

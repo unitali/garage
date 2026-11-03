@@ -1,26 +1,25 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Car, CheckCircle2, Gauge, Plus, TrendingDown, TrendingUp } from 'lucide-react';
+import { Car, Check, CheckCircle2, Gauge, Plus, TrendingDown, TrendingUp } from 'lucide-react';
 import Header from '../components/Header';
 import EntryRow from '../components/EntryRow';
 import FlagStripe from '../components/FlagStripe';
 import InstallCard from '../components/InstallCard';
 import StatusStrip from '../components/StatusStrip';
 import VehicleSwitcher from '../components/VehicleSwitcher';
-import { syncVehicleOdometer } from '../db';
+import { markPaid, syncVehicleOdometer } from '../db';
 import { useGarage } from '../garage';
-import { fuelStats, type AlertWindow, type DueReminder, type ReminderLevel } from '../lib/calc';
+import { fuelStats, type AlertWindow, type DueBill, type DueReminder, type ReminderLevel } from '../lib/calc';
 import { diffDays, fromTimestamp, today } from '../lib/dates';
 import { brl, date, daysAgo, dueIn, dueText, km, num } from '../lib/format';
 import {
-  aVencer,
+  cardsDoInicio,
   gastoPagoNoAno,
   gastoPrevistoNoAno,
   isPaid,
-  manutencoesNoAviso,
   proximaAcao,
   variacaoConsumo,
-  type AVencerItem,
+  type CardItem,
 } from '../lib/summary';
 import { monthsLabel } from './ReminderSettings';
 import { paths } from '../routes/paths';
@@ -32,9 +31,7 @@ import {
   card,
   iconCircle,
   KIND_ICON,
-  KIND_SOFT,
   LEVEL_LABEL,
-  LEVEL_TEXT,
   main,
   REMINDER_ICON,
   REMINDER_SOFT,
@@ -73,7 +70,7 @@ type Garage = ReturnType<typeof useGarage>;
 
 /** Tela inicial (resumo do veículo selecionado). */
 function Summary({ g, v }: { g: Garage; v: Vehicle }) {
-  const { uid, vehicles, entries, reminders, current, rate, alert, due } = g;
+  const { uid, vehicles, entries, reminders, current, rate, alert, due, bills } = g;
   const ref = today();
 
   // mantém o km do veículo em dia (inclusive após editar/excluir registros)
@@ -81,10 +78,9 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
     if (v.odometer !== current) syncVehicleOdometer(uid, v.id, current);
   }, [v, uid, current]);
 
-  // cards: lembretes dentro da antecedência de aviso; sem nenhum, o mais próximo aparece como "em dia"
-  const cards = useMemo(() => manutencoesNoAviso(due), [due]);
+  // cards: lembretes e contas dentro da antecedência de aviso; sem nenhum, o lembrete mais próximo aparece como "em dia"
+  const cards = useMemo(() => cardsDoInicio(due, bills), [due, bills]);
   const next = useMemo(() => proximaAcao(reminders, current, ref, rate, alert), [reminders, current, ref, rate, alert]);
-  const upcoming = useMemo(() => aVencer(entries, due, ref, 3, cards.map((c) => c.r.id)), [entries, due, ref, cards]);
   const recent = useMemo(
     () => entries.filter((e) => isPaid(e, ref)).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 3),
     [entries, ref],
@@ -118,7 +114,7 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
       <StatusStrip />
 
       <main className={`${main} flex flex-col gap-3`}>
-        <Maintenance vid={v.id} cards={cards} next={next} alert={alert} />
+        <Upcoming uid={uid} vid={v.id} cards={cards} next={next} alert={alert} />
 
         <section className="grid grid-cols-2 gap-3">
           <div className={card}>
@@ -140,17 +136,6 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
             )}
           </div>
         </section>
-
-        {upcoming.length > 0 && (
-          <section className={card}>
-            <SectionHead title="A vencer" to={paths.reminders()} link="Ver todos" />
-            <ul className="divide-y divide-line">
-              {upcoming.map((item) => (
-                <UpcomingRow key={item.type === 'bill' ? item.entry.id : item.due.r.id} vid={v.id} item={item} urgentDays={alert.urgentDays} />
-              ))}
-            </ul>
-          </section>
-        )}
 
         <section className={card}>
           <SectionHead title="Últimos registros" to={paths.history()} link="Histórico" />
@@ -193,7 +178,7 @@ function SectionHead({ title, to, link }: { title: string; to: string; link: str
   );
 }
 
-/** Cores dos cards de manutenção: verde em dia, laranja urgente, vermelho vencido (Configurações → Lembretes). */
+/** Cores dos cards: verde em dia, laranja próximo, vermelho vencido (Configurações → Lembretes). */
 const TONE: Record<ReminderLevel, { box: string; text: string; badge: string; button: string }> = {
   overdue: { box: 'border-danger/30 bg-danger-bg', text: 'text-danger', badge: 'bg-danger text-bg', button: 'bg-danger text-bg' },
   soon: { box: 'border-warn-border bg-warn-bg', text: 'text-warn', badge: 'bg-warn text-bg', button: 'bg-warn text-bg' },
@@ -201,11 +186,23 @@ const TONE: Record<ReminderLevel, { box: string; text: string; badge: string; bu
 };
 
 /**
- * Próxima manutenção: um card por lembrete dentro da antecedência de aviso, do mais urgente,
- * com rolagem lateral quando há mais de um. Sem nenhum na janela, mostra o mais próximo como "em dia".
+ * Lembretes e contas dentro da antecedência de aviso, um card cada, do mais urgente, com rolagem
+ * lateral quando há mais de um. Sem nenhum na janela, mostra o lembrete mais próximo como "em dia".
  */
-function Maintenance({ vid, cards, next, alert }: { vid: string; cards: DueReminder[]; next: DueReminder | null; alert: AlertWindow }) {
-  if (!next)
+function Upcoming({
+  uid,
+  vid,
+  cards,
+  next,
+  alert,
+}: {
+  uid: string;
+  vid: string;
+  cards: CardItem[];
+  next: DueReminder | null;
+  alert: AlertWindow;
+}) {
+  if (cards.length === 0 && !next)
     return (
       <section className={`${card} flex flex-wrap items-center gap-3`}>
         <span className={`${iconCircle} ${REMINDER_SOFT}`}>
@@ -221,119 +218,126 @@ function Maintenance({ vid, cards, next, alert }: { vid: string; cards: DueRemin
       </section>
     );
 
-  if (cards.length === 0)
+  if (cards.length === 0 && next)
     return (
       <Link to={paths.reminders()} className={`flex items-center gap-3 rounded-2xl border p-3.5 ${TONE.ok.box}`}>
         <CheckCircle2 className="size-6 shrink-0 text-ok" aria-hidden />
         <span className="flex min-w-0 flex-1 flex-col">
-          <strong>Manutenção em dia</strong>
+          <strong>Tudo em dia</strong>
           <span className="text-sm text-muted">
-            Nada vence nos próximos {km(alert.km)} ou {monthsLabel(alert.months)}. Próxima: {next.r.title}
+            Nada vence nos próximos {km(alert.km)} ou {monthsLabel(alert.months)}. Próximo: {next.r.title}
             {dueText(next.s) ? ` (${dueText(next.s)})` : ''}.
           </span>
         </span>
       </Link>
     );
 
+  const render = (c: CardItem, className?: string) =>
+    c.type === 'bill' ? (
+      <BillCard key={c.bill.e.id} uid={uid} vid={vid} bill={c.bill} className={className} />
+    ) : (
+      <ReminderCard key={c.due.r.id} vid={vid} item={c.due} className={className} />
+    );
+
   return (
     <section>
-      <SectionHead title="Próxima manutenção" to={paths.reminders()} link="Ver todos" />
+      <SectionHead title="Lembretes" to={paths.reminders()} link="Ver todos" />
       {cards.length === 1 ? (
-        <MaintenanceCard vid={vid} item={cards[0]} />
+        render(cards[0])
       ) : (
         // -mx-4/px-4: os cards encostam na borda da tela ao rolar, mas começam alinhados ao conteúdo
         <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-          {cards.map((d) => (
-            <MaintenanceCard key={d.r.id} vid={vid} item={d} className="w-[85%] max-w-sm shrink-0 snap-start" />
-          ))}
+          {cards.map((c) => render(c, 'w-[85%] max-w-sm shrink-0 snap-start'))}
         </div>
       )}
     </section>
   );
 }
 
-/** Card de um lembrete, na cor do nível, com atalho para registrar o serviço já com ele selecionado. */
-function MaintenanceCard({ vid, item, className = '' }: { vid: string; item: DueReminder; className?: string }) {
-  const { r, s, due, estimated } = item;
-  const tone = TONE[s.level];
-  const when = [due ? `${estimated ? '≈ ' : ''}${date(due)}` : null, s.nextKm != null ? km(s.nextKm) : null].filter(Boolean).join(' · ');
-  const ServiceIcon = KIND_ICON.service;
-
+/** Moldura comum: fundo/borda na cor do nível, ícone, selo, título, prazo colorido e a ação embaixo. */
+function ToneCard({
+  level,
+  icon: Icon,
+  title,
+  status,
+  detail,
+  action,
+  className = '',
+}: {
+  level: ReminderLevel;
+  icon: typeof Check;
+  title: ReactNode;
+  status: string;
+  detail: string;
+  action: ReactNode;
+  className?: string;
+}) {
+  const tone = TONE[level];
   return (
     <article className={`flex flex-col rounded-2xl border p-3.5 ${tone.box} ${className}`}>
       <div className="flex items-start gap-3">
         <span className={`${iconCircle} bg-surface ${tone.text}`}>
-          <ServiceIcon className="size-5" aria-hidden />
+          <Icon className="size-5" aria-hidden />
         </span>
         <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
-          <span className={`${badge} ${tone.badge}`}>{LEVEL_LABEL[s.level]}</span>
-          <h3 className="text-lg font-bold break-words">
-            <Link to={paths.reminder(vid, r.id)}>{r.title}</Link>
-          </h3>
-          <p className={`text-sm font-semibold ${tone.text}`}>{dueText(s)}</p>
-          {when && <p className="text-sm text-muted">vence {when}</p>}
+          <span className={`${badge} ${tone.badge}`}>{LEVEL_LABEL[level]}</span>
+          <h3 className="text-lg font-bold break-words">{title}</h3>
+          <p className={`text-sm font-semibold ${tone.text}`}>{status}</p>
+          {detail && <p className="text-sm text-muted">{detail}</p>}
         </div>
       </div>
-      {/* mt-auto: no carrossel os botões ficam alinhados embaixo mesmo com textos de tamanhos diferentes */}
-      <div className="mt-auto pt-3">
-        <Link
-          to={paths.newEntry(vid, 'service', { lembrete: r.id })}
-          className={`inline-flex min-h-11 items-center rounded-xl px-4 font-semibold ${tone.button}`}
-        >
-          Registrar serviço
-        </Link>
-      </div>
+      {/* mt-auto: no carrossel as ações ficam alinhadas embaixo mesmo com textos de tamanhos diferentes */}
+      <div className="mt-auto pt-3">{action}</div>
     </article>
   );
 }
 
-/** Item de "A vencer": parcela/conta em aberto ou lembrete. */
-function UpcomingRow({ vid, item, urgentDays }: { vid: string; item: AVencerItem; urgentDays: number }) {
-  if (item.type === 'bill') {
-    const e = item.entry;
-    const days = diffDays(today(), e.date);
-    const level: ReminderLevel = days < 0 ? 'overdue' : days <= urgentDays ? 'soon' : 'ok';
-    const ExpenseIcon = KIND_ICON.expense;
-    return (
-      <li>
-        <Link to={paths.entry(vid, e.id)} className="flex min-h-11 items-start gap-3 py-3">
-          <span className={`${iconCircle} ${KIND_SOFT.expense}`}>
-            <ExpenseIcon className="size-5" aria-hidden />
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <strong className="break-words">
-              {e.category}
-              {e.series ? ` · ${e.series.type === 'installments' ? 'parcela ' : ''}${e.series.index} de ${e.series.count}` : ''}
-            </strong>
-            <span className={`text-sm ${LEVEL_TEXT[level]}`}>
-              vence {date(e.date)} · {dueIn(days)}
-            </span>
-          </span>
-          <strong className="shrink-0 whitespace-nowrap">{brl(e.amount)}</strong>
-        </Link>
-      </li>
-    );
-  }
-  const { r, s, due, estimated } = item.due;
-  const text =
-    s.kmLeft != null
-      ? s.kmLeft > 0
-        ? `faltam ${km(s.kmLeft)}`
-        : `passou ${km(-s.kmLeft)}`
-      : due
-        ? `${estimated ? '≈ ' : ''}${date(due)}${s.daysLeft != null ? ` · ${dueIn(s.daysLeft)}` : ''}`
-        : '';
+const action = (level: ReminderLevel) => `inline-flex min-h-11 items-center gap-1.5 rounded-xl px-4 font-semibold ${TONE[level].button}`;
+
+/** Lembrete: atalho para registrar o serviço já com ele selecionado. */
+function ReminderCard({ vid, item, className }: { vid: string; item: DueReminder; className?: string }) {
+  const { r, s, due, estimated } = item;
+  const when = [due ? `${estimated ? '≈ ' : ''}${date(due)}` : null, s.nextKm != null ? km(s.nextKm) : null].filter(Boolean).join(' · ');
   return (
-    <li>
-      <Link to={paths.reminder(vid, r.id)} className="flex min-h-11 items-start gap-3 py-3">
-        <span className={`${iconCircle} ${REMINDER_SOFT}`}>
-          <REMINDER_ICON className="size-5" aria-hidden />
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <strong className="break-words">{r.title}</strong>
-          <span className={`text-sm ${LEVEL_TEXT[s.level]}`}>{text}</span>
-        </span>
-      </Link>
-    </li>
+    <ToneCard
+      level={s.level}
+      icon={KIND_ICON.service}
+      title={<Link to={paths.reminder(vid, r.id)}>{r.title}</Link>}
+      status={dueText(s)}
+      detail={when ? `vence ${when}` : ''}
+      className={className}
+      action={
+        <Link to={paths.newEntry(vid, 'service', { lembrete: r.id })} className={action(s.level)}>
+          Registrar serviço
+        </Link>
+      }
+    />
+  );
+}
+
+/** Conta em aberto (parcela, recorrente ou despesa futura): "Pago" tira dos lembretes e ela vai para o histórico. */
+function BillCard({ uid, vid, bill, className }: { uid: string; vid: string; bill: DueBill; className?: string }) {
+  const { e, s } = bill;
+  const series = e.series ? ` · ${e.series.type === 'installments' ? 'parcela ' : ''}${e.series.index} de ${e.series.count}` : '';
+  return (
+    <ToneCard
+      level={s.level}
+      icon={KIND_ICON.expense}
+      title={
+        <Link to={paths.entry(vid, e.id)}>
+          {e.category}
+          {series}
+        </Link>
+      }
+      status={dueIn(s.daysLeft ?? 0)}
+      detail={`vence ${date(e.date)} · ${brl(e.amount)}`}
+      className={className}
+      action={
+        <button type="button" className={action(s.level)} onClick={() => markPaid(uid, vid, e.id)}>
+          <Check className="size-4" aria-hidden />
+          Pago
+        </button>
+      }
+    />
   );
 }

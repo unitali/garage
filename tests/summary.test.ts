@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { aVencer, gastoPagoNoAno, manutencoesNoAviso, gastoPrevistoNoAno, isPaid, proximaAcao, resumoDaSerie, seriesDe, variacaoConsumo } from '../src/lib/summary.ts';
-import { buildSchedule, remindersByDue } from '../src/lib/calc.ts';
+import { cardsDoInicio, gastoPagoNoAno, gastoPrevistoNoAno, isPaid, proximaAcao, resumoDaSerie, seriesDe, variacaoConsumo } from '../src/lib/summary.ts';
+import { billsDue, buildSchedule, remindersByDue } from '../src/lib/calc.ts';
 import type { Entry, Reminder } from '../src/types.ts';
 
 const ref = '2026-11-03';
@@ -51,25 +51,20 @@ test('próxima ação: vencido por data antes de vencido por km', () => {
   assert.equal(proximaAcao([], 194500, ref), null);
 });
 
-test('cards da tela inicial: só dentro do aviso, com a cor de cada janela', () => {
+test('cards da tela inicial: lembretes e contas dentro do aviso, com a cor de cada janela', () => {
   const vencido = rem({ title: 'Óleo', intervalKm: 10000, lastKm: 180000 }); // venceu em 190.000
   const urgente = rem({ title: 'Pneus', intervalKm: 20000, lastKm: 174600 }); // faltam 100 km
   const aviso = rem({ title: 'Revisão', intervalKm: 20000, lastKm: 175000 }); // faltam 500 km
   const longe = rem({ title: 'Correia', intervalKm: 50000, lastKm: 160000 }); // faltam 15.500 km
   const due = remindersByDue([longe, aviso, urgente, vencido], 194500, null, ref);
-  const cards = manutencoesNoAviso(due);
-  assert.deepEqual(cards.map((d) => d.r.title), ['Óleo', 'Pneus', 'Revisão']);
-  assert.deepEqual(cards.map((d) => d.s.level), ['overdue', 'soon', 'ok']); // vermelho, laranja, verde
+  const bills = billsDue(serie, ref); // parcela de 19/11 (16 dias: verde); a de 19/12 fica fora de 1 mês
+  const cards = cardsDoInicio(due, bills);
+  const title = (c: (typeof cards)[number]) => (c.type === 'bill' ? `Seguro ${c.bill.e.series?.index}` : c.due.r.title);
+  const level = (c: (typeof cards)[number]) => (c.type === 'bill' ? c.bill.s.level : c.due.s.level);
+  assert.deepEqual(cards.map(title), ['Óleo', 'Pneus', 'Seguro 4', 'Revisão']); // em dia: com data antes de só km
+  assert.deepEqual(cards.map(level), ['overdue', 'soon', 'ok', 'ok']); // vermelho, laranja, verde
   const largo = remindersByDue([longe], 194500, null, ref, { km: 20000, months: 1, urgentKm: 200, urgentDays: 7 });
-  assert.equal(manutencoesNoAviso(largo).length, 1); // aviso de 20.000 km: a correia entra
-});
-
-test('a vencer: contas e lembretes pela data mais próxima, até 3', () => {
-  const r = rem({ title: 'Licenciamento', intervalMonths: 12, lastDate: '2025-11-10' }); // 10/11/2026
-  const due = remindersByDue([r], 0, null, ref);
-  const list = aVencer(serie, due, ref);
-  assert.deepEqual(list.map((x) => x.date), ['2026-11-10', '2026-11-19', '2026-12-19']);
-  assert.equal(list[0].type, 'reminder');
+  assert.equal(cardsDoInicio(largo, []).length, 1); // aviso de 20.000 km: a correia entra
 });
 
 test('consumo: variação em relação ao mês anterior', () => {

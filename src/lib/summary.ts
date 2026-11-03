@@ -1,6 +1,6 @@
 // Cálculos de exibição da tela inicial e do histórico (funções puras, testadas em tests/summary.test.ts).
 
-import { DEFAULT_ALERT, isPaid, remindersByDue, type AlertWindow, type DueReminder } from './calc.ts';
+import { DEFAULT_ALERT, isPaid, remindersByDue, type AlertWindow, type DueBill, type DueReminder, type ReminderStatus } from './calc.ts';
 import { addMonths, today } from './dates.ts';
 import type { Entry, Reminder } from '../types';
 
@@ -52,19 +52,20 @@ export function seriesDe(entries: Entry[]): Entry[][] {
   return [...groups.values()].sort((a, b) => Math.max(...b.map((e) => e.createdAt)) - Math.max(...a.map((e) => e.createdAt)));
 }
 
+type Urgencia = { s: ReminderStatus; date: string | null };
+
 /**
- * Do mais urgente para o menos: vencido > urgente > em dia. Entre vencidos, por data antes de só por km
+ * Do mais urgente para o menos: vencido > próximo > em dia. Entre vencidos, por data antes de só por km
  * (prazo legal costuma pesar mais); depois o que venceu há mais tempo / vence antes.
  */
-export function porUrgencia(due: DueReminder[]): DueReminder[] {
-  const rank = (x: DueReminder) => (x.s.level === 'overdue' ? 0 : x.s.level === 'soon' ? 1 : 2);
-  const byDate = (x: DueReminder) => (x.s.daysLeft != null && x.s.daysLeft <= 0 ? 0 : 1);
-  return [...due].sort(
-    (a, b) =>
-      rank(a) - rank(b) ||
-      (rank(a) === 0 ? byDate(a) - byDate(b) : 0) ||
-      (a.due && b.due ? a.due.localeCompare(b.due) : a.due ? -1 : b.due ? 1 : 0) ||
-      (a.s.kmLeft ?? Infinity) - (b.s.kmLeft ?? Infinity),
+function urgencia(a: Urgencia, b: Urgencia): number {
+  const rank = (x: Urgencia) => (x.s.level === 'overdue' ? 0 : x.s.level === 'soon' ? 1 : 2);
+  const byDate = (x: Urgencia) => (x.s.daysLeft != null && x.s.daysLeft <= 0 ? 0 : 1);
+  return (
+    rank(a) - rank(b) ||
+    (rank(a) === 0 ? byDate(a) - byDate(b) : 0) ||
+    (a.date && b.date ? a.date.localeCompare(b.date) : a.date ? -1 : b.date ? 1 : 0) ||
+    (a.s.kmLeft ?? Infinity) - (b.s.kmLeft ?? Infinity)
   );
 }
 
@@ -76,25 +77,25 @@ export function proximaAcao(
   rate: number | null = null,
   alert: AlertWindow = DEFAULT_ALERT,
 ): DueReminder | null {
-  return porUrgencia(remindersByDue(reminders, kmAtual, rate, ref, alert))[0] ?? null;
+  const sorted = remindersByDue(reminders, kmAtual, rate, ref, alert).sort((a, b) =>
+    urgencia({ s: a.s, date: a.due }, { s: b.s, date: b.due }),
+  );
+  return sorted[0] ?? null;
 }
 
-/** Cards da tela inicial: os lembretes dentro da antecedência de aviso (Configurações → Lembretes), do mais urgente. */
-export function manutencoesNoAviso(due: DueReminder[]): DueReminder[] {
-  return porUrgencia(due.filter((d) => d.s.near));
-}
+export type CardItem = { type: 'reminder'; due: DueReminder } | { type: 'bill'; bill: DueBill };
 
-export type AVencerItem = { type: 'bill'; entry: Entry; date: string } | { type: 'reminder'; due: DueReminder; date: string | null };
-
-/** "A vencer": contas em aberto e lembretes, pela data mais próxima (sem data por último). */
-export function aVencer(entries: Entry[], due: DueReminder[], ref = today(), limit = 3, exceptReminderIds: string[] = []): AVencerItem[] {
-  const bills: AVencerItem[] = entries
-    .filter((e) => e.kind === 'expense' && !isPaid(e, ref))
-    .map((entry) => ({ type: 'bill', entry, date: entry.date }));
-  const reminders: AVencerItem[] = due.filter((d) => !exceptReminderIds.includes(d.r.id)).map((d) => ({ type: 'reminder', due: d, date: d.due }));
-  return [...bills, ...reminders]
-    .sort((a, b) => (a.date && b.date ? a.date.localeCompare(b.date) : a.date ? -1 : b.date ? 1 : 0))
-    .slice(0, limit);
+/**
+ * Cards da tela inicial: lembretes e contas em aberto dentro da antecedência de aviso
+ * (Configurações → Lembretes), do mais urgente. `bills` já vem filtrado pela janela (billsDue).
+ */
+export function cardsDoInicio(due: DueReminder[], bills: DueBill[]): CardItem[] {
+  const key = (c: CardItem): Urgencia => (c.type === 'bill' ? { s: c.bill.s, date: c.bill.e.date } : { s: c.due.s, date: c.due.due });
+  const items: CardItem[] = [
+    ...due.filter((d) => d.s.near).map((d) => ({ type: 'reminder' as const, due: d })),
+    ...bills.map((b) => ({ type: 'bill' as const, bill: b })),
+  ];
+  return items.sort((a, b) => urgencia(key(a), key(b)));
 }
 
 /** km/l por mês de fechamento do trecho (método do tanque cheio), para comparar meses. */

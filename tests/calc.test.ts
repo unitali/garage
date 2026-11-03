@@ -163,7 +163,7 @@ test('despesa parcelada e recorrente: datas mês a mês e centavos exatos', () =
   assert.ok(r.every((x) => x.amount === 89.9));
 });
 
-test('contas do mês: só em aberto até o fim do mês, vencidas incluídas', () => {
+test('contas: só em aberto dentro do aviso, vencidas incluídas', () => {
   const bill = (id: string, date: string, extra: Partial<Entry> = {}): Entry => ({
     ...fuel(0, 0, true, date), id, kind: 'expense', odometer: null, amount: 100, category: 'IPVA', ...extra,
   });
@@ -178,9 +178,11 @@ test('contas do mês: só em aberto até o fim do mês, vencidas incluídas', ()
     bill('legado', '2026-11-30', { series }), // sem `paid`, neste mês: em aberto
     bill('comum', '2026-11-02'), // despesa normal
   ];
-  const due = billsDue(list, '2026-11-03');
+  const due = billsDue(list, '2026-11-03'); // aviso de 1 mês: até 03/12
   assert.deepEqual(due.map((x) => x.e.id), ['vencida', 'urgente', 'mes', 'legado']);
   assert.deepEqual(due.map((x) => x.s.level), ['overdue', 'soon', 'ok', 'ok']);
+  const dois = billsDue(list, '2026-11-03', { km: 1000, months: 2, urgentKm: 200, urgentDays: 7 });
+  assert.equal(dois.at(-1)?.e.id, 'futura'); // aviso de 2 meses: a de 10/12 entra
   assert.equal(endOfMonth('2028-02-10'), '2028-02-29');
 });
 
