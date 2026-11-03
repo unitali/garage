@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Navigate, useParams } from 'react-router-dom';
 import { Plus, Trash2 } from 'lucide-react';
 import Header from '../components/Header';
 import { SettingsGroup } from '../components/SettingsGroup';
@@ -6,36 +7,39 @@ import { useUid } from '../auth';
 import { addCategory, removeCategory } from '../db';
 import { useUserPrefs } from '../hooks';
 import { DEFAULT_CATEGORIES, categoryOptions, normalizeCategory } from '../constants';
-import { paths } from '../routes/paths';
+import { CATEGORY_SLUG, paths } from '../routes/paths';
 import type { CategoryKind } from '../types';
 import { btn, input, main } from '../ui';
 
-const GROUPS: { kind: CategoryKind; title: string; placeholder: string }[] = [
-  { kind: 'service', title: 'Serviços personalizados', placeholder: 'Novo serviço' },
-  { kind: 'expense', title: 'Despesas personalizadas', placeholder: 'Nova despesa' },
-];
+const META: Record<CategoryKind, { title: string; one: string; placeholder: string }> = {
+  service: { title: 'Serviços', one: 'um serviço', placeholder: 'Novo serviço' },
+  expense: { title: 'Despesas', one: 'uma despesa', placeholder: 'Nova despesa' },
+};
 
-/** Configurações → Serviços e despesas: tipos criados pelo usuário (os padrões não aparecem aqui). */
+/** Mais → Serviços / Despesas: tipos criados pelo usuário (os padrões só aparecem listados embaixo). */
 export default function Categories() {
   const uid = useUid();
   const prefs = useUserPrefs(uid);
+  const { tipo } = useParams();
+  const kind = (Object.keys(CATEGORY_SLUG) as CategoryKind[]).find((k) => CATEGORY_SLUG[k] === tipo);
+  if (!kind) return <Navigate to={paths.more()} replace />;
+  const meta = META[kind];
 
   return (
     <>
-      <Header title="Serviços e despesas" back={paths.more()} />
+      <Header title={meta.title} back={paths.more()} />
       <main className={`${main} flex flex-col gap-5`}>
         <p className="text-sm text-muted">
-          Tipos que você criou, além dos padrões. Aparecem na lista de categoria ao registrar um serviço ou uma despesa, em
-          todos os veículos. Remover um tipo não altera os registros que já usam ele.
+          Tipos que você criou, além dos padrões. Aparecem na lista de categoria ao registrar {meta.one}, em todos os
+          veículos. Remover um tipo não altera os registros que já usam ele.
         </p>
-        {GROUPS.map((g) => (
-          <Group
-            key={g.kind}
-            uid={uid}
-            {...g}
-            items={(g.kind === 'service' ? prefs.data?.serviceCategories : prefs.data?.expenseCategories) ?? []}
-          />
-        ))}
+        <Group
+          key={kind}
+          uid={uid}
+          kind={kind}
+          placeholder={meta.placeholder}
+          items={(kind === 'service' ? prefs.data?.serviceCategories : prefs.data?.expenseCategories) ?? []}
+        />
       </main>
     </>
   );
@@ -44,13 +48,11 @@ export default function Categories() {
 function Group({
   uid,
   kind,
-  title,
   placeholder,
   items,
 }: {
   uid: string;
   kind: CategoryKind;
-  title: string;
   placeholder: string;
   items: string[];
 }) {
@@ -77,7 +79,7 @@ function Group({
   }
 
   return (
-    <SettingsGroup title={title}>
+    <SettingsGroup>
       {sorted.length === 0 && <li className="px-4 py-3 text-sm text-muted">Nenhum ainda.</li>}
       {sorted.map((c) => (
         <li key={c} className="flex items-center gap-3 px-4 py-2.5">

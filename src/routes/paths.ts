@@ -1,5 +1,5 @@
 import { generatePath } from 'react-router-dom';
-import type { EntryKind } from '../types';
+import type { CategoryKind, EntryKind } from '../types';
 
 // Caminhos das telas. Fica separado de index.ts (que importa as telas) para as telas poderem
 // importar daqui sem dependência circular.
@@ -10,6 +10,8 @@ export type VehicleTab = 'historico' | 'resumo' | 'despesas' | 'lembretes';
 /** filtro do histórico (?tipo=) */
 export type HistoryFilter = 'abastecimento' | 'servico' | 'despesa';
 export const FILTER_KIND: Record<HistoryFilter, EntryKind> = { abastecimento: 'fuel', servico: 'service', despesa: 'expense' };
+
+export const CATEGORY_SLUG: Record<CategoryKind, string> = { service: 'servicos', expense: 'despesas' };
 
 /** Padrões que o React Router casa com a URL. */
 export const PATTERNS = {
@@ -22,7 +24,9 @@ export const PATTERNS = {
   settings: '/config',
   profile: '/config/perfil',
   vehicles: '/config/veiculos',
-  categories: '/config/categorias',
+  /** tipos personalizados: /config/servicos e /config/despesas (o antigo /config/categorias leva ao Mais) */
+  categories: '/config/:tipo',
+  oldCategories: '/config/categorias',
   reminderSettings: '/config/lembretes',
   newVehicle: '/v/new',
   vehicle: '/v/:vid',
@@ -47,7 +51,7 @@ export const paths = {
   more: () => PATTERNS.more,
   profile: () => PATTERNS.profile,
   vehicles: () => PATTERNS.vehicles,
-  categories: () => PATTERNS.categories,
+  categories: (kind: CategoryKind) => generatePath(PATTERNS.categories, { tipo: CATEGORY_SLUG[kind] }),
   reminderSettings: () => PATTERNS.reminderSettings,
   newVehicle: () => PATTERNS.newVehicle,
   /** seleciona o veículo e abre a tela correspondente (histórico, lembretes…) */

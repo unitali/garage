@@ -1,23 +1,16 @@
 import { Link } from 'react-router-dom';
-import { BellRing, Car, ChevronRight, Info, LogOut, Tags } from 'lucide-react';
+import { Car, ChevronRight, LogOut } from 'lucide-react';
 import Header from '../components/Header';
 import InstallCard from '../components/InstallCard';
 import UserAvatar from '../components/UserAvatar';
-import { SettingsGroup, SettingsInfo, SettingsLink } from '../components/SettingsGroup';
+import { SettingsAction, SettingsGroup, SettingsLink } from '../components/SettingsGroup';
 import { logout, useAuth } from '../auth';
-import { useAlertWindow, useUserPrefs, useVehicles } from '../hooks';
-import { km } from '../lib/format';
-import { monthsLabel } from './ReminderSettings';
 import { paths } from '../routes/paths';
-import { btn, card, main } from '../ui';
+import { card, KIND_ICON, main, REMINDER_ICON } from '../ui';
 
-/** Mais: conta, veículos, lembretes, personalização e o app — tudo direto aqui, sem tela intermediária. */
+/** Mais: perfil e um menu só com as configurações (Veículos, Lembretes, Serviços, Despesas) e Sair. */
 export default function More() {
   const { user } = useAuth();
-  const { data: vehicles } = useVehicles(user!.uid);
-  const { data: prefs } = useUserPrefs(user!.uid);
-  const alert = useAlertWindow(user!.uid);
-  const customCount = (prefs?.serviceCategories?.length ?? 0) + (prefs?.expenseCategories?.length ?? 0);
   if (!user) return null;
   const name = user.displayName || user.email || 'Você';
 
@@ -34,35 +27,18 @@ export default function More() {
           <ChevronRight className="size-5 shrink-0 text-muted" />
         </Link>
 
-        {/* tudo no primeiro nível, sem títulos de grupo (o perfil é o card acima) */}
+        {/* tudo num menu só, cada item com o nome da tela que abre */}
         <SettingsGroup>
-          <SettingsLink
-            to={paths.vehicles()}
-            icon={Car}
-            label="Veículos"
-            detail={vehicles.length === 1 ? '1 veículo' : `${vehicles.length} veículos`}
-          />
-          <SettingsLink
-            to={paths.reminderSettings()}
-            icon={BellRing}
-            label="Avisos e cores"
-            detail={`${km(alert.km)} · ${monthsLabel(alert.months)}`}
-          />
-          <SettingsLink
-            to={paths.categories()}
-            icon={Tags}
-            label="Serviços e despesas"
-            detail={customCount > 0 ? `${customCount} criado${customCount === 1 ? '' : 's'}` : undefined}
-          />
-          <SettingsInfo icon={Info} label="Versão" value={`v${__APP_VERSION__}`} />
+          <SettingsLink to={paths.vehicles()} icon={Car} label="Veículos" />
+          <SettingsLink to={paths.reminderSettings()} icon={REMINDER_ICON} label="Lembretes" />
+          <SettingsLink to={paths.categories('service')} icon={KIND_ICON.service} label="Serviços" />
+          <SettingsLink to={paths.categories('expense')} icon={KIND_ICON.expense} label="Despesas" />
+          <SettingsAction icon={LogOut} label="Sair" danger onClick={() => confirm('Sair da conta?') && logout()} />
         </SettingsGroup>
 
         <InstallCard />
 
-        <button className={`${btn('danger')} w-full gap-2`} onClick={() => confirm('Sair da conta?') && logout()}>
-          <LogOut className="size-5" />
-          Sair da conta
-        </button>
+        <p className="text-center text-xs text-muted">Unitali Garage v{__APP_VERSION__}</p>
       </main>
     </>
   );

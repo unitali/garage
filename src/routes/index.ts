@@ -36,6 +36,7 @@ export const routes: RouteObject[] = [
   { path: PATTERNS.settings, Component: toMore },
   { path: PATTERNS.profile, Component: Profile, handle: tabBar },
   { path: PATTERNS.vehicles, Component: Vehicles, handle: tabBar },
+  { path: PATTERNS.oldCategories, Component: toMore },
   { path: PATTERNS.categories, Component: Categories, handle: tabBar },
   { path: PATTERNS.reminderSettings, Component: ReminderSettings, handle: tabBar },
   { path: PATTERNS.newVehicle, Component: VehicleForm },

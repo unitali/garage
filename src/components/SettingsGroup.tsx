@@ -30,15 +30,17 @@ export function SettingsLink({ to, icon: Icon, label, detail }: { to: string; ic
   );
 }
 
-/** Linha só informativa (ex: versão). */
-export function SettingsInfo({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: string }) {
+/** Linha que executa uma ação (ex: sair); `danger` em vermelho. */
+export function SettingsAction({ icon: Icon, label, onClick, danger }: { icon: LucideIcon; label: string; onClick: () => void; danger?: boolean }) {
   return (
-    <li className="flex items-center gap-3 px-4 py-3">
-      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-brand-soft text-brand">
-        <Icon className="size-5" />
-      </span>
-      <span className="flex-1 font-semibold">{label}</span>
-      <span className="text-sm text-muted">{value}</span>
+    <li>
+      <button type="button" className={`flex w-full items-center gap-3 px-4 py-3 text-left active:bg-bg ${danger ? 'text-danger' : ''}`} onClick={onClick}>
+        <span className={`grid size-9 shrink-0 place-items-center rounded-lg ${danger ? 'bg-danger-bg' : 'bg-brand-soft text-brand'}`}>
+          <Icon className="size-5" />
+        </span>
+        <span className="flex-1 font-semibold">{label}</span>
+      </button>
     </li>
   );
 }
+
