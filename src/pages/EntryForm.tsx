@@ -1,6 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
+import CategorySelect from '../components/CategorySelect';
 import { useUid } from '../auth';
 import { useEntries, useReminders, useVehicle } from '../hooks';
 import { deleteEntry, markReminderDone, saveEntry, syncVehicleOdometer } from '../db';
@@ -203,14 +204,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
 
           {kind !== 'fuel' && (
             <>
-              <label className={field}>
-                Categoria
-                <select className={input} value={category} onChange={(e) => setCategory(e.target.value)}>
-                  {(kind === 'service' ? SERVICE_CATEGORIES : EXPENSE_CATEGORIES).map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
-              </label>
+              <CategorySelect uid={uid} kind={kind} value={category} onChange={setCategory} />
               <label className={field}>
                 Descrição <span className={opt}>(opcional)</span>
                 <input className={input}

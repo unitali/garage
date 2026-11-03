@@ -1,4 +1,4 @@
-import type { EntryKind, VehicleType } from './types';
+import type { CategoryKind, EntryKind, VehicleType } from './types';
 
 export const VEHICLE_TYPES: Record<VehicleType, { label: string; icon: string }> = {
   carro: { label: 'Carro', icon: '🚗' },
@@ -57,3 +57,31 @@ export const REMINDER_PRESETS: { title: string; intervalKm: number | null; inter
   { title: 'IPVA', intervalKm: null, intervalMonths: 12 },
   { title: 'Seguro', intervalKm: null, intervalMonths: 12 },
 ];
+
+export const DEFAULT_CATEGORIES: Record<CategoryKind, string[]> = {
+  service: SERVICE_CATEGORIES,
+  expense: EXPENSE_CATEGORIES,
+};
+
+const OTHER = 'Outro';
+
+/** Para comparar nomes de tipo: "  troca  DE óleo" ≡ "Troca de óleo". */
+export const normalizeCategory = (s: string) => s.trim().replace(/\s+/g, ' ').toLocaleLowerCase('pt-BR');
+
+/**
+ * Opções do select: padrões, depois os personalizados em ordem alfabética, "Outro" sempre por último.
+ * `current` (o tipo de um registro antigo) entra na lista mesmo que tenha sido removido. Sem repetidos.
+ */
+export function categoryOptions(defaults: string[], custom: string[] = [], current?: string): string[] {
+  const base = defaults.filter((c) => c !== OTHER);
+  const seen = new Set(base.map(normalizeCategory));
+  const extra = [...custom, ...(current ? [current] : [])]
+    .filter((c) => {
+      const key = normalizeCategory(c);
+      if (!key || seen.has(key) || key === normalizeCategory(OTHER)) return false;
+      seen.add(key);
+      return true;
+    })
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  return [...base, ...extra, ...(defaults.includes(OTHER) ? [OTHER] : [])];
+}

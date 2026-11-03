@@ -1,13 +1,14 @@
-import { collection, deleteDoc, doc, getDocs, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { arrayRemove, arrayUnion, collection, deleteDoc, doc, getDocs, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 import { trackWrite } from './sync';
-import type { Data, Entry, Reminder, Vehicle } from './types';
+import type { CategoryKind, Data, Entry, Reminder, Vehicle } from './types';
 
 // Estrutura:
 //   users/{uid}/vehicles/{vid}
 //   users/{uid}/vehicles/{vid}/entries/{id}     ← abastecimentos, serviços e despesas
 //   users/{uid}/vehicles/{vid}/reminders/{id}
 
+export const userDoc = (uid: string) => doc(db, 'users', uid);
 export const vehiclesCol = (uid: string) => collection(db, 'users', uid, 'vehicles');
 export const vehicleDoc = (uid: string, vid: string) => doc(db, 'users', uid, 'vehicles', vid);
 export const entriesCol = (uid: string, vid: string) => collection(db, 'users', uid, 'vehicles', vid, 'entries');
@@ -69,4 +70,19 @@ export function markReminderDone(uid: string, vid: string, id: string, lastKm: n
 
 export function deleteReminder(uid: string, vid: string, id: string) {
   fire(deleteDoc(doc(remindersCol(uid, vid), id)));
+}
+
+const CATEGORY_FIELD: Record<CategoryKind, 'serviceCategories' | 'expenseCategories'> = {
+  service: 'serviceCategories',
+  expense: 'expenseCategories',
+};
+
+/** Tipo de serviço/despesa criado pelo usuário (fica em users/{uid}, vale em todos os veículos). */
+export function addCategory(uid: string, kind: CategoryKind, name: string) {
+  fire(setDoc(userDoc(uid), { [CATEGORY_FIELD[kind]]: arrayUnion(name) }, { merge: true }));
+}
+
+/** Remove da lista; registros que já usam o tipo continuam com ele. */
+export function removeCategory(uid: string, kind: CategoryKind, name: string) {
+  fire(setDoc(userDoc(uid), { [CATEGORY_FIELD[kind]]: arrayRemove(name) }, { merge: true }));
 }

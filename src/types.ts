@@ -46,3 +46,12 @@ export interface Reminder {
 }
 
 export type Data<T> = Omit<T, 'id'>;
+
+/** Tipos de serviço/despesa criados pelo usuário, além dos padrões (constants.ts). */
+export type CategoryKind = Extract<EntryKind, 'service' | 'expense'>;
+
+/** Documento users/{uid}: preferências da conta. */
+export interface UserPrefs {
+  serviceCategories?: string[];
+  expenseCategories?: string[];
+}

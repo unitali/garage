@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { onSnapshot, orderBy, query, type DocumentReference, type Query } from 'firebase/firestore';
-import { entriesCol, remindersCol, vehicleDoc, vehiclesCol } from './db';
-import type { Entry, Reminder, Vehicle } from './types';
+import { entriesCol, remindersCol, userDoc, vehicleDoc, vehiclesCol } from './db';
+import type { Entry, Reminder, UserPrefs, Vehicle } from './types';
 
 interface Live<T> {
   data: T;
@@ -60,3 +60,6 @@ export const useEntries = (uid: string, vid?: string) =>
 
 export const useReminders = (uid: string, vid?: string) =>
   useLiveQuery<Reminder>(vid ? () => remindersCol(uid, vid) : null, `reminders/${uid}/${vid}`);
+
+/** Preferências da conta (users/{uid}), como os tipos de serviço/despesa personalizados. */
+export const useUserPrefs = (uid: string) => useLiveDoc<UserPrefs>(() => userDoc(uid), `prefs/${uid}`);

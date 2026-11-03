@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, sortEntriesByKm } from '../src/lib/calc.ts';
 import { addDays, addMonths, diffDays } from '../src/lib/dates.ts';
 import { maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../src/lib/format.ts';
+import { categoryOptions } from '../src/constants.ts';
 import type { Entry, Reminder } from '../src/types.ts';
 
 let n = 0;
@@ -105,6 +106,12 @@ test('números em formato brasileiro', () => {
   assert.equal(parseDecimal('6.19'), 6.19);
   assert.equal(parseDecimal(''), null);
   assert.equal(parseInteger('85.300 km'), 85300);
+});
+
+test('tipos de serviço: padrões + personalizados, "Outro" por último, sem repetidos', () => {
+  const opts = categoryOptions(['Troca de óleo', 'Freios', 'Outro'], ['Lavagem a seco', ' troca  DE óleo ', 'Alarme', 'outro'], 'Polimento');
+  assert.deepEqual(opts, ['Troca de óleo', 'Freios', 'Alarme', 'Lavagem a seco', 'Polimento', 'Outro']);
+  assert.deepEqual(categoryOptions(['A', 'Outro']), ['A', 'Outro']);
 });
 
 test('máscaras: km com até 6 dígitos, valores com duas casas', () => {
