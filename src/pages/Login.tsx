@@ -1,12 +1,32 @@
-import { useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
+import { getRedirectResult } from 'firebase/auth';
+import { CircleCheck, Download, Share, SquarePlus, Smartphone } from 'lucide-react';
+import { auth } from '../firebase';
 import { login } from '../auth';
-import { btn, error as errorText } from '../ui';
+import { useInstall, useJustInstalled } from '../pwa';
+import { btn, card, error as errorText } from '../ui';
 import FlagStripe from '../components/FlagStripe';
 import logoUrl from '../assets/logo.png';
+
+const IGNORED = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request'];
 
 export default function Login() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const install = useInstall();
+  const justInstalled = useJustInstalled();
+
+  // volta do login por redirecionamento (app instalado): o usuário entra sozinho; aqui só mostramos erro
+  useEffect(() => {
+    getRedirectResult(auth).catch(fail);
+  }, []);
+
+  function fail(e: unknown) {
+    const code = (e as { code?: string }).code ?? '';
+    if (IGNORED.includes(code)) return;
+    console.error(e);
+    setError('Não foi possível entrar. Tente de novo.');
+  }
 
   async function handleLogin() {
     setError('');
@@ -14,15 +34,14 @@ export default function Login() {
     try {
       await login();
     } catch (e) {
-      const code = (e as { code?: string }).code;
-      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
-        setError('Não foi possível entrar. Tente de novo.');
-        console.error(e);
-      }
+      fail(e);
     } finally {
       setBusy(false);
     }
   }
+
+  // no navegador, com instalação disponível: baixar o app é o caminho principal
+  const offerInstall = !!install || justInstalled;
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center">
@@ -33,10 +52,67 @@ export default function Login() {
       {/* contorno: no fundo claro o branco do meio sumiria */}
       <FlagStripe className="h-1.5 w-16 overflow-hidden rounded-full ring-1 ring-line" />
       <p className="mb-3 max-w-[300px] text-muted">Manutenções, abastecimentos e despesas dos seus veículos, sempre à mão.</p>
-      <button className={btn('primary')} onClick={handleLogin} disabled={busy}>
+
+      {offerInstall && (
+        <section className={`${card} mb-2 flex w-full max-w-sm flex-col gap-3 text-left`}>
+          {justInstalled ? (
+            <div className="flex items-start gap-3">
+              <CircleCheck className="size-6 shrink-0 text-ok" />
+              <div className="flex flex-col gap-0.5">
+                <strong>App instalado!</strong>
+                <span className="text-sm text-muted">Abra o Unitali Garage pela tela inicial e entre por lá.</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-start gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
+                  <Smartphone className="size-5" />
+                </span>
+                <div className="flex flex-col gap-0.5">
+                  <strong>Baixe o app</strong>
+                  <span className="text-sm text-muted">Instale e entre direto pelo app: abre da tela inicial e funciona sem internet.</span>
+                </div>
+              </div>
+              {install?.kind === 'prompt' && (
+                <button className={`${btn('primary')} w-full gap-2`} onClick={install.install}>
+                  <Download className="size-5" />
+                  Baixar o app
+                </button>
+              )}
+              {install?.kind === 'ios' && (
+                <ol className="flex flex-col gap-2 text-sm">
+                  <Step n={1} icon={<Share className="size-4" />}>
+                    No Safari, toque em <b>Compartilhar</b>
+                  </Step>
+                  <Step n={2} icon={<SquarePlus className="size-4" />}>
+                    Escolha <b>Adicionar à Tela de Início</b>
+                  </Step>
+                  <Step n={3} icon={<Smartphone className="size-4" />}>
+                    Abra o app pelo ícone e entre com Google
+                  </Step>
+                </ol>
+              )}
+            </>
+          )}
+        </section>
+      )}
+
+      {offerInstall && <span className="text-sm text-muted">ou continue no navegador</span>}
+      <button className={btn(offerInstall ? 'default' : 'primary')} onClick={handleLogin} disabled={busy}>
         {busy ? 'Entrando…' : 'Entrar com Google'}
       </button>
       {error && <p className={errorText}>{error}</p>}
     </div>
+  );
+}
+
+function Step({ n, icon, children }: { n: number; icon: ReactNode; children: ReactNode }) {
+  return (
+    <li className="flex items-center gap-2.5">
+      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-brand text-xs font-bold text-brand-contrast">{n}</span>
+      <span className="flex-1">{children}</span>
+      <span className="text-muted">{icon}</span>
+    </li>
   );
 }

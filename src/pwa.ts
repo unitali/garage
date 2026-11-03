@@ -38,9 +38,17 @@ addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   installEvent.set(e as BeforeInstallPromptEvent);
 });
-addEventListener('appinstalled', () => installEvent.set(null));
+// instalou agora, pelo navegador: o app abre pela tela inicial (não dá para trocar de janela daqui)
+const justInstalled = createStore(false);
+addEventListener('appinstalled', () => {
+  installEvent.set(null);
+  justInstalled.set(true);
+});
 
-const standalone =
+export const useJustInstalled = () => useStore(justInstalled);
+
+/** Rodando como app instalado (tela inicial), não numa aba do navegador. */
+export const isStandalone =
   matchMedia('(display-mode: standalone)').matches || (navigator as { standalone?: boolean }).standalone === true;
 
 // iPadOS se identifica como Mac; o toque denuncia
@@ -52,7 +60,7 @@ export type Install = { kind: 'prompt'; install: () => Promise<void> } | { kind:
 /** Como oferecer a instalação neste navegador, ou null se já instalado / não suportado. */
 export function useInstall(): Install | null {
   const event = useStore(installEvent);
-  if (standalone) return null;
+  if (isStandalone) return null;
   if (event)
     return {
       kind: 'prompt',
