@@ -10,14 +10,20 @@ import { brl } from '../lib/format';
 import { isPaid } from '../lib/summary';
 import { FILTER_KIND, type HistoryFilter } from '../routes/paths';
 import type { Entry } from '../types';
-import { card, chip, chips, emptyText, KIND_ICON, main, sectionTitle, splash } from '../ui';
+import { card, emptyText, main, sectionTitle, splash } from '../ui';
 
 const FILTERS: { id: HistoryFilter | null; label: string }[] = [
   { id: null, label: 'Tudo' },
-  { id: 'abastecimento', label: ENTRY_KINDS.fuel.plural },
+  { id: 'abastecimento', label: 'Combustível' }, // "Abastecimentos" não cabe com os outros numa linha de 360px
   { id: 'servico', label: ENTRY_KINDS.service.plural },
   { id: 'despesa', label: ENTRY_KINDS.expense.plural },
 ];
+
+/** filtro compacto: os quatro numa linha só, dividindo a largura */
+const filterChip = (active: boolean) =>
+  `inline-flex h-9 flex-auto items-center justify-center whitespace-nowrap rounded-full border px-1.5 text-xs font-semibold min-[360px]:px-2.5 ${
+    active ? 'border-brand bg-brand text-brand-contrast' : 'border-line bg-surface text-ink'
+  }`;
 
 const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
 const monthTitle = (ym: string) => `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`;
@@ -54,18 +60,16 @@ export default function History() {
     <>
       <Header title="Histórico" odometer={current} />
       <main className={`${main} flex flex-col gap-4`}>
-        <div className={chips} role="group" aria-label="Filtrar por tipo">
+        <div className="flex gap-1 min-[360px]:gap-1.5" role="group" aria-label="Filtrar por tipo">
           {FILTERS.map((f) => {
             const active = (tipo ?? null) === f.id;
-            const Icon = f.id ? KIND_ICON[FILTER_KIND[f.id]] : null;
             return (
               <button
                 key={f.label}
                 aria-pressed={active}
-                className={chip(active)}
+                className={filterChip(active)}
                 onClick={() => setParams(f.id ? { tipo: f.id } : {}, { replace: true })}
               >
-                {Icon && <Icon className="size-4" aria-hidden />}
                 {f.label}
               </button>
             );
