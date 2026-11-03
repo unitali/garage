@@ -23,6 +23,7 @@ export default function CategorySelect({
   value,
   onChange,
   label = 'Categoria',
+  compact = false,
 }: {
   uid: string;
   kind: CategoryKind;
@@ -30,6 +31,8 @@ export default function CategorySelect({
   value: string;
   onChange: (category: string) => void;
   label?: string;
+  /** dentro de um grid (linha "item + valor"): rótulo só para leitor de tela */
+  compact?: boolean;
 }) {
   const prefs = useUserPrefs(uid);
   const custom = (kind === 'service' ? prefs.data?.serviceCategories : prefs.data?.expenseCategories) ?? [];
@@ -52,54 +55,70 @@ export default function CategorySelect({
     cancel();
   }
 
+  const select = (
+    <select
+      className={`${input} min-w-0`}
+      value={value}
+      onChange={(e) => (e.target.value === ADD ? setAdding(true) : onChange(e.target.value))}
+      aria-label={compact ? label : undefined}
+    >
+      {value === '' && (
+        <option value="" disabled>
+          Selecione…
+        </option>
+      )}
+      {options.map((c) => (
+        <option key={c}>{c}</option>
+      ))}
+      <option value={ADD}>{NOUN[kind].add}</option>
+    </select>
+  );
+
+  const addRow = adding && (
+    // compacto: ocupa a linha inteira do grid do pai, abaixo dos campos
+    <div className={`flex gap-2 ${compact ? 'order-last col-span-full' : ''}`}>
+      <input
+        className={`${input} min-w-0`}
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => {
+          // Enter cria o tipo em vez de salvar o formulário
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            confirm();
+          }
+          if (e.key === 'Escape') cancel();
+        }}
+        placeholder={NOUN[kind].placeholder}
+        maxLength={40}
+        autoFocus
+        aria-label={kind === 'service' ? 'Nome do novo serviço' : 'Nome da nova despesa'}
+      />
+      <button type="button" className={btn('primary')} onClick={confirm} disabled={!name.trim()}>
+        Adicionar
+      </button>
+      <button type="button" className={btn()} onClick={cancel} aria-label="Cancelar">
+        <X className="size-5" />
+      </button>
+    </div>
+  );
+
+  // compacto: sem rótulo visível e sem contêiner — select e linha de criar viram itens do grid do pai
+  if (compact)
+    return (
+      <>
+        {select}
+        {addRow}
+      </>
+    );
+
   return (
     <div className="flex flex-col gap-1.5">
       <label className={field}>
         {label}
-        <select
-          className={input}
-          value={value}
-          onChange={(e) => (e.target.value === ADD ? setAdding(true) : onChange(e.target.value))}
-        >
-          {value === '' && (
-            <option value="" disabled>
-              Selecione…
-            </option>
-          )}
-          {options.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-          <option value={ADD}>{NOUN[kind].add}</option>
-        </select>
+        {select}
       </label>
-
-      {adding && (
-        <div className="flex gap-2">
-          <input
-            className={input}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              // Enter cria o tipo em vez de salvar o formulário
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                confirm();
-              }
-              if (e.key === 'Escape') cancel();
-            }}
-            placeholder={NOUN[kind].placeholder}
-            maxLength={40}
-            autoFocus
-            aria-label={kind === 'service' ? 'Nome do novo serviço' : 'Nome da nova despesa'}
-          />
-          <button type="button" className={btn('primary')} onClick={confirm} disabled={!name.trim()}>
-            Adicionar
-          </button>
-          <button type="button" className={btn()} onClick={cancel} aria-label="Cancelar">
-            <X className="size-5" />
-          </button>
-        </div>
-      )}
+      {addRow}
     </div>
   );
 }

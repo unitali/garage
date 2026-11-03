@@ -35,6 +35,9 @@ export const isOilChange = (category: string) => normalizeCategory(category) ===
 export const findReminder = (reminders: Reminder[], category: string) =>
   reminders.find((r) => normalizeCategory(r.title) === normalizeCategory(category));
 
+/** Colunas de cada linha: serviço (resto) · valor · remover */
+const row = 'grid grid-cols-[minmax(0,1fr)_7.5rem_2.25rem] gap-2';
+
 /** Lista do que foi feito no serviço (categoria + valor de cada item), o total e o lembrete opcional de cada item. */
 export default function ServiceItemsField({
   uid,
@@ -70,38 +73,42 @@ export default function ServiceItemsField({
   return (
     <fieldset className={fieldset}>
       <legend className={legend}>O que foi feito</legend>
-      <ul className="flex flex-col divide-y divide-line">
+      {/* item e valor sempre na mesma linha; títulos das colunas uma vez só */}
+      <div className={`${row} text-sm font-semibold`} aria-hidden>
+        <span>Serviço</span>
+        <span>Valor (R$)</span>
+      </div>
+      <ul className="flex flex-col gap-2">
         {items.map((item, idx) => (
-          <li key={item.key} className="flex flex-col gap-2 py-3 first:pt-1">
+          <li key={item.key} className={`${row} items-center`}>
             <CategorySelect
               uid={uid}
               kind="service"
-              label={items.length > 1 ? `Item ${idx + 1}` : 'Serviço'}
+              compact
+              label={`Serviço do item ${idx + 1}`}
               value={item.category}
               onChange={(category) => changeCategory(item, category)}
             />
-            <div className="flex items-end gap-2">
-              <label className={`${field} flex-1`}>
-                Valor (R$)
-                <input
-                  className={input}
-                  value={item.amount}
-                  onChange={(e) => update(item.key, { amount: maskMoney(e.target.value) })}
-                  inputMode="numeric"
-                  placeholder="0,00"
-                />
-              </label>
-              {items.length > 1 && (
-                <button
-                  type="button"
-                  className="grid size-11 shrink-0 place-items-center rounded-[10px] border border-line text-danger"
-                  aria-label={`Remover item ${idx + 1}`}
-                  onClick={() => onChange(items.filter((i) => i.key !== item.key))}
-                >
-                  <Trash2 className="size-5" />
-                </button>
-              )}
-            </div>
+            <input
+              className={`${input} text-right`}
+              value={item.amount}
+              onChange={(e) => update(item.key, { amount: maskMoney(e.target.value) })}
+              inputMode="numeric"
+              placeholder="0,00"
+              aria-label={`Valor do item ${idx + 1}`}
+            />
+            {items.length > 1 ? (
+              <button
+                type="button"
+                className="grid size-9 place-items-center rounded-lg text-danger active:bg-bg"
+                aria-label={`Remover item ${idx + 1}`}
+                onClick={() => onChange(items.filter((i) => i.key !== item.key))}
+              >
+                <Trash2 className="size-5" />
+              </button>
+            ) : (
+              <span />
+            )}
 
             {/* troca de óleo tem os badges próprios (OilChangeField) */}
             {allowReminders && item.category && !isOilChange(item.category) && (
@@ -141,7 +148,11 @@ function ItemReminder({
 }) {
   if (!item.remind)
     return (
-      <button type="button" className="flex items-center gap-1.5 self-start py-1 text-sm font-semibold text-brand" onClick={() => update({ remind: true })}>
+      <button
+        type="button"
+        className="order-last col-span-full flex items-center gap-1.5 justify-self-start pb-1 text-sm font-semibold text-brand"
+        onClick={() => update({ remind: true })}
+      >
         <Bell className="size-4" />
         Lembrar da próxima troca
       </button>
@@ -152,7 +163,7 @@ function ItemReminder({
   const next = [everyKm ? km(fromKm + everyKm) : null, everyMonths ? date(addMonths(fromDate, everyMonths)) : null].filter(Boolean);
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl bg-brand-soft/60 p-3">
+    <div className="order-last col-span-full mb-1 flex flex-col gap-2 rounded-xl bg-brand-soft/60 p-3">
       <div className="flex items-center justify-between">
         <span className="flex items-center gap-1.5 text-sm font-bold">
           <BellRing className="size-4 text-brand" />
