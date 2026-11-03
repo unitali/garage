@@ -2,6 +2,7 @@ import { useEffect, useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Car, Check, CheckCircle2, Gauge, Plus, TrendingDown, TrendingUp } from 'lucide-react';
 import Header from '../components/Header';
+import Carousel from '../components/Carousel';
 import EntryRow from '../components/EntryRow';
 import FlagStripe from '../components/FlagStripe';
 import InstallCard from '../components/InstallCard';
@@ -167,10 +168,13 @@ function odometerAge(v: Vehicle, entries: Entry[], ref: string) {
   return `atualizado ${daysAgo(diffDays(last, ref))}`;
 }
 
-function SectionHead({ title, to, link }: { title: string; to: string; link: string }) {
+function SectionHead({ title, count, to, link }: { title: string; count?: number; to: string; link: string }) {
   return (
     <div className="flex items-baseline justify-between gap-3">
-      <h2 className={sectionTitle}>{title}</h2>
+      <h2 className={`${sectionTitle} flex items-center gap-2`}>
+        {title}
+        {count != null && <span className={`${badge} bg-brand text-brand-contrast`}>{count}</span>}
+      </h2>
       <Link className="-my-3 inline-flex min-h-11 items-center text-sm font-semibold text-brand" to={to}>
         {link}
       </Link>
@@ -241,14 +245,11 @@ function Upcoming({
 
   return (
     <section>
-      <SectionHead title="Lembretes" to={paths.reminders()} link="Ver todos" />
+      <SectionHead title="Lembretes" count={cards.length > 1 ? cards.length : undefined} to={paths.reminders()} link="Ver todos" />
       {cards.length === 1 ? (
         render(cards[0])
       ) : (
-        // -mx-4/px-4: os cards encostam na borda da tela ao rolar, mas começam alinhados ao conteúdo
-        <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-          {cards.map((c) => render(c, 'w-[85%] max-w-sm shrink-0 snap-start'))}
-        </div>
+        <Carousel label="Lembretes">{cards.map((c) => render(c, 'w-[85%] max-w-sm shrink-0 snap-start'))}</Carousel>
       )}
     </section>
   );
