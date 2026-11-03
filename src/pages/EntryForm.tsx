@@ -1,6 +1,9 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Calculator } from 'lucide-react';
 import Header from '../components/Header';
+import FuelCalculator from '../components/FuelCalculator';
+import Sheet from '../components/Sheet';
 import CategorySelect from '../components/CategorySelect';
 import ServiceItemsField, { findReminder, isOilChange, newItem, withExistingReminder, type ItemDraft } from '../components/ServiceItemsField';
 import OilChangeField from '../components/OilChangeField';
@@ -83,6 +86,8 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
   const [price, setPrice] = useState(toInput(entry?.pricePerLiter, 2));
   const [liters, setLiters] = useState(toInput(entry?.liters, 2));
   const [fullTank, setFullTank] = useState(entry?.fullTank ?? true);
+  // calculadora etanol x gasolina num painel (o formulário fica como está por trás)
+  const [calcOpen, setCalcOpen] = useState(false);
   // serviço: lista do que foi feito (serviço antigo vira um item só)
   const [items, setItems] = useState<ItemDraft[]>(() =>
     kind !== 'service'
@@ -302,6 +307,12 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
 
           {kind === 'fuel' && (
             <>
+              {vehicle.type !== 'bike' && (
+                <button type="button" className={`${btn('default')} w-full gap-2`} onClick={() => setCalcOpen(true)}>
+                  <Calculator className="size-5" aria-hidden />
+                  Etanol ou gasolina? Calcular
+                </button>
+              )}
               <label className={field}>
                 Combustível
                 <select className={input} value={fuelType} onChange={(e) => setFuelType(e.target.value)}>
@@ -447,6 +458,18 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
             </button>
           )}
         </form>
+        <Sheet open={calcOpen} onClose={() => setCalcOpen(false)} title="Calculadora" subtitle="Compensa etanol ou gasolina?">
+          <FuelCalculator
+            entries={others}
+            // o preço já digitado no formulário vale mais que o último registrado
+            initial={fuelType === 'Etanol' || fuelType === 'Gasolina' ? { [fuelType]: price } : {}}
+            onUse={(fuel, p) => {
+              setFuelType(fuel);
+              onPrice(p);
+              setCalcOpen(false);
+            }}
+          />
+        </Sheet>
       </main>
     </>
   );
