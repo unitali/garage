@@ -55,14 +55,25 @@ function Group({
   items: string[];
 }) {
   const [name, setName] = useState('');
+  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const sorted = [...items].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const defaults = DEFAULT_CATEGORIES[kind].filter((c) => c !== 'Outro');
 
   function add() {
     const clean = name.trim().replace(/\s+/g, ' ');
     if (!clean) return;
-    const exists = categoryOptions(DEFAULT_CATEGORIES[kind], items).some((o) => normalizeCategory(o) === normalizeCategory(clean));
-    if (!exists) addCategory(uid, kind, clean);
+    // já existe (padrão ou criado antes, com qualquer grafia)? avisa em vez de sumir sem gravar
+    const match = categoryOptions(DEFAULT_CATEGORIES[kind], items).find((o) => normalizeCategory(o) === normalizeCategory(clean));
+    if (match) {
+      setMessage({
+        ok: false,
+        text: DEFAULT_CATEGORIES[kind].includes(match) ? `"${match}" já faz parte da lista padrão.` : `"${match}" já está na sua lista.`,
+      });
+      return;
+    }
+    addCategory(uid, kind, clean);
     setName('');
+    setMessage({ ok: true, text: `"${clean}" adicionado.` });
   }
 
   return (
@@ -84,7 +95,10 @@ function Group({
         <input
           className={input}
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            setMessage(null);
+          }}
           onKeyDown={(e) => e.key === 'Enter' && add()}
           placeholder={placeholder}
           maxLength={40}
@@ -93,6 +107,14 @@ function Group({
         <button className={btn('primary')} onClick={add} disabled={!name.trim()} aria-label="Adicionar">
           <Plus className="size-5" />
         </button>
+      </li>
+      {message && (
+        <li className={`px-4 pb-3 text-sm ${message.ok ? 'text-ok' : 'text-warn'}`} role="status">
+          {message.text}
+        </li>
+      )}
+      <li className="px-4 py-3 text-xs text-muted">
+        <b>Já incluídos:</b> {defaults.join(', ')}.
       </li>
     </SettingsGroup>
   );
