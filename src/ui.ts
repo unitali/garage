@@ -1,6 +1,6 @@
 import { Bell, Bike, Car, CarFront, Fuel, Motorbike, Receipt, Truck, Wrench, type LucideIcon } from 'lucide-react';
 import type { ReminderLevel } from './lib/calc';
-import type { EntryKind, VehicleType } from './types';
+import type { Entry, EntryKind, VehicleType } from './types';
 
 // Classes Tailwind repetidas em várias telas. Cores vêm dos tokens (src/styles/tokens.css).
 // Regras: alvos de toque ≥ 44px (min-h-11), cards com raio 16 e padding 14, sem borda colorida à esquerda.
@@ -59,6 +59,13 @@ export const KIND_SOFT: Record<EntryKind, string> = {
   expense: 'bg-expense-bg text-expense',
 };
 export const KIND_TEXT: Record<EntryKind, string> = { fuel: 'text-fuel', service: 'text-service', expense: 'text-expense' };
+
+/** abastecimento pela cor do combustível: gasolina vermelha, etanol verde; os outros na cor do tipo */
+export const FUEL_SOFT: Record<string, string> = { Gasolina: 'bg-gasolina-bg text-gasolina', Etanol: 'bg-etanol-bg text-etanol' };
+export const FUEL_TEXT: Record<string, string> = { Gasolina: 'text-gasolina', Etanol: 'text-etanol' };
+/** círculo do ícone de um registro (abastecimento pelo combustível, o resto pelo tipo) */
+export const entrySoft = (e: Pick<Entry, 'kind' | 'fuelType'>) =>
+  (e.kind === 'fuel' && e.fuelType && FUEL_SOFT[e.fuelType]) || KIND_SOFT[e.kind];
 export const REMINDER_ICON = Bell;
 export const REMINDER_SOFT = 'bg-reminder-bg text-reminder';
 export const iconCircle = 'grid size-10 shrink-0 place-items-center rounded-full';

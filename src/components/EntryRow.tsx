@@ -5,7 +5,7 @@ import { rotuloParcela } from '../lib/summary';
 import { brl, km, num, shortDate } from '../lib/format';
 import { paths } from '../routes/paths';
 import type { Entry } from '../types';
-import { iconCircle, KIND_ICON, KIND_SOFT } from '../ui';
+import { entrySoft, iconCircle, KIND_ICON } from '../ui';
 
 /**
  * Linha de um registro (dentro de um card com divisórias): ícone do tipo, título, linha secundária
@@ -19,7 +19,7 @@ export default function EntryRow({ vid, entry: e, kml }: { vid: string; entry: E
 
   return (
     <Link to={paths.entry(vid, e.id)} className="flex min-h-11 items-start gap-3 py-3">
-      <span className={`${iconCircle} ${KIND_SOFT[e.kind]}`}>
+      <span className={`${iconCircle} ${entrySoft(e)}`}>
         <Icon className="size-5" aria-hidden />
       </span>
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">

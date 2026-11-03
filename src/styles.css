@@ -32,6 +32,11 @@
 
   --color-fuel: var(--type-fuel);
   --color-fuel-bg: var(--type-fuel-bg);
+  /* combustível do abastecimento: gasolina vermelha, etanol verde (seguem o modo escuro dos tokens) */
+  --color-gasolina: var(--danger);
+  --color-gasolina-bg: var(--danger-bg);
+  --color-etanol: var(--type-fuel);
+  --color-etanol-bg: var(--type-fuel-bg);
   --color-service: var(--type-service);
   --color-service-bg: var(--type-service-bg);
   --color-expense: var(--type-expense);

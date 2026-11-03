@@ -3,7 +3,7 @@ import { Fuel } from 'lucide-react';
 import { ETHANOL_THRESHOLD, fuelChoice } from '../lib/calc';
 import { brl, maskMoney, num, parseDecimal, toInput } from '../lib/format';
 import type { Entry } from '../types';
-import { btn, card, checkbox, checkField, field, grid2, hint, input, sectionTitle } from '../ui';
+import { btn, card, checkbox, checkField, field, FUEL_SOFT, FUEL_TEXT, grid2, hint, input, sectionTitle } from '../ui';
 
 export type FuelOption = 'Etanol' | 'Gasolina';
 
@@ -80,11 +80,11 @@ export default function FuelCalculator({
 
       {result && best ? (
         <section className={`${card} flex flex-col items-center gap-2 py-6 text-center`} aria-live="polite">
-          <span className={`grid size-14 place-items-center rounded-full ${best === 'Etanol' ? 'bg-ok-bg text-ok' : 'bg-brand-soft text-brand'}`}>
+          <span className={`grid size-14 place-items-center rounded-full ${FUEL_SOFT[best]}`}>
             <Fuel className="size-7" />
           </span>
           <span className="text-sm text-muted">Compensa abastecer com</span>
-          <strong className={`text-3xl uppercase ${best === 'Etanol' ? 'text-ok' : 'text-brand'}`}>{result.best}</strong>
+          <strong className={`text-3xl uppercase ${FUEL_TEXT[best]}`}>{result.best}</strong>
           <p className="text-sm">
             O etanol custa <b>{pct(result.ratio)}</b> do preço da gasolina — {result.best === 'etanol' ? 'abaixo' : 'acima'} do limite de{' '}
             <b>{pct(result.threshold)}</b>

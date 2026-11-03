@@ -5,7 +5,7 @@ import Sheet from './Sheet';
 import { brl, km } from '../lib/format';
 import { paths } from '../routes/paths';
 import type { Entry, Vehicle } from '../types';
-import { iconCircle, KIND_ICON, KIND_SOFT, REMINDER_ICON, REMINDER_SOFT } from '../ui';
+import { entrySoft, iconCircle, KIND_ICON, KIND_SOFT, REMINDER_ICON, REMINDER_SOFT } from '../ui';
 
 /**
  * Painel "Adicionar" (abre pelo + da barra de baixo): grade com Abastecer, Serviço, Despesa e
@@ -40,7 +40,7 @@ export default function AddSheet({
       <div className="grid grid-cols-2 gap-3">
         <Tile
           icon={KIND_ICON.fuel}
-          tone={KIND_SOFT.fuel}
+          tone={lastFuel ? entrySoft(lastFuel) : KIND_SOFT.fuel} // na cor do último combustível
           title="Abastecer"
           hint={lastFuel?.pricePerLiter ? `último ${brl(lastFuel.pricePerLiter)}/L` : 'gasolina, etanol…'}
           onClick={() => go((vid) => paths.newEntry(vid, 'fuel'))}
