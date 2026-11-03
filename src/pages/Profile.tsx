@@ -110,6 +110,8 @@ export default function Profile() {
           <LogOut className="size-5" />
           Sair da conta
         </button>
+
+        <p className="text-center text-xs text-muted">Unitali Garage v{__APP_VERSION__}</p>
       </main>
     </>
   );
