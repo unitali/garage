@@ -1,6 +1,6 @@
 import { useEffect, useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Car, Check, CheckCircle2, Gauge, Plus, TrendingDown, TrendingUp } from 'lucide-react';
+import { Car, Check, CheckCircle2, Plus, TrendingDown, TrendingUp } from 'lucide-react';
 import Header from '../components/Header';
 import Carousel from '../components/Carousel';
 import EntryRow from '../components/EntryRow';
@@ -11,8 +11,8 @@ import VehicleSwitcher from '../components/VehicleSwitcher';
 import { markPaid, syncVehicleOdometer } from '../db';
 import { useGarage } from '../garage';
 import { fuelStats, type AlertWindow, type DueBill, type DueReminder, type ReminderLevel } from '../lib/calc';
-import { diffDays, fromTimestamp, today } from '../lib/dates';
-import { brl, date, daysAgo, dueIn, dueText, km, num } from '../lib/format';
+import { today } from '../lib/dates';
+import { brl, date, dueIn, dueText, km, num } from '../lib/format';
 import {
   cardsDoInicio,
   gastoPagoNoAno,
@@ -24,7 +24,7 @@ import {
 } from '../lib/summary';
 import { monthsLabel } from './ReminderSettings';
 import { paths } from '../routes/paths';
-import type { Entry, Vehicle } from '../types';
+import type { Vehicle } from '../types';
 import logoUrl from '../assets/logo.png';
 import {
   badge,
@@ -94,22 +94,10 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
 
   return (
     <>
-      <header className="bg-bar px-4 pt-[calc(12px+env(safe-area-inset-top))] pb-4 text-bar-ink">
-        <div className="flex items-center gap-3">
-          {/* fundo branco: o U azul-marinho sumiria na barra da mesma cor */}
-          <img src={logoUrl} alt="Unitali Garage" className="size-10 shrink-0 rounded-xl bg-white object-contain p-1" />
-          <VehicleSwitcher vehicles={vehicles} current={v} odometer={current} />
-        </div>
-        <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <p className="text-sm opacity-85">Hodômetro · {odometerAge(v, entries, ref)}</p>
-            <p className="text-[28px] leading-tight font-bold">{km(current)}</p>
-          </div>
-          <Link to={paths.odometer(v.id)} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 font-semibold text-bar">
-            <Gauge className="size-5" aria-hidden />
-            Atualizar km
-          </Link>
-        </div>
+      <header className="flex items-center gap-3 bg-bar px-4 pt-[calc(12px+env(safe-area-inset-top))] pb-3 text-bar-ink">
+        {/* fundo branco: o U azul-marinho sumiria na barra da mesma cor */}
+        <img src={logoUrl} alt="Unitali Garage" className="size-10 shrink-0 rounded-xl bg-white object-contain p-1" />
+        <VehicleSwitcher vehicles={vehicles} current={v} odometer={current} />
       </header>
       <FlagStripe className="h-1" />
       <StatusStrip />
@@ -157,15 +145,6 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
       </main>
     </>
   );
-}
-
-/** "atualizado há X dias": o mais recente entre o "Atualizar km" e os registros com km. */
-function odometerAge(v: Vehicle, entries: Entry[], ref: string) {
-  const dates = entries.filter((e) => e.odometer != null && e.date <= ref).map((e) => e.date);
-  if (v.odometerUpdatedAt) dates.push(fromTimestamp(v.odometerUpdatedAt));
-  if (dates.length === 0) return 'informe o km atual';
-  const last = dates.sort()[dates.length - 1];
-  return `atualizado ${daysAgo(diffDays(last, ref))}`;
 }
 
 function SectionHead({ title, count, to, link }: { title: string; count?: number; to: string; link: string }) {
