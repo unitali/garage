@@ -94,8 +94,13 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
   const [schedule, setSchedule] = useState<ScheduleRow[]>([]);
   const isNewSeries = kind === 'expense' && !entry && payMode !== 'single';
   // despesa que é conta (parcela ou futura): pode marcar/desmarcar "Pago"
-  const isBill = kind === 'expense' && !!entry && (!!entry.series || entry.paid != null);
-  const [paid, setPaid] = useState(entry?.paid ?? !(entry && isOpenBill(entry)));
+  // toda despesa pode ser marcada como paga (verde no histórico); desmarcada, vira conta em aberto
+  // e vai para os lembretes do mês. Nova: marcada se a data é hoje ou antes (até a pessoa mexer).
+  const [paidChoice, setPaidChoice] = useState<boolean | null>(() =>
+    entry ? (entry.paid ?? (!!entry.series && !isOpenBill(entry))) : null,
+  );
+  const paid = paidChoice ?? day <= today();
+  const showPaid = kind === 'expense' && (!!entry || payMode === 'single');
   // parcelas da mesma série (para "excluir todas")
   const seriesIds = entry?.series ? [entry.id, ...others.filter((o) => o.series?.id === entry.series!.id).map((o) => o.id)] : [];
   // troca de óleo (só em serviço novo): intervalo da próxima → lembrete
@@ -213,7 +218,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
               ...base,
               series: entry?.series, // parcela editada continua na série
               // conta: o que estiver marcado; despesa nova com vencimento futuro nasce em aberto
-              paid: isBill ? paid : !entry && kind === 'expense' && day > today() ? false : entry?.paid,
+              paid: kind === 'expense' ? paid : undefined,
             },
       );
       if (isService && reminderId) markReminderDone(uid, vid, reminderId, odoNum ?? lastKm, day);
@@ -373,15 +378,6 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
                     Valor (R$)
                     <input className={input} value={amount} onChange={(e) => onAmount(e.target.value)} inputMode="numeric" placeholder="0,00" />
                   </label>
-                  {isBill && (
-                    <label className={checkField}>
-                      <input className={checkbox} type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} />
-                      <span>
-                        Pago
-                        <small className={hint}> — em aberto, aparece nos lembretes do mês</small>
-                      </span>
-                    </label>
-                  )}
                 </>
               ) : (
                 <ExpensePaymentField
@@ -398,6 +394,15 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
                   onRows={setSchedule}
                   firstDate={day || today()}
                 />
+              )}
+              {showPaid && (
+                <label className={checkField}>
+                  <input className={checkbox} type="checkbox" checked={paid} onChange={(e) => setPaidChoice(e.target.checked)} />
+                  <span>
+                    Pago
+                    <small className={hint}> — sem marcar, vira conta em aberto e aparece nos lembretes do mês</small>
+                  </span>
+                </label>
               )}
             </>
           )}

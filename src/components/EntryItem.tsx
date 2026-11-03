@@ -82,7 +82,7 @@ function seriesLabel(e: Entry) {
   return `${e.series.type === 'installments' ? 'Parcela' : 'Recorrente'} ${e.series.index}/${e.series.count}`;
 }
 
-/** Conta (parcela/recorrente ou despesa a vencer) já paga: borda verde no histórico. */
+/** Despesa paga: marcada como paga, ou parcela antiga (sem o campo) de mês já passado. Borda verde. */
 function isPaidBill(e: Entry) {
-  return e.kind === 'expense' && (!!e.series || e.paid != null) && !isOpenBill(e);
+  return e.kind === 'expense' && (e.paid === true || (e.paid == null && !!e.series && !isOpenBill(e)));
 }
