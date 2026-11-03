@@ -71,6 +71,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
   const [amount, setAmount] = useState(toInput(entry?.amount, 2));
   const [category, setCategory] = useState(entry?.category ?? (kind === 'service' ? SERVICE_CATEGORIES[0] : EXPENSE_CATEGORIES[0]));
   const [description, setDescription] = useState(entry?.description ?? '');
+  const [title, setTitle] = useState(entry?.title ?? '');
   const [notes, setNotes] = useState(entry?.notes ?? '');
   // abastecimento
   const [fuelType, setFuelType] = useState(entry?.fuelType ?? lastFuelType(others));
@@ -179,7 +180,14 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
       });
     } else {
       // um item só: grava como antes (sem lista); vários: a lista, e amount/category resumem
-      saveEntry(uid, vid, entry?.id, isService && serviceList.length > 1 ? { ...base, items: serviceList } : base);
+      saveEntry(
+        uid,
+        vid,
+        entry?.id,
+        isService
+          ? { ...base, title: title.trim() || undefined, items: serviceList.length > 1 ? serviceList : undefined }
+          : base,
+      );
       if (isService && reminderId) markReminderDone(uid, vid, reminderId, odoNum ?? lastKm, day);
       if (hasOilChange) upsertReminder(OIL_CHANGE, oilKm, oilMonths);
       for (const r of itemReminders) upsertReminder(r.title, r.km, r.months);
@@ -249,6 +257,16 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
 
           {kind === 'service' && (
             <>
+              <label className={field}>
+                Título <span className={opt}>(opcional)</span>
+                <input
+                  className={input}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Ex: Revisão dos 60 mil km"
+                  maxLength={60}
+                />
+              </label>
               <ServiceItemsField
                 uid={uid}
                 items={items}

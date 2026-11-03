@@ -30,6 +30,8 @@ export interface Entry {
   pricePerLiter?: number;
   fuelType?: string;
   fullTank?: boolean;
+  /** só serviço: título dado pelo usuário (ex: "Revisão dos 60 mil km") */
+  title?: string;
   /** só serviço com vários itens feitos juntos: `amount` é a soma e `category` é o 1º item */
   items?: ServiceItem[];
   createdAt: number;
