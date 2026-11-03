@@ -1,6 +1,6 @@
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Fuel, Gauge, X, type LucideIcon } from 'lucide-react';
+import { X, type LucideIcon } from 'lucide-react';
 import { brl, km } from '../lib/format';
 import { paths } from '../routes/paths';
 import type { Entry, Vehicle } from '../types';
@@ -9,8 +9,8 @@ import { iconCircle, KIND_ICON, KIND_SOFT, REMINDER_ICON, REMINDER_SOFT } from '
 const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 /**
- * Painel "Adicionar" (abre pelo + da barra de baixo): Abastecer em destaque e a grade com
- * Serviço, Despesa, Lembrete e Atualizar km. Cada item abre o formulário correspondente.
+ * Painel "Adicionar" (abre pelo + da barra de baixo): grade com Abastecer, Serviço, Despesa e
+ * Lembrete. Cada item abre o formulário correspondente.
  * Fecha com Esc, com o X ou tocando fora; o foco fica preso dentro enquanto aberto.
  */
 export default function AddSheet({
@@ -97,27 +97,17 @@ export default function AddSheet({
           </button>
         </div>
 
-        <button
-          className="mb-3 flex min-h-11 w-full items-center gap-3 rounded-2xl bg-brand p-4 text-left text-brand-contrast"
-          onClick={() => go((vid) => paths.newEntry(vid, 'fuel'))}
-        >
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/12">
-            <Fuel className="size-6" aria-hidden />
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col">
-            <strong className="text-lg">Abastecer</strong>
-            <span className="text-sm opacity-85">
-              {lastFuel ? `${lastFuel.fuelType ?? 'Combustível'} · último ${brl(lastFuel.pricePerLiter ?? 0)}/L` : 'Registre o primeiro abastecimento'}
-            </span>
-          </span>
-          <ChevronRight className="size-5 shrink-0" aria-hidden />
-        </button>
-
         <div className="grid grid-cols-2 gap-3">
+          <Tile
+            icon={KIND_ICON.fuel}
+            tone={KIND_SOFT.fuel}
+            title="Abastecer"
+            hint={lastFuel?.pricePerLiter ? `último ${brl(lastFuel.pricePerLiter)}/L` : 'gasolina, etanol…'}
+            onClick={() => go((vid) => paths.newEntry(vid, 'fuel'))}
+          />
           <Tile icon={KIND_ICON.service} tone={KIND_SOFT.service} title="Serviço" hint="óleo, pneus, revisão" onClick={() => go((vid) => paths.newEntry(vid, 'service'))} />
           <Tile icon={KIND_ICON.expense} tone={KIND_SOFT.expense} title="Despesa" hint="IPVA, seguro, multa" onClick={() => go((vid) => paths.newEntry(vid, 'expense'))} />
           <Tile icon={REMINDER_ICON} tone={REMINDER_SOFT} title="Lembrete" hint="por km ou data" onClick={() => go(paths.newReminder)} />
-          <Tile icon={Gauge} tone="bg-ok-bg text-ok" title="Atualizar km" hint="sem gasto" onClick={() => go(paths.odometer)} />
         </div>
       </div>
     </div>
