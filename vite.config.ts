@@ -30,7 +30,7 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.png', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Unitali Garage — manutenção do veículo',
+        name: 'Unitali Garage',
         short_name: 'Unitali Garage',
         description: 'Controle de manutenções, abastecimentos e despesas dos seus veículos',
         lang: 'pt-BR',
