@@ -1,9 +1,14 @@
 import type { Entry, Reminder, ServiceItem, Vehicle } from '../types';
-import { addDays, addMonths, diffDays, endOfMonth, fromTimestamp, startOfMonth, today } from './dates.ts';
+import { addDays, addMonths, diffDays, endOfMonth, fromTimestamp, today } from './dates.ts';
 
-/** km atual = maior km entre o cadastro e os registros */
-export function currentOdometer(v: Pick<Vehicle, 'initialOdometer'> | null, entries: Entry[]): number {
+/** km atual = maior km entre o cadastro, o "Atualizar km" (manual) e os registros */
+export function currentOdometer(
+  v: (Pick<Vehicle, 'initialOdometer'> & Partial<Pick<Vehicle, 'odometer' | 'odometerUpdatedAt'>>) | null,
+  entries: Entry[],
+): number {
   let max = v?.initialOdometer ?? 0;
+  // `odometer` só conta como leitura quando veio do "Atualizar km" (senão é o cache do máximo)
+  if (v?.odometerUpdatedAt && v.odometer != null && v.odometer > max) max = v.odometer;
   for (const e of entries) if (e.odometer != null && e.odometer > max) max = e.odometer;
   return max;
 }
@@ -100,27 +105,21 @@ export interface ReminderStatus {
   nextDate: string | null;
   kmLeft: number | null;
   daysLeft: number | null;
-  /** cor: vencido (vermelho), urgente (laranja) ou em dia (verde) */
+  /** vencido (vermelho), em breve (âmbar) ou em dia (neutro) */
   level: ReminderLevel;
-  /** dentro da antecedência de aviso (ou urgente/vencido): aparece no topo do histórico */
+  /** vencido ou em breve: entra em "A vencer" e conta como aviso */
   near: boolean;
 }
 
-/**
- * Janelas dos lembretes (Configurações → Lembretes):
- * - aviso: faltando até `km` ou `months` meses → aparece no topo do histórico
- * - urgente: faltando até `urgentKm` ou `urgentDays` dias → laranja
- */
+/** "Em breve" (âmbar): faltando até `km` ou até `months` meses (Configurações → Lembretes). */
 export interface AlertWindow {
   km: number;
   months: number;
-  urgentKm: number;
-  urgentDays: number;
 }
 
-export const DEFAULT_ALERT: AlertWindow = { km: 1000, months: 1, urgentKm: 200, urgentDays: 7 };
+export const DEFAULT_ALERT: AlertWindow = { km: 1000, months: 1 };
 
-/** Vencido: passou do km ou da data. Urgente: dentro da janela urgente. Em dia: o resto. */
+/** Vencido: passou do km ou da data. Em breve: dentro da janela de aviso. Em dia: o resto. */
 export function reminderStatus(r: Reminder, current: number, ref = today(), alert = DEFAULT_ALERT): ReminderStatus {
   const nextKm = r.intervalKm && r.lastKm != null ? r.lastKm + r.intervalKm : null;
   const nextDate = r.intervalMonths && r.lastDate ? addMonths(r.lastDate, r.intervalMonths) : null;
@@ -129,12 +128,9 @@ export function reminderStatus(r: Reminder, current: number, ref = today(), aler
 
   let level: ReminderLevel = 'ok';
   if ((kmLeft != null && kmLeft <= 0) || (daysLeft != null && daysLeft <= 0)) level = 'overdue';
-  else if ((kmLeft != null && kmLeft <= alert.urgentKm) || (daysLeft != null && daysLeft <= alert.urgentDays)) level = 'soon';
+  else if ((kmLeft != null && kmLeft <= alert.km) || (nextDate != null && nextDate <= addMonths(ref, alert.months))) level = 'soon';
 
-  const near =
-    level !== 'ok' ||
-    (kmLeft != null && kmLeft <= alert.km) ||
-    (nextDate != null && nextDate <= addMonths(ref, alert.months));
+  const near = level !== 'ok';
 
   return { nextKm, nextDate, kmLeft, daysLeft, level, near };
 }
@@ -238,14 +234,14 @@ export function buildSchedule(mode: ScheduleMode, firstDate: string, amount: num
   return dates.map((date, i) => ({ date, amount: (base + (i < rest ? 1 : 0)) / 100 }));
 }
 
-/**
- * Conta em aberto: despesa marcada como não paga. Parcelas antigas (sem o campo `paid`) contam
- * como pagas antes do mês atual e em aberto a partir dele.
- */
+/** Já realizado/pago: vale o "Pago" quando marcado; sem ele, o que tem data até hoje. */
+export function isPaid(e: Pick<Entry, 'paid' | 'date'>, ref = today()): boolean {
+  return e.paid ?? e.date <= ref;
+}
+
+/** Conta em aberto: despesa ainda não paga (parcela, recorrente ou com vencimento futuro). */
 export function isOpenBill(e: Entry, ref = today()): boolean {
-  if (e.kind !== 'expense' || e.paid === true) return false;
-  if (e.paid === false) return true;
-  return !!e.series && e.date >= startOfMonth(ref);
+  return e.kind === 'expense' && !isPaid(e, ref);
 }
 
 export interface DueBill {
@@ -262,7 +258,7 @@ export function billsDue(entries: Entry[], ref = today(), alert = DEFAULT_ALERT)
     .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)
     .map((e) => {
       const daysLeft = diffDays(ref, e.date);
-      const level: ReminderLevel = daysLeft < 0 ? 'overdue' : daysLeft <= alert.urgentDays ? 'soon' : 'ok';
+      const level: ReminderLevel = daysLeft < 0 ? 'overdue' : e.date <= addMonths(ref, alert.months) ? 'soon' : 'ok';
       return { e, s: { nextKm: null, nextDate: e.date, kmLeft: null, daysLeft, level, near: true } };
     });
 }

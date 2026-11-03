@@ -7,8 +7,10 @@ export interface Vehicle {
   plate: string;
   /** km no momento do cadastro */
   initialOdometer: number;
-  /** maior km registrado (desnormalizado para a lista de veículos) */
+  /** maior km registrado (desnormalizado); com `odometerUpdatedAt`, também a leitura do "Atualizar km" */
   odometer: number;
+  /** quando o km foi atualizado à mão ("Atualizar km"), em ms */
+  odometerUpdatedAt?: number;
   createdAt: number;
 }
 
@@ -71,9 +73,6 @@ export interface UserPrefs {
   /** aviso de lembrete: faltando até X km ou Y meses (padrão em calc.ts DEFAULT_ALERT) */
   alertKm?: number;
   alertMonths?: number;
-  /** urgente (laranja): faltando até X km ou Y dias */
-  urgentKm?: number;
-  urgentDays?: number;
 }
 
 export interface EntrySeries {
