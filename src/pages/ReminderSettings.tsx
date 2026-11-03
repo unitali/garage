@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BellRing } from 'lucide-react';
 import Header from '../components/Header';
 import { useUid } from '../auth';
@@ -19,13 +20,12 @@ export default function ReminderSettings() {
   const saved = useAlertWindow(uid);
   // rascunho local: os badges só mudam a tela; grava tudo de uma vez no Salvar
   const [draft, setDraft] = useState<AlertWindow | null>(null);
-  const [justSaved, setJustSaved] = useState(false);
+  const navigate = useNavigate();
   const alert = draft ?? saved;
   const changed = (Object.keys(saved) as (keyof AlertWindow)[]).filter((k) => alert[k] !== saved[k]);
 
   function set(patch: Partial<AlertWindow>) {
     setDraft({ ...alert, ...patch });
-    setJustSaved(false);
   }
 
   function save() {
@@ -37,8 +37,7 @@ export default function ReminderSettings() {
       urgentDays: 'urgentDays',
     };
     savePrefs(uid, Object.fromEntries(changed.map((k) => [field[k], alert[k]])));
-    setDraft(null);
-    setJustSaved(true);
+    navigate(paths.home());
   }
 
   return (
@@ -131,7 +130,7 @@ export default function ReminderSettings() {
         </section>
 
         <button className={`${btn('primary')} w-full`} onClick={save} disabled={changed.length === 0}>
-          {changed.length === 0 && justSaved ? '✓ Salvo' : 'Salvar'}
+          Salvar
         </button>
       </main>
     </>
