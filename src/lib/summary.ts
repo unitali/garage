@@ -1,13 +1,21 @@
 // Cálculos de exibição da tela inicial e do histórico (funções puras, testadas em tests/summary.test.ts).
 
 import { DEFAULT_ALERT, isPaid, remindersByDue, type AlertWindow, type DueBill, type DueReminder, type ReminderStatus } from './calc.ts';
-import { addMonths, today } from './dates.ts';
+import { addDays, addMonths, today } from './dates.ts';
 import type { Entry, Reminder } from '../types';
 
 export { isPaid };
 
 const inYear = (e: Entry, ref: string) => e.date.startsWith(ref.slice(0, 4));
 const sum = (list: Entry[]) => list.reduce((cents, e) => cents + Math.round(e.amount * 100), 0) / 100;
+
+/** "Últimos registros" da tela inicial: o que já aconteceu (pago/realizado) nos últimos `dias`, do mais recente. */
+export function registrosRecentes(entries: Entry[], ref = today(), dias = 30): Entry[] {
+  const desde = addDays(ref, -dias);
+  return entries
+    .filter((e) => e.date >= desde && isPaid(e, ref))
+    .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
+}
 
 /** Gasto do ano já realizado (pago / data até hoje). */
 export const gastoPagoNoAno = (entries: Entry[], ref = today()) => sum(entries.filter((e) => inYear(e, ref) && isPaid(e, ref)));

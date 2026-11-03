@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cardsDoInicio, gastoPagoNoAno, rotuloParcela, tituloConta, gastoPrevistoNoAno, isPaid, proximaAcao, resumoDaSerie, seriesDe, variacaoConsumo } from '../src/lib/summary.ts';
+import { cardsDoInicio, gastoPagoNoAno, registrosRecentes, rotuloParcela, tituloConta, gastoPrevistoNoAno, isPaid, proximaAcao, resumoDaSerie, seriesDe, variacaoConsumo } from '../src/lib/summary.ts';
 import { billsDue, buildSchedule, remindersByDue } from '../src/lib/calc.ts';
 import type { Entry, Reminder } from '../src/types.ts';
 
@@ -32,6 +32,17 @@ test('rótulo da parcela: posição na série, igual para parcelado e recorrente
   assert.equal(rotuloParcela(serie[2]), 'parcela 3 de 24');
   assert.equal(tituloConta(serie[2]), 'Seguro · parcela 3 de 24');
   assert.equal(tituloConta({ category: 'IPVA' }), 'IPVA');
+});
+
+test('últimos registros: só o que já aconteceu nos últimos 30 dias, do mais recente', () => {
+  const list = [
+    entry({ id: 'hoje', date: ref }),
+    entry({ id: 'limite', date: '2026-10-04' }), // 30 dias antes de 03/11
+    entry({ id: 'velho', date: '2026-10-03' }),
+    entry({ id: 'futuro', date: '2026-11-10' }), // ainda não aconteceu
+    entry({ id: 'aberta', date: '2026-10-20', paid: false }), // conta não paga
+  ];
+  assert.deepEqual(registrosRecentes(list, ref).map((x) => x.id), ['hoje', 'limite']);
 });
 
 test('resumo da série: 3 de 24 pagas', () => {

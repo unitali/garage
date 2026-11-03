@@ -14,7 +14,7 @@ import {
   cardsDoInicio,
   gastoPagoNoAno,
   gastoPrevistoNoAno,
-  isPaid,
+  registrosRecentes,
   proximaAcao,
   tituloConta,
   variacaoConsumo,
@@ -66,6 +66,9 @@ function NoVehicle() {
 
 type Garage = ReturnType<typeof useGarage>;
 
+/** "Últimos registros": quantos dias para trás */
+const RECENT_DAYS = 30;
+
 /** Tela inicial (resumo do veículo selecionado). */
 function Summary({ g, v }: { g: Garage; v: Vehicle }) {
   const { uid, entries, reminders, current, rate, alert, due, bills } = g;
@@ -79,10 +82,7 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
   // cards: lembretes e contas dentro da antecedência de aviso; sem nenhum, o lembrete mais próximo aparece como "em dia"
   const cards = useMemo(() => cardsDoInicio(due, bills), [due, bills]);
   const next = useMemo(() => proximaAcao(reminders, current, ref, rate, alert), [reminders, current, ref, rate, alert]);
-  const recent = useMemo(
-    () => entries.filter((e) => isPaid(e, ref)).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 3),
-    [entries, ref],
-  );
+  const recent = useMemo(() => registrosRecentes(entries, ref, RECENT_DAYS), [entries, ref]);
   const consumption = useMemo(() => fuelStats(entries), [entries]);
   const variation = useMemo(() => variacaoConsumo(entries, ref), [entries, ref]);
   const pago = gastoPagoNoAno(entries, ref);
@@ -119,8 +119,11 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
 
         <section className={card}>
           <SectionHead title="Últimos registros" to={paths.history()} link="Histórico" />
+          <p className="-mt-1 mb-1 text-xs text-slate-600 dark:text-slate-400">Últimos {RECENT_DAYS} dias</p>
           {recent.length === 0 ? (
-            <p className="py-2 text-sm text-slate-600 dark:text-slate-400">Nada registrado ainda. Toque em + para começar.</p>
+            <p className="py-2 text-sm text-slate-600 dark:text-slate-400">
+              {entries.length === 0 ? 'Nada registrado ainda. Toque em + para começar.' : `Nada nos últimos ${RECENT_DAYS} dias.`}
+            </p>
           ) : (
             <ul className="divide-y divide-slate-200 dark:divide-slate-800">
               {recent.map((e) => (
