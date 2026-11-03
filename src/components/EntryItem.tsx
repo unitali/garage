@@ -26,15 +26,17 @@ export default function EntryItem({ vid, entry: e, kml }: { vid: string; entry: 
   );
 }
 
+/** Título: tipo de combustível, ou a categoria do serviço/despesa. */
 function entryTitle(e: Entry) {
   if (e.kind === 'fuel') return e.fuelType || 'Abastecimento';
-  return e.description || e.category || ENTRY_KINDS[e.kind].label;
+  return e.category || ENTRY_KINDS[e.kind].label;
 }
 
+/** Última linha: litros e consumo, ou a descrição do serviço/despesa. */
 function entryDetail(e: Entry, kml?: number) {
   if (e.kind === 'fuel') {
     const parts = [e.liters ? `${num(e.liters, 2)} L` : null, kml ? `${num(kml, 1)} km/l` : null, e.fullTank ? null : 'parcial'];
     return parts.filter(Boolean).join(' · ');
   }
-  return e.description && e.category ? e.category : null;
+  return e.description || null;
 }
