@@ -16,6 +16,7 @@ import {
   gastoPrevistoNoAno,
   isPaid,
   proximaAcao,
+  tituloConta,
   variacaoConsumo,
   type CardItem,
 } from '../lib/summary';
@@ -288,16 +289,12 @@ function ReminderCard({ vid, item, className }: { vid: string; item: DueReminder
 /** Conta em aberto (parcela, recorrente ou despesa futura): "Pago" tira dos lembretes e ela vai para o histórico. */
 function BillCard({ uid, vid, bill, className }: { uid: string; vid: string; bill: DueBill; className?: string }) {
   const { e, s } = bill;
-  const series = e.series ? ` · ${e.series.type === 'installments' ? 'parcela ' : ''}${e.series.index} de ${e.series.count}` : '';
   return (
     <ToneCard
       level={s.level}
       icon={KIND_ICON.expense}
       title={
-        <Link to={paths.entry(vid, e.id)}>
-          {e.category}
-          {series}
-        </Link>
+        <Link to={paths.entry(vid, e.id)}>{tituloConta(e)}</Link>
       }
       status={dueIn(s.daysLeft ?? 0)}
       detail={`vence ${date(e.date)} · ${brl(e.amount)}`}

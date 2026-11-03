@@ -40,6 +40,17 @@ export function resumoDaSerie(parcelas: Entry[], ref = today()): ResumoSerie {
   };
 }
 
+/**
+ * Rótulo da parcela, igual em todo lugar (Histórico, Lembretes, Início): "parcela 3 de 24".
+ * É a posição dela na série — quantas já foram pagas vem de `resumoDaSerie`.
+ */
+export function rotuloParcela(e: Pick<Entry, 'series'>): string {
+  return e.series ? `parcela ${e.series.index} de ${e.series.count}` : '';
+}
+
+/** "Seguro · parcela 3 de 24" (ou só a categoria, fora de série) */
+export const tituloConta = (e: Pick<Entry, 'series' | 'category'>) => [e.category, rotuloParcela(e)].filter(Boolean).join(' · ');
+
 /** Despesas parceladas/recorrentes agrupadas por série (as mais recentes primeiro). */
 export function seriesDe(entries: Entry[]): Entry[][] {
   const groups = new Map<string, Entry[]>();

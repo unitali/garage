@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cardsDoInicio, gastoPagoNoAno, gastoPrevistoNoAno, isPaid, proximaAcao, resumoDaSerie, seriesDe, variacaoConsumo } from '../src/lib/summary.ts';
+import { cardsDoInicio, gastoPagoNoAno, rotuloParcela, tituloConta, gastoPrevistoNoAno, isPaid, proximaAcao, resumoDaSerie, seriesDe, variacaoConsumo } from '../src/lib/summary.ts';
 import { billsDue, buildSchedule, remindersByDue } from '../src/lib/calc.ts';
 import type { Entry, Reminder } from '../src/types.ts';
 
@@ -26,6 +26,12 @@ test('parcelas futuras ficam fora do gasto pago e entram no previsto', () => {
   const list = [...serie, entry({ kind: 'fuel', amount: 200, date: '2026-10-05' })];
   assert.equal(gastoPagoNoAno(list, ref), 200 + 3 * 146.35); // ago, set, out + combustível
   assert.equal(gastoPrevistoNoAno(list, ref), 2 * 146.35); // nov e dez deste ano
+});
+
+test('rótulo da parcela: posição na série, igual para parcelado e recorrente', () => {
+  assert.equal(rotuloParcela(serie[2]), 'parcela 3 de 24');
+  assert.equal(tituloConta(serie[2]), 'Seguro · parcela 3 de 24');
+  assert.equal(tituloConta({ category: 'IPVA' }), 'IPVA');
 });
 
 test('resumo da série: 3 de 24 pagas', () => {

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ENTRY_KINDS } from '../constants';
 import { serviceItems } from '../lib/calc';
+import { rotuloParcela } from '../lib/summary';
 import { brl, km, num, shortDate } from '../lib/format';
 import { paths } from '../routes/paths';
 import type { Entry } from '../types';
@@ -50,7 +51,7 @@ function title(e: Entry) {
     if (e.items && e.items.length > 1) return ENTRY_KINDS.service.label;
   }
   const base = e.category || ENTRY_KINDS[e.kind].label;
-  return e.series ? `${base} · ${e.series.type === 'installments' ? 'parcela ' : ''}${e.series.index} de ${e.series.count}` : base;
+  return [base, rotuloParcela(e)].filter(Boolean).join(' · ');
 }
 
 function secondary(e: Entry, kml?: number) {

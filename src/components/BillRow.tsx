@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import { markPaid } from '../db';
 import type { DueBill } from '../lib/calc';
 import { brl, date, dueIn } from '../lib/format';
+import { tituloConta } from '../lib/summary';
 import { paths } from '../routes/paths';
 import { btn, iconCircle, KIND_ICON, KIND_SOFT, LEVEL_TEXT } from '../ui';
 
@@ -11,7 +12,6 @@ const Icon = KIND_ICON.expense;
 /** Conta do mês (dentro de um card com divisórias): "Pago" tira dos lembretes e ela vai para o histórico. */
 export default function BillRow({ uid, vid, bill }: { uid: string; vid: string; bill: DueBill }) {
   const { e, s } = bill;
-  const series = e.series ? ` · ${e.series.type === 'installments' ? 'parcela ' : ''}${e.series.index} de ${e.series.count}` : '';
   return (
     <div className="flex items-start gap-3 py-3">
       <span className={`${iconCircle} ${KIND_SOFT.expense}`}>
@@ -21,8 +21,7 @@ export default function BillRow({ uid, vid, bill }: { uid: string; vid: string; 
         <Link to={paths.entry(vid, e.id)} className="flex flex-col gap-0.5">
           <span className="flex items-start justify-between gap-3">
             <strong className="min-w-0 break-words">
-              {e.category}
-              {series}
+              {tituloConta(e)}
             </strong>
             <strong className="shrink-0 whitespace-nowrap">{brl(e.amount)}</strong>
           </span>
