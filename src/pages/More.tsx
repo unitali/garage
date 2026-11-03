@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BellRing, Car, ChevronRight, Info, LogOut, Tags, UserRound } from 'lucide-react';
+import { BellRing, Car, ChevronRight, Info, LogOut, Tags } from 'lucide-react';
 import Header from '../components/Header';
 import InstallCard from '../components/InstallCard';
 import UserAvatar from '../components/UserAvatar';
@@ -34,38 +34,26 @@ export default function More() {
           <ChevronRight className="size-5 shrink-0 text-muted" />
         </Link>
 
-        <SettingsGroup title="Conta">
-          <SettingsLink to={paths.profile()} icon={UserRound} label="Perfil" />
-        </SettingsGroup>
-
-        <SettingsGroup title="Garagem">
+        {/* tudo no primeiro nível, sem títulos de grupo (o perfil é o card acima) */}
+        <SettingsGroup>
           <SettingsLink
             to={paths.vehicles()}
             icon={Car}
             label="Veículos"
             detail={vehicles.length === 1 ? '1 veículo' : `${vehicles.length} veículos`}
           />
-        </SettingsGroup>
-
-        <SettingsGroup title="Lembretes">
           <SettingsLink
             to={paths.reminderSettings()}
             icon={BellRing}
             label="Avisos e cores"
             detail={`${km(alert.km)} · ${monthsLabel(alert.months)}`}
           />
-        </SettingsGroup>
-
-        <SettingsGroup title="Personalizar">
           <SettingsLink
             to={paths.categories()}
             icon={Tags}
             label="Serviços e despesas"
             detail={customCount > 0 ? `${customCount} criado${customCount === 1 ? '' : 's'}` : undefined}
           />
-        </SettingsGroup>
-
-        <SettingsGroup title="Aplicativo">
           <SettingsInfo icon={Info} label="Versão" value={`v${__APP_VERSION__}`} />
         </SettingsGroup>
 

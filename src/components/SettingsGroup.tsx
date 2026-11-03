@@ -2,11 +2,11 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 
-/** Grupo de opções das Configurações: título pequeno + card com linhas. */
-export function SettingsGroup({ title, children }: { title: string; children: ReactNode }) {
+/** Card com linhas de opções; `title` (opcional) aparece pequeno acima. */
+export function SettingsGroup({ title, children }: { title?: string; children: ReactNode }) {
   return (
     <section>
-      <h2 className="mx-1 mb-2 text-xs font-bold tracking-wider text-muted uppercase">{title}</h2>
+      {title && <h2 className="mx-1 mb-2 text-xs font-bold tracking-wider text-muted uppercase">{title}</h2>}
       <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface shadow-xs dark:shadow-none">
         {children}
       </ul>
