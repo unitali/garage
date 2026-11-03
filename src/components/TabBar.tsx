@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Bell, Fuel, House, Settings, Wrench } from 'lucide-react';
+import { Bell, Calculator, Fuel, House, Receipt, Settings, Wrench } from 'lucide-react';
 import { useUid } from '../auth';
 import { useVehicles } from '../hooks';
 import { useSelectedVehicle } from '../selection';
 import { paths } from '../routes/paths';
 
-/** Barra fixa de atalhos, como num app: Início, Serviço, Abastecer, Lembretes e Configurações. */
+/** Barra fixa de atalhos, como num app: Início, Serviço, Despesa, Abastecer, Lembretes, Calculadora e Configurações. */
 export default function TabBar() {
   const uid = useUid();
   const navigate = useNavigate();
@@ -25,11 +25,13 @@ export default function TabBar() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-3xl border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:border-x">
-      <div className="grid h-16 grid-cols-5">
+      {/* 7 colunas: Abastecer fica no centro, saltando da barra */}
+      <div className="grid h-16 grid-cols-7">
         <Tab icon={<House />} label="Início" active={onHome && !onReminders} onClick={() => navigate(paths.home())} />
         <Tab icon={<Wrench />} label="Serviço" onClick={() => go((vid) => paths.newEntry(vid, 'service'))} />
+        <Tab icon={<Receipt />} label="Despesa" onClick={() => go((vid) => paths.newEntry(vid, 'expense'))} />
         <button
-          className="flex flex-col items-center justify-end gap-0.5 pb-2 text-[11px] font-semibold text-brand"
+          className="flex min-w-0 flex-col items-center justify-end gap-0.5 pb-2 text-[10px] font-semibold text-brand sm:text-[11px]"
           onClick={() => go((vid) => paths.newEntry(vid, 'fuel'))}
         >
           {/* ação mais usada: botão redondo saltando da barra */}
@@ -40,8 +42,16 @@ export default function TabBar() {
         </button>
         <Tab icon={<Bell />} label="Lembretes" active={onReminders} onClick={() => go(() => paths.home('lembretes'))} />
         <Tab
+          icon={<Calculator />}
+          label="Calculadora"
+          short="Calcular"
+          active={pathname === paths.calculator()}
+          onClick={() => navigate(paths.calculator())}
+        />
+        <Tab
           icon={<Settings />}
           label="Configurações"
+          short="Config."
           active={pathname.startsWith(paths.settings())}
           onClick={() => navigate(paths.settings())}
         />
@@ -50,18 +60,40 @@ export default function TabBar() {
   );
 }
 
-function Tab({ icon, label, active, onClick }: { icon: ReactNode; label: string; active?: boolean; onClick: () => void }) {
+function Tab({
+  icon,
+  label,
+  short,
+  active,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  /** rótulo no celular, onde 7 colunas não cabem o nome inteiro */
+  short?: string;
+  active?: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
-      className={`flex min-w-0 flex-col items-center justify-center gap-1 text-[11px] font-semibold [&_svg]:size-6 ${
+      className={`flex min-w-0 flex-col items-center justify-center gap-1 text-[10px] font-semibold sm:text-[11px] [&_svg]:size-5 sm:[&_svg]:size-6 ${
         active ? 'text-brand' : 'text-muted'
       }`}
       aria-current={active ? 'page' : undefined}
+      aria-label={label}
       onClick={onClick}
     >
       {icon}
-      {/* "Configurações" é o rótulo mais longo: não deixa estourar a coluna em telas estreitas */}
-      <span className="max-w-full truncate px-0.5">{label}</span>
+      <span className="max-w-full truncate px-0.5">
+        {short ? (
+          <>
+            <span className="sm:hidden">{short}</span>
+            <span className="hidden sm:inline">{label}</span>
+          </>
+        ) : (
+          label
+        )}
+      </span>
     </button>
   );
 }

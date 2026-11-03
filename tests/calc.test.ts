@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { billsDue, buildSchedule, costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, serviceItems, sortEntriesByKm, sumItems } from '../src/lib/calc.ts';
+import { billsDue, buildSchedule, fuelChoice, costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, serviceItems, sortEntriesByKm, sumItems } from '../src/lib/calc.ts';
 import { addDays, addMonths, diffDays, endOfMonth } from '../src/lib/dates.ts';
 import { maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../src/lib/format.ts';
 import { categoryOptions } from '../src/constants.ts';
@@ -176,6 +176,18 @@ test('contas do mês: só em aberto até o fim do mês, vencidas incluídas', ()
   assert.deepEqual(due.map((x) => x.e.id), ['vencida', 'urgente', 'mes', 'legado']);
   assert.deepEqual(due.map((x) => x.s.level), ['overdue', 'soon', 'ok', 'ok']);
   assert.equal(endOfMonth('2028-02-10'), '2028-02-29');
+});
+
+test('calculadora etanol x gasolina', () => {
+  // regra dos 70%
+  assert.equal(fuelChoice(4.09, 6.19).best, 'etanol'); // 66%
+  assert.equal(fuelChoice(4.49, 6.19).best, 'gasolina'); // 72,5%
+  assert.equal(fuelChoice(7, 10).best, 'gasolina'); // exatamente 70%: empate → gasolina
+  // consumo do carro: 9 km/l etanol, 12 km/l gasolina → limite 75%
+  const c = fuelChoice(4.49, 6.19, 9, 12);
+  assert.equal(c.threshold, 0.75);
+  assert.equal(c.best, 'etanol'); // 72,5% < 75%
+  assert.ok(c.perKm!.etanol < c.perKm!.gasolina);
 });
 
 test('máscaras: km com até 6 dígitos, valores com duas casas', () => {

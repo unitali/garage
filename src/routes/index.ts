@@ -3,6 +3,7 @@ import { Navigate, type RouteObject } from 'react-router-dom';
 import Home from '../pages/Home';
 import Profile from '../pages/Profile';
 import Settings from '../pages/Settings';
+import Calculator from '../pages/Calculator';
 import Vehicles from '../pages/Vehicles';
 import Categories from '../pages/Categories';
 import ReminderSettings from '../pages/ReminderSettings';
@@ -24,6 +25,7 @@ const tabBar: RouteHandle = { tabBar: true };
 /** Todas as telas do app (usuário logado). */
 export const routes: RouteObject[] = [
   { path: PATTERNS.home, Component: Home, handle: tabBar },
+  { path: PATTERNS.calculator, Component: Calculator, handle: tabBar },
   { path: PATTERNS.settings, Component: Settings, handle: tabBar },
   { path: PATTERNS.profile, Component: Profile, handle: tabBar },
   { path: PATTERNS.vehicles, Component: Vehicles, handle: tabBar },

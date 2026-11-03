@@ -266,3 +266,27 @@ export function billsDue(entries: Entry[], ref = today(), alert = DEFAULT_ALERT)
       return { e, s: { nextKm: null, nextDate: e.date, kmLeft: null, daysLeft, level, near: true } };
     });
 }
+
+/** Regra de bolso: etanol compensa se custar até 70% da gasolina (rende ~30% menos por litro). */
+export const ETHANOL_THRESHOLD = 0.7;
+
+export interface FuelChoice {
+  best: 'etanol' | 'gasolina';
+  /** preço do etanol ÷ preço da gasolina */
+  ratio: number;
+  /** limite usado: 0,70 ou o rendimento real (km/l etanol ÷ km/l gasolina) */
+  threshold: number;
+  /** R$ por km de cada um (só com o consumo do carro informado) */
+  perKm: { etanol: number; gasolina: number } | null;
+}
+
+/**
+ * Etanol ou gasolina? Com o consumo do carro (km/l de cada um), compara o custo por km;
+ * sem ele, usa a regra dos 70%. Empate fica com a gasolina (rende mais por tanque).
+ */
+export function fuelChoice(ethanolPrice: number, gasPrice: number, kmlEthanol?: number | null, kmlGas?: number | null): FuelChoice {
+  const ratio = ethanolPrice / gasPrice;
+  const real = kmlEthanol && kmlGas ? { etanol: ethanolPrice / kmlEthanol, gasolina: gasPrice / kmlGas } : null;
+  const threshold = kmlEthanol && kmlGas ? kmlEthanol / kmlGas : ETHANOL_THRESHOLD;
+  return { best: ratio < threshold ? 'etanol' : 'gasolina', ratio, threshold, perKm: real };
+}
