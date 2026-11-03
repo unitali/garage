@@ -34,6 +34,8 @@ export interface Entry {
   title?: string;
   /** só serviço com vários itens feitos juntos: `amount` é a soma e `category` é o 1º item */
   items?: ServiceItem[];
+  /** só despesa parcelada/recorrente: cada parcela é um registro, ligados pelo `id` */
+  series?: EntrySeries;
   createdAt: number;
 }
 
@@ -70,4 +72,12 @@ export interface UserPrefs {
   /** urgente (laranja): faltando até X km ou Y dias */
   urgentKm?: number;
   urgentDays?: number;
+}
+
+export interface EntrySeries {
+  id: string;
+  type: 'installments' | 'recurring';
+  /** 1 … count */
+  index: number;
+  count: number;
 }

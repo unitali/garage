@@ -1,7 +1,7 @@
 import { arrayRemove, arrayUnion, collection, deleteDoc, doc, getDocs, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 import { trackWrite } from './sync';
-import type { CategoryKind, Data, Entry, Reminder, UserPrefs, Vehicle } from './types';
+import type { CategoryKind, Data, Entry, EntrySeries, Reminder, UserPrefs, Vehicle } from './types';
 
 // Estrutura:
 //   users/{uid}/vehicles/{vid}
@@ -52,6 +52,21 @@ export function saveEntry(uid: string, vid: string, id: string | undefined, data
   const ref = id ? doc(entriesCol(uid, vid), id) : doc(entriesCol(uid, vid));
   fire(setDoc(ref, data));
   return ref.id;
+}
+
+/** Várias despesas de uma vez (parcelas/recorrência), ligadas por `series.id`: uma gravação só. */
+export function saveEntrySeries(uid: string, vid: string, list: (Omit<Data<Entry>, 'series'> & { series: Omit<EntrySeries, 'id'> })[]) {
+  const seriesId = doc(entriesCol(uid, vid)).id;
+  const batch = writeBatch(db);
+  for (const e of list) batch.set(doc(entriesCol(uid, vid)), { ...e, series: { ...e.series, id: seriesId } });
+  fire(batch.commit());
+}
+
+/** Exclui várias de uma vez (ex: todas as parcelas). */
+export function deleteEntries(uid: string, vid: string, ids: string[]) {
+  const batch = writeBatch(db);
+  ids.forEach((id) => batch.delete(doc(entriesCol(uid, vid), id)));
+  fire(batch.commit());
 }
 
 export function deleteEntry(uid: string, vid: string, id: string) {

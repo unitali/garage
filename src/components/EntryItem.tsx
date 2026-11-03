@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ENTRY_KINDS } from '../constants';
 import { serviceItems } from '../lib/calc';
+import { today } from '../lib/dates';
 import { brl, date, km, num } from '../lib/format';
 import { paths } from '../routes/paths';
 import type { Entry } from '../types';
@@ -21,7 +22,10 @@ export default function EntryItem({ vid, entry: e, kml }: { vid: string; entry: 
           <strong className="truncate">{entryTitle(e)}</strong>
           <strong className="whitespace-nowrap">{brl(e.amount)}</strong>
         </span>
-        <span className="text-sm text-muted">{[date(e.date), e.odometer != null ? km(e.odometer) : null].filter(Boolean).join(' · ')}</span>
+        <span className="text-sm text-muted">
+          {[date(e.date), e.odometer != null ? km(e.odometer) : null, seriesLabel(e)].filter(Boolean).join(' · ')}
+          {e.date > today() && <span className="font-semibold text-warn"> · a vencer</span>}
+        </span>
         {items && (
           <ul className="mt-1 flex flex-col gap-0.5 border-l-2 border-line pl-2.5 text-sm">
             {items.map((i, idx) => (
@@ -62,4 +66,10 @@ function entryDetail(e: Entry, kml?: number) {
     return parts.filter(Boolean).join(' · ');
   }
   return (e.notes || e.description)?.split('\n')[0] || null;
+}
+
+/** "Parcela 2/10" ou "Recorrente 3/12". */
+function seriesLabel(e: Entry) {
+  if (!e.series) return null;
+  return `${e.series.type === 'installments' ? 'Parcela' : 'Recorrente'} ${e.series.index}/${e.series.count}`;
 }

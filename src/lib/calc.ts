@@ -222,3 +222,18 @@ export function serviceItems(e: Pick<Entry, 'items' | 'category' | 'amount'>): S
 export function sumItems(items: { amount: number }[]): number {
   return items.reduce((cents, i) => cents + Math.round(i.amount * 100), 0) / 100;
 }
+
+export type ScheduleMode = 'installments' | 'recurring';
+
+/**
+ * Vencimentos de uma despesa parcelada/recorrente: o 1º na data escolhida e os demais mês a mês.
+ * Parcelado divide o total em centavos (a sobra vai para as primeiras); recorrente repete o valor.
+ */
+export function buildSchedule(mode: ScheduleMode, firstDate: string, amount: number, count: number): { date: string; amount: number }[] {
+  const dates = Array.from({ length: count }, (_, i) => addMonths(firstDate, i));
+  if (mode === 'recurring') return dates.map((date) => ({ date, amount }));
+  const cents = Math.round(amount * 100);
+  const base = Math.floor(cents / count);
+  const rest = cents - base * count;
+  return dates.map((date, i) => ({ date, amount: (base + (i < rest ? 1 : 0)) / 100 }));
+}

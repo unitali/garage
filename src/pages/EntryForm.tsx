@@ -4,9 +4,10 @@ import Header from '../components/Header';
 import CategorySelect from '../components/CategorySelect';
 import ServiceItemsField, { findReminder, isOilChange, newItem, withExistingReminder, type ItemDraft } from '../components/ServiceItemsField';
 import OilChangeField from '../components/OilChangeField';
+import ExpensePaymentField, { DEFAULT_COUNT, type PayMode, type ScheduleRow } from '../components/ExpensePaymentField';
 import { useUid } from '../auth';
 import { useEntries, useReminders, useVehicle } from '../hooks';
-import { deleteEntry, markReminderDone, saveEntry, saveReminder, syncVehicleOdometer } from '../db';
+import { deleteEntries, deleteEntry, markReminderDone, saveEntry, saveEntrySeries, saveReminder, syncVehicleOdometer } from '../db';
 import { ENTRY_KINDS, EXPENSE_CATEGORIES, FUEL_TYPES, normalizeCategory, OIL_CHANGE, OIL_KM_OPTIONS, OIL_MONTH_OPTIONS, SERVICE_CATEGORIES } from '../constants';
 import { currentOdometer, serviceItems, sumItems } from '../lib/calc';
 import { today } from '../lib/dates';
@@ -87,6 +88,13 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
         : [newItem()],
   );
   const [reminderId, setReminderId] = useState('');
+  // despesa nova: cota única, parcelado ou recorrente (uma despesa por vencimento)
+  const [payMode, setPayMode] = useState<PayMode>('single');
+  const [count, setCount] = useState(DEFAULT_COUNT.installments);
+  const [schedule, setSchedule] = useState<ScheduleRow[]>([]);
+  const isNewSeries = kind === 'expense' && !entry && payMode !== 'single';
+  // parcelas da mesma série (para "excluir todas")
+  const seriesIds = entry?.series ? [entry.id, ...others.filter((o) => o.series?.id === entry.series!.id).map((o) => o.id)] : [];
   // troca de óleo (só em serviço novo): intervalo da próxima → lembrete
   const currentOil = entry ? findReminder(reminders, OIL_CHANGE) : undefined;
   const [oilKm, setOilKm] = useState<number | null>(() =>
@@ -152,6 +160,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
 
   function submit(e: FormEvent) {
     e.preventDefault();
+    if (isNewSeries) return submitSeries();
     const isService = kind === 'service';
     const serviceList = items.map((i) => ({ category: i.category, amount: Math.round((parseDecimal(i.amount) ?? 0) * 100) / 100 }));
     if (isService && serviceList.some((i) => !i.category)) return setError('Escolha o serviço de cada item.');
@@ -197,7 +206,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
         entry?.id,
         isService
           ? { ...base, title: title.trim() || undefined, items: serviceList.length > 1 ? serviceList : undefined }
-          : base,
+          : { ...base, series: entry?.series }, // parcela editada continua na série
       );
       if (isService && reminderId) markReminderDone(uid, vid, reminderId, odoNum ?? lastKm, day);
       if (hasOilChange) upsertReminder(OIL_CHANGE, oilKm, oilMonths);
@@ -207,9 +216,42 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
     navigate(back, { replace: true });
   }
 
+  /** Parcelado/recorrente: uma despesa por vencimento, gravadas juntas e ligadas pela série. */
+  function submitSeries() {
+    if (!category) return setError('Escolha a categoria.');
+    if (schedule.length === 0) return setError('Informe o valor.');
+    const list = schedule.map((r) => ({ date: r.date, amount: Math.round((parseDecimal(r.amount) ?? 0) * 100) / 100 }));
+    const bad = list.findIndex((r) => !r.date || r.amount <= 0);
+    if (bad >= 0) return setError(`Confira a data e o valor da ${bad + 1}ª parcela.`);
+    const now = Date.now();
+    saveEntrySeries(
+      uid,
+      vid,
+      list.map((r, i) => ({
+        kind: 'expense' as const,
+        date: r.date,
+        odometer: i === 0 ? odoNum : null, // km só faz sentido no primeiro (o de hoje)
+        amount: r.amount,
+        category,
+        description: '',
+        notes: notes.trim(),
+        createdAt: now + i,
+        series: { type: payMode as 'installments' | 'recurring', index: i + 1, count: list.length },
+      })),
+    );
+    if (odoNum != null && odoNum > (vehicle.odometer ?? 0)) syncVehicleOdometer(uid, vid, odoNum);
+    navigate(back, { replace: true });
+  }
+
   function remove() {
     if (!entry || !confirm('Excluir este registro?')) return;
     deleteEntry(uid, vid, entry.id);
+    navigate(back, { replace: true });
+  }
+
+  function removeSeries() {
+    if (!confirm(`Excluir todas as ${seriesIds.length} parcelas desta despesa?`)) return;
+    deleteEntries(uid, vid, seriesIds);
     navigate(back, { replace: true });
   }
 
@@ -222,8 +264,14 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
         <form className={form} onSubmit={submit}>
           <div className={grid2}>
             <label className={field}>
-              Data
-              <input className={input} type="date" value={day} max={today()} onChange={(e) => setDay(e.target.value)} />
+              {isNewSeries ? '1º vencimento' : 'Data'}
+              <input
+                className={input}
+                type="date"
+                value={day}
+                max={kind === 'expense' ? undefined : today()}
+                onChange={(e) => setDay(e.target.value)}
+              />
             </label>
             <label className={field}>
               Km {kind !== 'fuel' && <span className={opt}>(opcional)</span>}
@@ -303,10 +351,35 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
           {kind === 'expense' && (
             <>
               <CategorySelect uid={uid} kind={kind} value={category} onChange={setCategory} />
-              <label className={field}>
-                Valor (R$)
-                <input className={input} value={amount} onChange={(e) => onAmount(e.target.value)} inputMode="numeric" placeholder="0,00" />
-              </label>
+              {entry ? (
+                <>
+                  {entry.series && (
+                    <p className="rounded-xl bg-brand-soft p-2.5 text-sm">
+                      {entry.series.type === 'installments' ? 'Parcela' : 'Recorrente'} {entry.series.index} de {entry.series.count} — as
+                      alterações valem só para esta.
+                    </p>
+                  )}
+                  <label className={field}>
+                    Valor (R$)
+                    <input className={input} value={amount} onChange={(e) => onAmount(e.target.value)} inputMode="numeric" placeholder="0,00" />
+                  </label>
+                </>
+              ) : (
+                <ExpensePaymentField
+                  mode={payMode}
+                  onMode={(m) => {
+                    setPayMode(m);
+                    if (m !== 'single') setCount(DEFAULT_COUNT[m]);
+                  }}
+                  amount={amount}
+                  onAmount={onAmount}
+                  count={count}
+                  onCount={setCount}
+                  rows={schedule}
+                  onRows={setSchedule}
+                  firstDate={day || today()}
+                />
+              )}
             </>
           )}
 
@@ -336,7 +409,12 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
           </button>
           {entry && (
             <button type="button" className={`${btn('danger')} w-full`} onClick={remove}>
-              Excluir registro
+              {entry.series ? 'Excluir só esta parcela' : 'Excluir registro'}
+            </button>
+          )}
+          {entry && seriesIds.length > 1 && (
+            <button type="button" className={`${btn('danger')} w-full`} onClick={removeSeries}>
+              Excluir todas as parcelas ({seriesIds.length})
             </button>
           )}
         </form>

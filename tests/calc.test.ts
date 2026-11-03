@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, serviceItems, sortEntriesByKm, sumItems } from '../src/lib/calc.ts';
+import { buildSchedule, costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, serviceItems, sortEntriesByKm, sumItems } from '../src/lib/calc.ts';
 import { addDays, addMonths, diffDays } from '../src/lib/dates.ts';
 import { maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../src/lib/format.ts';
 import { categoryOptions } from '../src/constants.ts';
@@ -144,6 +144,17 @@ test('serviço com vários itens: soma exata e compatível com serviços antigos
   assert.equal(sumItems(items), 2050.4); // sem 2050.3999999…
   assert.deepEqual(serviceItems({ items, category: 'Correia', amount: 2050.4 }), items);
   assert.deepEqual(serviceItems({ category: 'Freios', amount: 300 }), [{ category: 'Freios', amount: 300 }]);
+});
+
+test('despesa parcelada e recorrente: datas mês a mês e centavos exatos', () => {
+  const p = buildSchedule('installments', '2026-01-31', 1000, 3);
+  assert.deepEqual(p.map((x) => x.date), ['2026-01-31', '2026-02-28', '2026-03-31']);
+  assert.deepEqual(p.map((x) => x.amount), [333.34, 333.33, 333.33]);
+  assert.equal(sumItems(p), 1000);
+  const r = buildSchedule('recurring', '2026-11-10', 89.9, 12);
+  assert.equal(r.length, 12);
+  assert.equal(r[11].date, '2027-10-10');
+  assert.ok(r.every((x) => x.amount === 89.9));
 });
 
 test('máscaras: km com até 6 dígitos, valores com duas casas', () => {
