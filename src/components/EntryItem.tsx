@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ENTRY_KINDS } from '../constants';
-import { serviceItems } from '../lib/calc';
+import { isOpenBill, serviceItems } from '../lib/calc';
 import { today } from '../lib/dates';
 import { brl, date, km, num } from '../lib/format';
 import { paths } from '../routes/paths';
@@ -12,8 +12,12 @@ export default function EntryItem({ vid, entry: e, kml }: { vid: string; entry: 
   const Icon = KIND_ICON[e.kind];
   const detail = entryDetail(e, kml);
   const items = listedItems(e);
+  const paidBill = isPaidBill(e);
   return (
-    <Link className={`${card} flex items-start gap-3 border-l-4 ${KIND_BORDER[e.kind]}`} to={paths.entry(vid, e.id)}>
+    <Link
+      className={`${card} flex items-start gap-3 border-l-4 ${paidBill ? 'border-l-ok' : KIND_BORDER[e.kind]}`}
+      to={paths.entry(vid, e.id)}
+    >
       <span className={`grid size-10 shrink-0 place-items-center rounded-full ${KIND_SOFT[e.kind]}`}>
         <Icon className="size-5" />
       </span>
@@ -24,7 +28,11 @@ export default function EntryItem({ vid, entry: e, kml }: { vid: string; entry: 
         </span>
         <span className="text-sm text-muted">
           {[date(e.date), e.odometer != null ? km(e.odometer) : null, seriesLabel(e)].filter(Boolean).join(' · ')}
-          {e.date > today() && <span className="font-semibold text-warn"> · a vencer</span>}
+          {paidBill ? (
+            <span className="font-semibold text-ok"> · pago</span>
+          ) : (
+            e.date > today() && <span className="font-semibold text-warn"> · a vencer</span>
+          )}
         </span>
         {items && (
           <ul className="mt-1 flex flex-col gap-0.5 border-l-2 border-line pl-2.5 text-sm">
@@ -72,4 +80,9 @@ function entryDetail(e: Entry, kml?: number) {
 function seriesLabel(e: Entry) {
   if (!e.series) return null;
   return `${e.series.type === 'installments' ? 'Parcela' : 'Recorrente'} ${e.series.index}/${e.series.count}`;
+}
+
+/** Conta (parcela/recorrente ou despesa a vencer) já paga: borda verde no histórico. */
+function isPaidBill(e: Entry) {
+  return e.kind === 'expense' && (!!e.series || e.paid != null) && !isOpenBill(e);
 }
