@@ -38,3 +38,9 @@ export function diffDays(a: string, b: string): number {
   const [by, bm, bd] = parts(b);
   return Math.round((Date.UTC(by, bm - 1, bd) - Date.UTC(ay, am - 1, ad)) / 86_400_000);
 }
+
+/** 'YYYY-MM-01' do mês de `s` */
+const startOfMonth = (s: string) => `${s.slice(0, 7)}-01`;
+
+/** último dia do mês de `s` */
+export const endOfMonth = (s: string) => addDays(addMonths(startOfMonth(s), 1), -1);

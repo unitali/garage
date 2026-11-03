@@ -1,47 +1,63 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import FlagStripe from './FlagStripe';
 import StatusStrip from './StatusStrip';
+import VehicleSwitcher from './VehicleSwitcher';
+import { useUid } from '../auth';
+import { useVehicles } from '../hooks';
+import { useSelectedVehicle } from '../selection';
+import type { Vehicle } from '../types';
 import logoUrl from '../assets/logo.png';
 
 interface Props {
+  /** nome da tela aberta */
   title: string;
-  subtitle?: string;
   /** rota para voltar; se omitido, não mostra o botão */
   back?: string;
-  /** mostra o logo antes do título (tela inicial) */
-  logo?: boolean;
   right?: ReactNode;
-  /** segunda linha dentro da barra, abaixo do título (ex: seletor de veículo); posicionada com `relative` */
-  bottom?: ReactNode;
+  /**
+   * Veículo abaixo do título. Padrão: seletor do veículo selecionado (some sem veículos).
+   * Um veículo: só exibe, sem trocar (formulários dele). `false`: sem a linha do veículo.
+   */
+  vehicle?: Vehicle | false;
+  /** km atual do veículo, quando a tela já calcula (senão, o salvo no veículo) */
+  odometer?: number;
   /** conteúdo fixo logo abaixo da barra (ex: abas) */
   children?: ReactNode;
   /** a barra rola com a página e só as abas/avisos ficam presos no topo (mais espaço para o conteúdo) */
   scrollAway?: boolean;
 }
 
-export default function Header({ title, subtitle, back, logo, right, bottom, children, scrollAway }: Props) {
+/** Cabeçalho de todas as telas: logo + nome da tela e, embaixo, o veículo. */
+export default function Header({ title, back, right, vehicle, odometer, children, scrollAway }: Props) {
   const navigate = useNavigate();
+  const uid = useUid();
+  const vehicles = useVehicles(uid).data;
+  const selected = useSelectedVehicle(vehicles);
+  const shown = vehicle === false ? null : (vehicle ?? selected);
+
   const bar = (
     <>
-      <header className="bg-bar px-4 pt-[calc(10px+env(safe-area-inset-top))] pb-2.5 text-bar-ink">
-        <div className="flex items-center gap-2">
+      <header className="bg-bar px-4 pt-[calc(10px+env(safe-area-inset-top))] pb-3 text-bar-ink">
+        <div className="flex items-center gap-2.5">
           {back && (
-            <button className="pr-2 pb-1 text-[2rem] leading-none" aria-label="Voltar" onClick={() => navigate(back)}>
-              ‹
+            <button className="-ml-2 grid size-11 shrink-0 place-items-center rounded-xl active:bg-white/10" aria-label="Voltar" onClick={() => navigate(back)}>
+              <ChevronLeft className="size-7" aria-hidden />
             </button>
           )}
           {/* fundo branco: o U azul-marinho sumiria na barra da mesma cor */}
-          {logo && <img src={logoUrl} alt="" className="size-8 shrink-0 rounded-lg bg-white object-contain p-1" />}
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-bold">{title}</h1>
-            {subtitle && <span className="text-[0.8rem] opacity-85">{subtitle}</span>}
-          </div>
+          <img src={logoUrl} alt="" className="size-9 shrink-0 rounded-xl bg-white object-contain p-1" />
+          <h1 className="min-w-0 flex-1 text-xl font-bold wrap-break-words">{title}</h1>
           {right}
         </div>
-        {bottom && <div className="relative mt-2.5">{bottom}</div>}
+        {shown && (
+          <div className="mt-3">
+            <VehicleSwitcher vehicles={vehicles} current={shown} odometer={odometer} readOnly={vehicle !== undefined} />
+          </div>
+        )}
       </header>
-      <FlagStripe className="h-0.75" />
+      <FlagStripe className="h-1" />
     </>
   );
   const pinned = (

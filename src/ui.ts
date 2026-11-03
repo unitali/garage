@@ -1,35 +1,39 @@
-import { Fuel, Receipt, Wrench, type LucideIcon } from 'lucide-react';
+import { Bell, Bike, Car, CarFront, Fuel, Motorbike, Receipt, Truck, Wrench, type LucideIcon } from 'lucide-react';
 import type { ReminderLevel } from './lib/calc';
-import type { EntryKind } from './types';
+import type { Entry, EntryKind, VehicleType } from './types';
 
-// Classes Tailwind repetidas em várias telas. Cores vêm dos tokens em styles.css.
+// Classes Tailwind repetidas em várias telas. Cores da paleta do Tailwind com a variante dark:; só a marca
+// (brand, bar, flag) vem dos tokens (src/styles/tokens.css).
+// Regras: alvos de toque ≥ 44px (min-h-11), cards com raio 16 e padding 14, sem borda colorida à esquerda.
 
-export const splash = 'grid min-h-dvh place-items-center text-muted';
+export const splash = 'grid min-h-dvh place-items-center text-slate-600 dark:text-slate-400';
 export const main = 'px-4 pt-4 pb-[calc(24px+env(safe-area-inset-bottom))]';
-export const mainWithFab = 'px-4 pt-4 pb-[calc(96px+env(safe-area-inset-bottom))]';
-export const emptyText = 'my-4 text-center text-muted';
-export const sectionTitle = 'mb-2 text-[0.95rem] font-bold';
+export const emptyText = 'my-4 text-center text-slate-600 dark:text-slate-400';
+export const sectionTitle = 'mb-2 text-base font-bold';
 
-export const card = 'rounded-2xl border border-line bg-surface p-3.5 shadow-xs dark:shadow-none';
+export const card = 'rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-xs dark:shadow-none';
 export const cardRow = `${card} flex items-center gap-3`;
-export const list = 'mb-4 flex flex-col gap-2';
+export const list = 'mb-4 flex flex-col gap-3';
 export const grow = 'flex min-w-0 flex-1 flex-col gap-0.5';
 export const avatarSmall = 'grid size-9 shrink-0 place-items-center rounded-xl bg-brand-soft text-lg';
 
 const BTN_VARIANTS = {
-  default: 'border-line bg-surface',
+  default: 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900',
   primary: 'border-brand bg-brand text-brand-contrast',
-  danger: 'border-line bg-transparent text-danger',
+  danger: 'border-slate-200 dark:border-slate-800 bg-transparent text-red-700 dark:text-red-400',
+  /** ação irreversível: vermelho com letras brancas */
+  destructive: 'border-red-700 dark:border-red-400 bg-red-700 dark:bg-red-400 text-white',
 };
 const BTN_SIZES = { md: 'px-4 py-3', sm: 'px-3 py-2 text-sm' };
 
 export const btn = (variant: keyof typeof BTN_VARIANTS = 'default', size: keyof typeof BTN_SIZES = 'md') =>
-  `inline-flex items-center justify-center rounded-xl border font-semibold disabled:opacity-60 ${BTN_VARIANTS[variant]} ${BTN_SIZES[size]}`;
+  `inline-flex min-h-11 items-center justify-center rounded-xl border font-semibold disabled:opacity-60 ${BTN_VARIANTS[variant]} ${BTN_SIZES[size]}`;
 
-export const chips = 'flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none]';
+/** chips quebram linha (nada cortado em telas estreitas) */
+export const chips = 'flex flex-wrap gap-2';
 export const chip = (active: boolean) =>
-  `inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-3 py-1.5 text-sm ${
-    active ? 'border-brand bg-brand text-brand-contrast' : 'border-line bg-surface'
+  `inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 text-sm font-semibold ${
+    active ? 'border-brand bg-brand text-brand-contrast' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100'
   }`;
 
 // ---------- formulários ----------
@@ -38,56 +42,52 @@ export const form = 'flex flex-col gap-3.5';
 export const grid2 = 'grid grid-cols-2 gap-3';
 export const field = 'flex flex-col gap-1.5 text-sm font-semibold';
 /** "(opcional)" na mesma linha do rótulo — `contents` evita virar um item do flex em coluna */
-export const opt = 'contents font-normal text-muted';
-export const hint = 'text-xs font-normal text-muted';
+export const opt = 'contents font-normal text-slate-600 dark:text-slate-400';
+export const hint = 'text-xs font-normal text-slate-600 dark:text-slate-400';
 export const input =
-  'w-full min-w-0 rounded-[10px] border border-line bg-surface px-3 py-2.5 text-base font-normal text-ink focus:outline-2 focus:-outline-offset-1 focus:outline-brand';
+  'min-h-11 w-full min-w-0 rounded-[10px] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2.5 text-base font-normal text-slate-900 dark:text-slate-100 focus:outline-2 focus:-outline-offset-1 focus:outline-brand';
 export const checkField = 'flex items-start gap-2.5 text-sm font-semibold';
 export const checkbox = 'm-0 size-5 shrink-0 accent-brand';
-export const fieldset = 'flex flex-col gap-2 rounded-2xl border border-line px-3 pt-2.5 pb-3';
+export const fieldset = 'flex flex-col gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 px-3 pt-2.5 pb-3';
 export const legend = 'px-1 text-sm font-bold';
-export const error = 'text-danger';
+export const error = 'text-red-700 dark:text-red-400';
 
-// ---------- botão flutuante ----------
-
-// A coluna do app tem no máximo 768px (max-w-3xl): o botão acompanha a borda direita dela.
-// Fica acima da barra de atalhos (64px + área segura).
-const fabRight = 'right-[max(20px,calc(50vw-364px))]';
-export const fab = `fixed ${fabRight} bottom-[calc(84px+env(safe-area-inset-bottom))] z-30 grid size-15 place-items-center rounded-full bg-brand text-[2rem] leading-none text-brand-contrast shadow-[0_6px_16px_rgb(0_0_0/25%)] transition-transform`;
-
-// ---------- tipos de registro: ícone e cor (abastecimento amarelo, serviço azul, despesa vermelho) ----------
+// ---------- tipo de registro: só no ícone (combustível verde, serviço laranja, despesa azul, lembrete roxo) ----------
 
 export const KIND_ICON: Record<EntryKind, LucideIcon> = { fuel: Fuel, service: Wrench, expense: Receipt };
-export const KIND_BORDER: Record<EntryKind, string> = {
-  fuel: 'border-l-fuel',
-  service: 'border-l-service',
-  expense: 'border-l-expense',
-};
 /** círculo do ícone: fundo claro + ícone na cor do tipo */
 export const KIND_SOFT: Record<EntryKind, string> = {
-  fuel: 'bg-fuel/15 text-fuel',
-  service: 'bg-service/15 text-service',
-  expense: 'bg-expense/15 text-expense',
+  fuel: 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400',
+  service: 'bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-300',
+  expense: 'bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-300',
 };
-export const KIND_TEXT: Record<EntryKind, string> = { fuel: 'text-fuel', service: 'text-service', expense: 'text-expense' };
 
-// ---------- status dos lembretes ----------
+/** abastecimento pela cor do combustível: gasolina vermelha, etanol verde; os outros na cor do tipo */
+export const FUEL_SOFT: Record<string, string> = { Gasolina: 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400', Etanol: 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' };
+export const FUEL_TEXT: Record<string, string> = { Gasolina: 'text-red-700 dark:text-red-400', Etanol: 'text-emerald-700 dark:text-emerald-400' };
+/** círculo do ícone de um registro (abastecimento pelo combustível, o resto pelo tipo) */
+export const entrySoft = (e: Pick<Entry, 'kind' | 'fuelType'>) =>
+  (e.kind === 'fuel' && e.fuelType && FUEL_SOFT[e.fuelType]) || KIND_SOFT[e.kind];
+export const REMINDER_ICON = Bell;
+export const REMINDER_SOFT = 'bg-violet-50 dark:bg-violet-950 text-violet-700 dark:text-violet-300';
+export const iconCircle = 'grid size-10 shrink-0 place-items-center rounded-full';
 
-export const LEVEL_TEXT: Record<ReminderLevel, string> = { ok: 'text-muted', soon: 'text-warn', overdue: 'text-danger' };
-export const LEVEL_DOT: Record<ReminderLevel, string> = { ok: 'bg-ok', soon: 'bg-warn', overdue: 'bg-danger' };
-export const LEVEL_LABEL: Record<ReminderLevel, string> = { ok: 'Em dia', soon: 'Em breve', overdue: 'Vencido' };
+// ---------- status: vermelho vencido, laranja próximo (janela urgente), verde/neutro em dia ----------
+
+export const LEVEL_TEXT: Record<ReminderLevel, string> = { ok: 'text-slate-600 dark:text-slate-400', soon: 'text-orange-700 dark:text-orange-400', overdue: 'text-red-700 dark:text-red-400' };
+export const LEVEL_LABEL: Record<ReminderLevel, string> = { ok: 'Em dia', soon: 'Próximo', overdue: 'Vencido' };
 export const LEVEL_BADGE: Record<ReminderLevel, string> = {
-  ok: 'bg-ok/15 text-ok',
-  soon: 'bg-warn/15 text-warn',
-  overdue: 'bg-danger/15 text-danger',
+  ok: 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400',
+  soon: 'bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-400',
+  overdue: 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400',
 };
-export const LEVEL_BORDER_TOP: Record<ReminderLevel, string> = {
-  ok: 'border-t-ok',
-  soon: 'border-t-warn',
-  overdue: 'border-t-danger',
-};
-export const LEVEL_BORDER: Record<ReminderLevel, string> = {
-  ok: 'border-l-ok',
-  soon: 'border-l-warn',
-  overdue: 'border-l-danger',
+export const badge = 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold';
+
+/** ícone por tipo de veículo (SVG, nunca emoji) */
+export const VEHICLE_ICON: Record<VehicleType, LucideIcon> = {
+  carro: Car,
+  moto: Motorbike,
+  bike: Bike,
+  caminhao: Truck,
+  outro: CarFront,
 };

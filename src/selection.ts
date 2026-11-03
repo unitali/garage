@@ -24,6 +24,16 @@ export function selectVehicle(id: string) {
   }
 }
 
+/** Esquece o veículo escolhido (ao excluir a conta). */
+export function clearSelectedVehicle() {
+  selected.set(null);
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    // sem storage: nada a limpar
+  }
+}
+
 /** O veículo selecionado; se nunca escolheu ou ele foi excluído, o primeiro da lista. */
 export function useSelectedVehicle(vehicles: Vehicle[]): Vehicle | null {
   const id = useStore(selected);

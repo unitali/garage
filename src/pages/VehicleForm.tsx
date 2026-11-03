@@ -5,7 +5,7 @@ import { useUid } from '../auth';
 import { useVehicle } from '../hooks';
 import { deleteVehicle, saveVehicle } from '../db';
 import { VEHICLE_TYPES } from '../constants';
-import { parseInteger } from '../lib/format';
+import { MAX_KM_DIGITS, maskKm, parseInteger } from '../lib/format';
 import { selectVehicle } from '../selection';
 import type { Vehicle, VehicleType } from '../types';
 import { btn, error as errorText, field, form, hint, input, main, opt, splash } from '../ui';
@@ -17,6 +17,8 @@ export default function VehicleFormPage() {
   const { data, loading } = useVehicle(uid, vid);
 
   if (vid && loading) return <div className={splash}>Carregando…</div>;
+  // id que não é um veículo seu: não vira cadastro novo com esse id
+  if (vid && !data) return <div className={splash}>Veículo não encontrado.</div>;
   return <VehicleForm uid={uid} vid={vid} initial={data} />;
 }
 
@@ -34,14 +36,19 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
     if (!name.trim()) return setError('Dê um nome ao veículo.');
     if (initialOdometer == null) return setError('Informe a quilometragem atual.');
 
-    const id = saveVehicle(uid, vid, {
-      name: name.trim(),
-      type,
-      plate: plate.trim().toUpperCase(),
-      initialOdometer,
-      odometer: Math.max(initial?.odometer ?? 0, initialOdometer),
-      createdAt: initial?.createdAt ?? Date.now(),
-    });
+    const id = saveVehicle(
+      uid,
+      vid,
+      {
+        name: name.trim(),
+        type,
+        plate: plate.trim().toUpperCase(),
+        initialOdometer,
+        odometer: Math.max(initial?.odometer ?? 0, initialOdometer),
+        createdAt: initial?.createdAt ?? Date.now(),
+      },
+      initial,
+    );
     // veículo novo vira o selecionado e volta para a tela inicial; edição volta de onde veio
     if (vid) return navigate(-1);
     selectVehicle(id);
@@ -50,18 +57,23 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
 
   async function remove() {
     if (!vid || !confirm(`Excluir "${initial?.name}" e todo o histórico dele? Não dá para desfazer.`)) return;
-    await deleteVehicle(uid, vid);
-    navigate(paths.home(), { replace: true });
+    try {
+      await deleteVehicle(uid, vid);
+      navigate(paths.home(), { replace: true });
+    } catch (err) {
+      console.error(err);
+      setError('Não foi possível excluir agora. Verifique a internet e tente de novo.');
+    }
   }
 
   return (
     <>
-      <Header title={vid ? 'Editar veículo' : 'Novo veículo'} back={vid ? paths.vehicle(vid) : paths.home()} />
+      <Header title={vid ? 'Editar veículo' : 'Novo veículo'} vehicle={false} back={vid ? paths.vehicle(vid) : paths.home()} />
       <main className={main}>
         <form className={form} onSubmit={submit}>
           <label className={field}>
             Nome
-            <input className={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Palio 2011" autoFocus={!vid} />
+            <input className={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Palio 2011" maxLength={60} autoFocus={!vid} />
           </label>
 
           <label className={field}>
@@ -69,7 +81,7 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
             <select className={input} value={type} onChange={(e) => setType(e.target.value as VehicleType)}>
               {Object.entries(VEHICLE_TYPES).map(([k, t]) => (
                 <option key={k} value={k}>
-                  {t.icon} {t.label}
+                  {t.label}
                 </option>
               ))}
             </select>
@@ -77,12 +89,12 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
 
           <label className={field}>
             Placa <span className={opt}>(opcional)</span>
-            <input className={input} value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="ABC1D23" autoCapitalize="characters" />
+            <input className={input} value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="ABC1D23" maxLength={10} autoCapitalize="characters" />
           </label>
 
           <label className={field}>
             {vid ? 'Quilometragem no cadastro' : 'Quilometragem atual'}
-            <input className={input} value={odo} onChange={(e) => setOdo(e.target.value)} inputMode="numeric" placeholder="Ex: 125000" />
+            <input className={input} value={odo} onChange={(e) => setOdo(maskKm(e.target.value))} inputMode="numeric" pattern="[0-9]*" maxLength={MAX_KM_DIGITS} placeholder="Ex: 125000" />
             <small className={hint}>Ponto de partida para calcular km rodados e custo por km.</small>
           </label>
 

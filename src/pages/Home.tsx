@@ -1,49 +1,60 @@
-import { useEffect, useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Car, Plus } from 'lucide-react';
+import { useEffect, useMemo, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
+import { Car, Check, CheckCircle2, Plus, TrendingDown, TrendingUp } from 'lucide-react';
 import Header from '../components/Header';
+import Carousel from '../components/Carousel';
+import EntryRow from '../components/EntryRow';
 import InstallCard from '../components/InstallCard';
-import VehicleSwitcher from '../components/VehicleSwitcher';
-import { Expenses, History, Reminders, Summary } from './VehicleTabs';
-import { useUid } from '../auth';
-import { syncVehicleOdometer } from '../db';
-import { useEntries, useReminders, useVehicles } from '../hooks';
-import { currentOdometer, kmPerDay, remindersByDue } from '../lib/calc';
-import { paths, type VehicleTab } from '../routes/paths';
-import { useSelectedVehicle } from '../selection';
+import { markPaid, syncVehicleOdometer } from '../db';
+import { useGarage } from '../hooks/useGarage';
+import { fuelStats, type AlertWindow, type DueBill, type DueReminder, type ReminderLevel } from '../lib/calc';
+import { today } from '../lib/dates';
+import { brl, date, dueIn, dueText, km, monthsLabel, num } from '../lib/format';
+import {
+  cardsDoInicio,
+  gastoPagoNoAno,
+  gastoPrevistoNoAno,
+  registrosRecentes,
+  proximaAcao,
+  tituloConta,
+  variacaoConsumo,
+  type CardItem,
+} from '../lib/summary';
+import { paths } from '../routes/paths';
 import type { Vehicle } from '../types';
-import { btn, emptyText, fab, main, mainWithFab, splash } from '../ui';
-
-const TABS: { id: VehicleTab; label: string }[] = [
-  { id: 'historico', label: 'Histórico' },
-  { id: 'resumo', label: 'Resumo' },
-  { id: 'despesas', label: 'Despesas' },
-  { id: 'lembretes', label: 'Lembretes' },
-];
-const DEFAULT_TAB: VehicleTab = 'historico';
+import {
+  badge,
+  btn,
+  card,
+  iconCircle,
+  KIND_ICON,
+  LEVEL_LABEL,
+  main,
+  REMINDER_ICON,
+  REMINDER_SOFT,
+  sectionTitle,
+  splash,
+} from '../ui';
 
 export default function Home() {
-  const uid = useUid();
-  const { data: vehicles, loading } = useVehicles(uid);
-  const vehicle = useSelectedVehicle(vehicles);
-
-  if (loading) return <div className={splash}>Carregando…</div>;
-  if (!vehicle) return <NoVehicle />;
-  return <VehicleHome key={vehicle.id} uid={uid} v={vehicle} vehicles={vehicles} />;
+  const g = useGarage();
+  if (g.loading) return <div className={splash}>Carregando…</div>;
+  if (!g.vehicle) return <NoVehicle />;
+  return <Summary key={g.vehicle.id} g={g} v={g.vehicle} />;
 }
 
 function NoVehicle() {
   return (
     <>
-      <Header title="Unitali Garage" logo />
+      <Header title="Início" />
       <main className={`${main} flex min-h-[70dvh] flex-col items-center justify-center gap-3 text-center`}>
         <span className="grid size-20 place-items-center rounded-full bg-brand-soft text-brand">
-          <Car className="size-10" />
+          <Car className="size-10" aria-hidden />
         </span>
         <h2 className="text-xl font-bold">Nenhum veículo ainda</h2>
-        <p className="max-w-xs text-muted">Cadastre seu carro, moto ou bike para acompanhar abastecimentos, serviços e lembretes.</p>
+        <p className="max-w-xs text-slate-600 dark:text-slate-400">Cadastre seu carro, moto ou bike para acompanhar abastecimentos, serviços e lembretes.</p>
         <Link className={`${btn('primary')} mt-2 gap-2`} to={paths.newVehicle()}>
-          <Plus className="size-5" />
+          <Plus className="size-5" aria-hidden />
           Cadastrar veículo
         </Link>
         <InstallCard className="mt-8 w-full text-left" />
@@ -52,69 +63,250 @@ function NoVehicle() {
   );
 }
 
-/** Veículo selecionado, com as abas. Abre sempre no Histórico. */
-function VehicleHome({ uid, v, vehicles }: { uid: string; v: Vehicle; vehicles: Vehicle[] }) {
-  const [params, setParams] = useSearchParams();
-  const tabParam = params.get('tab') as VehicleTab | null;
-  const tab = TABS.some((t) => t.id === tabParam) ? tabParam! : DEFAULT_TAB;
+type Garage = ReturnType<typeof useGarage>;
 
-  const entries = useEntries(uid, v.id);
-  const reminders = useReminders(uid, v.id);
+/** "Últimos registros": quantos dias para trás */
+const RECENT_DAYS = 30;
 
-  const current = useMemo(() => currentOdometer(v, entries.data), [v, entries.data]);
-  const rate = useMemo(() => kmPerDay(v, entries.data), [v, entries.data]);
-  const due = useMemo(() => remindersByDue(reminders.data, current, rate), [reminders.data, current, rate]);
+/** Tela inicial (resumo do veículo selecionado). */
+function Summary({ g, v }: { g: Garage; v: Vehicle }) {
+  const { uid, entries, reminders, current, rate, alert, due, bills } = g;
+  const ref = today();
 
   // mantém o km do veículo em dia (inclusive após editar/excluir registros)
   useEffect(() => {
-    if (!entries.loading && v.odometer !== current) syncVehicleOdometer(uid, v.id, current);
-  }, [v, uid, current, entries.loading]);
+    if (v.odometer !== current) syncVehicleOdometer(uid, v.id, current);
+  }, [v, uid, current]);
 
-  const loading = entries.loading || reminders.loading;
-  // botão + só onde faz sentido: despesas e lembretes (abastecer/serviço ficam na barra de baixo)
-  const add =
-    tab === 'despesas'
-      ? { to: paths.newEntry(v.id, 'expense'), label: 'Nova despesa' }
-      : tab === 'lembretes'
-        ? { to: paths.newReminder(v.id), label: 'Novo lembrete' }
-        : null;
+  // cards: lembretes e contas dentro da antecedência de aviso; sem nenhum, o lembrete mais próximo aparece como "em dia"
+  const cards = useMemo(() => cardsDoInicio(due, bills), [due, bills]);
+  const next = useMemo(() => proximaAcao(reminders, current, ref, rate, alert), [reminders, current, ref, rate, alert]);
+  const recent = useMemo(() => registrosRecentes(entries, ref, RECENT_DAYS), [entries, ref]);
+  const consumption = useMemo(() => fuelStats(entries), [entries]);
+  const variation = useMemo(() => variacaoConsumo(entries, ref), [entries, ref]);
+  const pago = gastoPagoNoAno(entries, ref);
+  const previsto = gastoPrevistoNoAno(entries, ref);
+  const unit = v.type === 'bike' ? 'km/kWh' : 'km/l';
 
   return (
     <>
-      <Header logo title="Unitali Garage" scrollAway bottom={<VehicleSwitcher vehicles={vehicles} current={v} odometer={current} />}>
-        <nav className="flex border-b border-line bg-surface">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              className={`flex-1 border-b-[3px] px-1 py-3 text-sm font-semibold ${
-                tab === t.id ? 'border-brand text-brand' : 'border-transparent text-muted'
-              }`}
-              aria-current={tab === t.id ? 'page' : undefined}
-              onClick={() => setParams(t.id === DEFAULT_TAB ? {} : { tab: t.id }, { replace: true })}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-      </Header>
-      <main className={add ? mainWithFab : main}>
-        {loading ? (
-          <p className={emptyText}>Carregando…</p>
-        ) : (
-          <>
-            {tab === 'historico' && <History v={v} entries={entries.data} due={due} />}
-            {tab === 'resumo' && <Summary v={v} entries={entries.data} due={due} current={current} />}
-            {tab === 'despesas' && <Expenses v={v} entries={entries.data} />}
-            {tab === 'lembretes' && <Reminders uid={uid} v={v} due={due} current={current} />}
-            {tab === 'historico' && <InstallCard className="mt-4" />}
-          </>
-        )}
+      <Header title="Início" odometer={current} />
+
+      <main className={`${main} flex flex-col gap-3`}>
+        <Upcoming uid={uid} vid={v.id} cards={cards} next={next} alert={alert} />
+
+        <section className="grid grid-cols-2 gap-3">
+          <div className={card}>
+            <h2 className="text-sm text-slate-600 dark:text-slate-400">Gasto em {ref.slice(0, 4)}</h2>
+            <p className="text-xl font-bold">{brl(pago)}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400">{previsto > 0 ? `pago · ${brl(previsto)} previsto` : 'pago'}</p>
+          </div>
+          <div className={card}>
+            <h2 className="text-sm text-slate-600 dark:text-slate-400">Consumo médio</h2>
+            <p className="text-xl font-bold">{consumption.avg ? `${num(consumption.avg, 1)} ${unit}` : '—'}</p>
+            {variation != null ? (
+              <p className={`flex items-center gap-1 text-xs ${variation >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
+                {variation >= 0 ? <TrendingUp className="size-4" aria-hidden /> : <TrendingDown className="size-4" aria-hidden />}
+                {variation >= 0 ? '+' : ''}
+                {num(variation * 100, 0)}% vs. mês anterior
+              </p>
+            ) : (
+              <p className="text-xs text-slate-600 dark:text-slate-400">{consumption.avg ? 'média de todos os tanques' : 'precisa de 2 tanques cheios'}</p>
+            )}
+          </div>
+        </section>
+
+        <section className={card}>
+          <SectionHead title="Últimos registros" to={paths.history()} link="Histórico" />
+          <p className="-mt-1 mb-1 text-xs text-slate-600 dark:text-slate-400">Últimos {RECENT_DAYS} dias</p>
+          {recent.length === 0 ? (
+            <p className="py-2 text-sm text-slate-600 dark:text-slate-400">
+              {entries.length === 0 ? 'Nada registrado ainda. Toque em + para começar.' : `Nada nos últimos ${RECENT_DAYS} dias.`}
+            </p>
+          ) : (
+            <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+              {recent.map((e) => (
+                <li key={e.id}>
+                  <EntryRow vid={v.id} entry={e} kml={consumption.byEntry[e.id]} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <InstallCard />
       </main>
-      {add && (
-        <Link className={fab} to={add.to} aria-label={add.label}>
-          <Plus className="size-7" />
-        </Link>
-      )}
     </>
+  );
+}
+
+function SectionHead({ title, count, to, link }: { title: string; count?: number; to: string; link: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <h2 className={`${sectionTitle} flex items-center gap-2`}>
+        {title}
+        {count != null && <span className={`${badge} bg-brand text-brand-contrast`}>{count}</span>}
+      </h2>
+      <Link className="-my-3 inline-flex min-h-11 items-center text-sm font-semibold text-brand" to={to}>
+        {link}
+      </Link>
+    </div>
+  );
+}
+
+/** Cores dos cards: verde em dia, laranja próximo, vermelho vencido (Configurações → Lembretes). */
+const TONE: Record<ReminderLevel, { box: string; text: string; badge: string; button: string }> = {
+  overdue: { box: 'border-red-700/30 dark:border-red-400/30 bg-red-50 dark:bg-red-950', text: 'text-red-700 dark:text-red-400', badge: 'bg-red-700 dark:bg-red-400 text-slate-100 dark:text-slate-950', button: 'bg-red-700 dark:bg-red-400 text-slate-100 dark:text-slate-950' },
+  soon: { box: 'border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950', text: 'text-orange-700 dark:text-orange-400', badge: 'bg-orange-700 dark:bg-orange-400 text-slate-100 dark:text-slate-950', button: 'bg-orange-700 dark:bg-orange-400 text-slate-100 dark:text-slate-950' },
+  ok: { box: 'border-emerald-700/30 dark:border-emerald-400/30 bg-emerald-50 dark:bg-emerald-950', text: 'text-emerald-700 dark:text-emerald-400', badge: 'bg-emerald-700 dark:bg-emerald-400 text-slate-100 dark:text-slate-950', button: 'bg-emerald-700 dark:bg-emerald-400 text-slate-100 dark:text-slate-950' },
+};
+
+/**
+ * Lembretes e contas dentro da antecedência de aviso, um card cada, do mais urgente, com rolagem
+ * lateral quando há mais de um. Sem nenhum na janela, mostra o lembrete mais próximo como "em dia".
+ */
+function Upcoming({
+  uid,
+  vid,
+  cards,
+  next,
+  alert,
+}: {
+  uid: string;
+  vid: string;
+  cards: CardItem[];
+  next: DueReminder | null;
+  alert: AlertWindow;
+}) {
+  if (cards.length === 0 && !next)
+    return (
+      <section className={`${card} flex flex-wrap items-center gap-3`}>
+        <span className={`${iconCircle} ${REMINDER_SOFT}`}>
+          <REMINDER_ICON className="size-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-bold">Crie seu primeiro lembrete</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Troca de óleo, revisão, IPVA… avisamos antes de vencer.</p>
+        </div>
+        <Link to={paths.newReminder(vid)} className={btn('primary', 'sm')}>
+          Criar lembrete
+        </Link>
+      </section>
+    );
+
+  if (cards.length === 0 && next)
+    return (
+      <Link to={paths.reminders()} className={`flex items-center gap-3 rounded-2xl border p-3.5 ${TONE.ok.box}`}>
+        <CheckCircle2 className="size-6 shrink-0 text-emerald-700 dark:text-emerald-400" aria-hidden />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <strong>Tudo em dia</strong>
+          <span className="text-sm text-slate-600 dark:text-slate-400">
+            Nada vence nos próximos {km(alert.km)} ou {monthsLabel(alert.months)}. Próximo: {next.r.title}
+            {dueText(next.s) ? ` (${dueText(next.s)})` : ''}.
+          </span>
+        </span>
+      </Link>
+    );
+
+  const render = (c: CardItem, className?: string) =>
+    c.type === 'bill' ? (
+      <BillCard key={c.bill.e.id} uid={uid} vid={vid} bill={c.bill} className={className} />
+    ) : (
+      <ReminderCard key={c.due.r.id} vid={vid} item={c.due} className={className} />
+    );
+
+  return (
+    <section>
+      <SectionHead title="Lembretes" count={cards.length > 1 ? cards.length : undefined} to={paths.reminders()} link="Ver todos" />
+      {cards.length === 1 ? (
+        render(cards[0])
+      ) : (
+        <Carousel label="Lembretes">{cards.map((c) => render(c, 'w-[85%] max-w-sm shrink-0 snap-start'))}</Carousel>
+      )}
+    </section>
+  );
+}
+
+/** Moldura comum: fundo/borda na cor do nível, ícone, selo, título, prazo colorido e a ação embaixo. */
+function ToneCard({
+  level,
+  icon: Icon,
+  title,
+  status,
+  detail,
+  action,
+  className = '',
+}: {
+  level: ReminderLevel;
+  icon: typeof Check;
+  title: ReactNode;
+  status: string;
+  detail: string;
+  action: ReactNode;
+  className?: string;
+}) {
+  const tone = TONE[level];
+  return (
+    <article className={`flex flex-col rounded-2xl border p-3.5 ${tone.box} ${className}`}>
+      <div className="flex items-start gap-3">
+        <span className={`${iconCircle} bg-white dark:bg-slate-900 ${tone.text}`}>
+          <Icon className="size-5" aria-hidden />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+          <span className={`${badge} ${tone.badge}`}>{LEVEL_LABEL[level]}</span>
+          <h3 className="text-lg font-bold break-words">{title}</h3>
+          <p className={`text-sm font-semibold ${tone.text}`}>{status}</p>
+          {detail && <p className="text-sm text-slate-600 dark:text-slate-400">{detail}</p>}
+        </div>
+      </div>
+      {/* mt-auto: no carrossel as ações ficam alinhadas embaixo mesmo com textos de tamanhos diferentes */}
+      <div className="mt-auto pt-3">{action}</div>
+    </article>
+  );
+}
+
+const action = (level: ReminderLevel) => `inline-flex min-h-11 items-center gap-1.5 rounded-xl px-4 font-semibold ${TONE[level].button}`;
+
+/** Lembrete: atalho para registrar o serviço já com ele selecionado. */
+function ReminderCard({ vid, item, className }: { vid: string; item: DueReminder; className?: string }) {
+  const { r, s, due, estimated } = item;
+  const when = [due ? `${estimated ? '≈ ' : ''}${date(due)}` : null, s.nextKm != null ? km(s.nextKm) : null].filter(Boolean).join(' · ');
+  return (
+    <ToneCard
+      level={s.level}
+      icon={KIND_ICON.service}
+      title={<Link to={paths.reminder(vid, r.id)}>{r.title}</Link>}
+      status={dueText(s)}
+      detail={when ? `vence ${when}` : ''}
+      className={className}
+      action={
+        <Link to={paths.newEntry(vid, 'service', { lembrete: r.id })} className={action(s.level)}>
+          Registrar serviço
+        </Link>
+      }
+    />
+  );
+}
+
+/** Conta em aberto (parcela, recorrente ou despesa futura): "Pago" tira dos lembretes e ela vai para o histórico. */
+function BillCard({ uid, vid, bill, className }: { uid: string; vid: string; bill: DueBill; className?: string }) {
+  const { e, s } = bill;
+  return (
+    <ToneCard
+      level={s.level}
+      icon={KIND_ICON.expense}
+      title={
+        <Link to={paths.entry(vid, e.id)}>{tituloConta(e)}</Link>
+      }
+      status={dueIn(s.daysLeft ?? 0)}
+      detail={`vence ${date(e.date)} · ${brl(e.amount)}`}
+      className={className}
+      action={
+        <button type="button" className={action(s.level)} onClick={() => markPaid(uid, vid, e.id)}>
+          <Check className="size-4" aria-hidden />
+          Pago
+        </button>
+      }
+    />
   );
 }

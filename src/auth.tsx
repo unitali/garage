@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, type User } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
+import { stopLive } from './hooks';
 import { isStandalone } from './pwa';
 
 interface AuthState {
@@ -12,7 +13,15 @@ const AuthContext = createContext<AuthState>({ user: null, loading: true });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({ user: null, loading: true });
-  useEffect(() => onAuthStateChanged(auth, (user) => setState({ user, loading: false })), []);
+  useEffect(() => {
+    let uid: string | undefined;
+    return onAuthStateChanged(auth, (user) => {
+      // dados em memória são do usuário logado: ao sair ou trocar de conta, fecha as assinaturas
+      if (user?.uid !== uid) stopLive();
+      uid = user?.uid;
+      setState({ user, loading: false });
+    });
+  }, []);
   return <AuthContext.Provider value={state}>{children}</AuthContext.Provider>;
 }
 

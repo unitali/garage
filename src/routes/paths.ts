@@ -1,18 +1,33 @@
 import { generatePath } from 'react-router-dom';
-import type { EntryKind } from '../types';
+import type { CategoryKind, EntryKind } from '../types';
 
 // Caminhos das telas. Fica separado de index.ts (que importa as telas) para as telas poderem
 // importar daqui sem dependência circular.
 
-/** abas da tela inicial (veículo selecionado); sem `tab` na URL abre o Histórico */
+/** destino ao "abrir" um veículo (/v/:vid?tab=…): os formulários voltam por aqui */
 export type VehicleTab = 'historico' | 'resumo' | 'despesas' | 'lembretes';
+
+/** filtro do histórico (?tipo=) */
+export type HistoryFilter = 'abastecimento' | 'servico' | 'despesa';
+export const FILTER_KIND: Record<HistoryFilter, EntryKind> = { abastecimento: 'fuel', servico: 'service', despesa: 'expense' };
+
+export const CATEGORY_SLUG: Record<CategoryKind, string> = { service: 'servicos', expense: 'despesas' };
 
 /** Padrões que o React Router casa com a URL. */
 export const PATTERNS = {
   home: '/',
+  history: '/historico',
+  reminders: '/lembretes',
+  more: '/mais',
+  /** endereços antigos (calculadora e configurações viraram parte de Abastecer e Mais): redirecionam para Mais */
+  calculator: '/calculadora',
   settings: '/config',
   profile: '/config/perfil',
   vehicles: '/config/veiculos',
+  /** tipos personalizados: /config/servicos e /config/despesas (o antigo /config/categorias leva ao Mais) */
+  categories: '/config/:tipo',
+  oldCategories: '/config/categorias',
+  reminderSettings: '/config/lembretes',
   newVehicle: '/v/new',
   vehicle: '/v/:vid',
   editVehicle: '/v/:vid/edit',
@@ -29,15 +44,21 @@ function withQuery(path: string, query: Record<string, string | undefined>) {
 
 /** URLs prontas para Link/navigate — nenhuma tela monta caminho na mão. */
 export const paths = {
-  home: (tab?: VehicleTab) => withQuery(PATTERNS.home, { tab }),
-  settings: () => PATTERNS.settings,
+  home: () => PATTERNS.home,
+  history: (tipo?: HistoryFilter) => withQuery(PATTERNS.history, { tipo }),
+  reminders: () => PATTERNS.reminders,
+  more: () => PATTERNS.more,
   profile: () => PATTERNS.profile,
   vehicles: () => PATTERNS.vehicles,
+  categories: (kind: CategoryKind) => generatePath(PATTERNS.categories, { tipo: CATEGORY_SLUG[kind] }),
+  reminderSettings: () => PATTERNS.reminderSettings,
   newVehicle: () => PATTERNS.newVehicle,
-  /** seleciona o veículo e abre a tela inicial na aba */
+  /** seleciona o veículo e abre a tela correspondente (histórico, lembretes…) */
   vehicle: (vid: string, tab?: VehicleTab) => withQuery(generatePath(PATTERNS.vehicle, { vid }), { tab }),
   editVehicle: (vid: string) => generatePath(PATTERNS.editVehicle, { vid }),
-  newEntry: (vid: string, kind?: EntryKind) => withQuery(generatePath(PATTERNS.newEntry, { vid }), { kind }),
+  /** `lembrete`: serviço já com o lembrete selecionado (card "Próxima manutenção") */
+  newEntry: (vid: string, kind?: EntryKind, opts: { lembrete?: string } = {}) =>
+    withQuery(generatePath(PATTERNS.newEntry, { vid }), { kind, lembrete: opts.lembrete }),
   entry: (vid: string, eid: string) => generatePath(PATTERNS.entry, { vid, eid }),
   newReminder: (vid: string) => generatePath(PATTERNS.newReminder, { vid }),
   reminder: (vid: string, rid: string) => generatePath(PATTERNS.reminder, { vid, rid }),

@@ -1,4 +1,4 @@
-import type { Entry, Reminder, Vehicle } from '../types';
+import type { Entry, Reminder, ServiceItem, Vehicle } from '../types';
 import { addDays, addMonths, diffDays, fromTimestamp, today } from './dates.ts';
 
 /** km atual = maior km entre o cadastro e os registros */
@@ -100,11 +100,28 @@ export interface ReminderStatus {
   nextDate: string | null;
   kmLeft: number | null;
   daysLeft: number | null;
+  /** cor: vencido (vermelho), urgente (laranja) ou em dia (verde) */
   level: ReminderLevel;
+  /** dentro da antecedência de aviso (ou urgente/vencido): aparece em cards na tela inicial */
+  near: boolean;
 }
 
-/** "Em breve" = faltando 10% do intervalo de km (mín. 300 km) ou até 30 dias. */
-export function reminderStatus(r: Reminder, current: number, ref = today()): ReminderStatus {
+/**
+ * Janelas dos lembretes (Configurações → Lembretes):
+ * - aviso: faltando até `km` ou `months` meses → aparece em card na tela inicial
+ * - urgente: faltando até `urgentKm` ou `urgentDays` dias → laranja
+ */
+export interface AlertWindow {
+  km: number;
+  months: number;
+  urgentKm: number;
+  urgentDays: number;
+}
+
+export const DEFAULT_ALERT: AlertWindow = { km: 1000, months: 1, urgentKm: 200, urgentDays: 7 };
+
+/** Vencido: passou do km ou da data. Urgente: dentro da janela urgente. Em dia: o resto. */
+export function reminderStatus(r: Reminder, current: number, ref = today(), alert = DEFAULT_ALERT): ReminderStatus {
   const nextKm = r.intervalKm && r.lastKm != null ? r.lastKm + r.intervalKm : null;
   const nextDate = r.intervalMonths && r.lastDate ? addMonths(r.lastDate, r.intervalMonths) : null;
   const kmLeft = nextKm != null ? nextKm - current : null;
@@ -112,13 +129,14 @@ export function reminderStatus(r: Reminder, current: number, ref = today()): Rem
 
   let level: ReminderLevel = 'ok';
   if ((kmLeft != null && kmLeft <= 0) || (daysLeft != null && daysLeft <= 0)) level = 'overdue';
-  else if (
-    (kmLeft != null && kmLeft <= Math.max(300, (r.intervalKm ?? 0) * 0.1)) ||
-    (daysLeft != null && daysLeft <= 30)
-  )
-    level = 'soon';
+  else if ((kmLeft != null && kmLeft <= alert.urgentKm) || (daysLeft != null && daysLeft <= alert.urgentDays)) level = 'soon';
 
-  return { nextKm, nextDate, kmLeft, daysLeft, level };
+  const near =
+    level !== 'ok' ||
+    (kmLeft != null && kmLeft <= alert.km) ||
+    (nextDate != null && nextDate <= addMonths(ref, alert.months));
+
+  return { nextKm, nextDate, kmLeft, daysLeft, level, near };
 }
 
 const LEVEL_ORDER: Record<ReminderLevel, number> = { overdue: 0, soon: 1, ok: 2 };
@@ -148,17 +166,23 @@ export interface DueReminder {
   estimated: boolean;
 }
 
-export function reminderDue(s: ReminderStatus, rate: number | null, ref = today()): Pick<DueReminder, 'due' | 'estimated'> {
+function reminderDue(s: ReminderStatus, rate: number | null, ref = today()): Pick<DueReminder, 'due' | 'estimated'> {
   const byKm = s.kmLeft != null && rate ? addDays(ref, Math.max(0, Math.ceil(s.kmLeft / rate))) : null;
   if (byKm && (!s.nextDate || byKm < s.nextDate)) return { due: byKm, estimated: true };
   return { due: s.nextDate, estimated: false };
 }
 
 /** Do que vence antes para o que vence depois; sem data (só km e sem histórico) vão por último, por urgência. */
-export function remindersByDue(list: Reminder[], current: number, rate: number | null, ref = today()): DueReminder[] {
+export function remindersByDue(
+  list: Reminder[],
+  current: number,
+  rate: number | null,
+  ref = today(),
+  alert = DEFAULT_ALERT,
+): DueReminder[] {
   return list
     .map((r) => {
-      const s = reminderStatus(r, current, ref);
+      const s = reminderStatus(r, current, ref, alert);
       return { r, s, ...reminderDue(s, rate, ref) };
     })
     .sort(
@@ -187,4 +211,85 @@ export function sortEntriesByKm(list: Entry[], initialOdometer = 0): Entry[] {
   return [...list].sort(
     (a, b) => effective.get(b.id)! - effective.get(a.id)! || b.date.localeCompare(a.date) || b.createdAt - a.createdAt,
   );
+}
+
+/** Itens de um serviço; serviços antigos (sem lista) viram um item só com a categoria e o valor do registro. */
+export function serviceItems(e: Pick<Entry, 'items' | 'category' | 'amount'>): ServiceItem[] {
+  return e.items?.length ? e.items : [{ category: e.category, amount: e.amount }];
+}
+
+/** Soma em centavos para não acumular erro de ponto flutuante (0,1 + 0,2). */
+export function sumItems(items: { amount: number }[]): number {
+  return items.reduce((cents, i) => cents + Math.round(i.amount * 100), 0) / 100;
+}
+
+export type ScheduleMode = 'installments' | 'recurring';
+
+/**
+ * Vencimentos de uma despesa parcelada/recorrente: o 1º na data escolhida e os demais mês a mês.
+ * Parcelado divide o total em centavos (a sobra vai para as primeiras); recorrente repete o valor.
+ */
+export function buildSchedule(mode: ScheduleMode, firstDate: string, amount: number, count: number): { date: string; amount: number }[] {
+  const dates = Array.from({ length: count }, (_, i) => addMonths(firstDate, i));
+  if (mode === 'recurring') return dates.map((date) => ({ date, amount }));
+  const cents = Math.round(amount * 100);
+  const base = Math.floor(cents / count);
+  const rest = cents - base * count;
+  return dates.map((date, i) => ({ date, amount: (base + (i < rest ? 1 : 0)) / 100 }));
+}
+
+/** Já realizado/pago: vale o "Pago" quando marcado; sem ele, o que tem data até hoje. */
+export function isPaid(e: Pick<Entry, 'paid' | 'date'>, ref = today()): boolean {
+  return e.paid ?? e.date <= ref;
+}
+
+/** Conta em aberto: despesa ainda não paga (parcela, recorrente ou com vencimento futuro). */
+export function isOpenBill(e: Entry, ref = today()): boolean {
+  return e.kind === 'expense' && !isPaid(e, ref);
+}
+
+export interface DueBill {
+  e: Entry;
+  /** reaproveita o texto/cores dos lembretes: só `daysLeft` preenchido */
+  s: ReminderStatus;
+}
+
+/**
+ * Contas em aberto dentro da antecedência de aviso (e as vencidas), por vencimento: aparecem como
+ * lembrete até "Pago", com as mesmas cores (laranja na janela urgente, vermelho vencida).
+ */
+export function billsDue(entries: Entry[], ref = today(), alert = DEFAULT_ALERT): DueBill[] {
+  const until = addMonths(ref, alert.months);
+  return entries
+    .filter((e) => isOpenBill(e, ref) && e.date <= until)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)
+    .map((e) => {
+      const daysLeft = diffDays(ref, e.date);
+      const level: ReminderLevel = daysLeft < 0 ? 'overdue' : daysLeft <= alert.urgentDays ? 'soon' : 'ok';
+      return { e, s: { nextKm: null, nextDate: e.date, kmLeft: null, daysLeft, level, near: true } };
+    });
+}
+
+/** Regra de bolso: etanol compensa se custar até 70% da gasolina (rende ~30% menos por litro). */
+export const ETHANOL_THRESHOLD = 0.7;
+
+export interface FuelChoice {
+  best: 'etanol' | 'gasolina';
+  /** preço do etanol ÷ preço da gasolina */
+  ratio: number;
+  /** limite usado: 0,70 ou o rendimento real (km/l etanol ÷ km/l gasolina) */
+  threshold: number;
+  /** R$ por km de cada um (só com o consumo do carro informado) */
+  perKm: { etanol: number; gasolina: number } | null;
+}
+
+/**
+ * Etanol ou gasolina? Com o consumo do carro (km/l de cada um), compara o custo por km;
+ * sem ele, usa a regra dos 70%. Empate fica com a gasolina (rende mais por tanque).
+ */
+export function fuelChoice(ethanolPrice: number, gasPrice: number, kmlEthanol?: number | null, kmlGas?: number | null): FuelChoice {
+  const ratio = ethanolPrice / gasPrice;
+  const real = kmlEthanol && kmlGas ? { etanol: ethanolPrice / kmlEthanol, gasolina: gasPrice / kmlGas } : null;
+  const threshold = kmlEthanol && kmlGas ? kmlEthanol / kmlGas : ETHANOL_THRESHOLD;
+  return { best: ratio < threshold ? 'etanol' : 'gasolina', ratio, threshold, perKm: real };
 }

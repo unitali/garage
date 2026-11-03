@@ -30,7 +30,7 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['favicon.png', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'Unitali Garage — manutenção do veículo',
+        name: 'Unitali Garage',
         short_name: 'Unitali Garage',
         description: 'Controle de manutenções, abastecimentos e despesas dos seus veículos',
         lang: 'pt-BR',
@@ -38,7 +38,7 @@ export default defineConfig({
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        theme_color: '#073863',
+        theme_color: '#0f2747',
         background_color: '#ffffff', // tela de abertura do app instalado: logo sobre branco
         icons: [
           { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -47,8 +47,10 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // inclui o logo (src/assets) para aparecer também offline
-        globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
+        // inclui o logo (src/assets) e a fonte Inter para aparecerem também offline
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
+        // da Inter só o latim (português); os outros alfabetos ficam fora do cache
+        globIgnores: ['**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2'],
         // /__/auth/* é o handler do Firebase Auth (proxy no vercel.json) — o service worker não pode interceptar
         navigateFallbackDenylist: [/^\/__\//],
       },

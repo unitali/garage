@@ -30,7 +30,21 @@ export interface Entry {
   pricePerLiter?: number;
   fuelType?: string;
   fullTank?: boolean;
+  /** só serviço: título dado pelo usuário (ex: "Revisão dos 60 mil km") */
+  title?: string;
+  /** só serviço com vários itens feitos juntos: `amount` é a soma e `category` é o 1º item */
+  items?: ServiceItem[];
+  /** só despesa parcelada/recorrente: cada parcela é um registro, ligados pelo `id` */
+  series?: EntrySeries;
+  /** conta (despesa a vencer): false = em aberto, aparece nos lembretes do mês até marcar "Pago" */
+  paid?: boolean;
   createdAt: number;
+}
+
+/** Um item de um serviço (ex: correia dentada, embreagem e bomba d'água no mesmo dia). */
+export interface ServiceItem {
+  category: string;
+  amount: number;
 }
 
 export interface Reminder {
@@ -46,3 +60,26 @@ export interface Reminder {
 }
 
 export type Data<T> = Omit<T, 'id'>;
+
+/** Tipos de serviço/despesa criados pelo usuário, além dos padrões (constants.ts). */
+export type CategoryKind = Extract<EntryKind, 'service' | 'expense'>;
+
+/** Documento users/{uid}: preferências da conta. */
+export interface UserPrefs {
+  serviceCategories?: string[];
+  expenseCategories?: string[];
+  /** aviso de lembrete: faltando até X km ou Y meses (padrão em calc.ts DEFAULT_ALERT) */
+  alertKm?: number;
+  alertMonths?: number;
+  /** urgente (laranja): faltando até X km ou Y dias */
+  urgentKm?: number;
+  urgentDays?: number;
+}
+
+export interface EntrySeries {
+  id: string;
+  type: 'installments' | 'recurring';
+  /** 1 … count */
+  index: number;
+  count: number;
+}

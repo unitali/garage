@@ -1,0 +1,93 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { cardsDoInicio, gastoPagoNoAno, registrosRecentes, rotuloParcela, tituloConta, gastoPrevistoNoAno, isPaid, proximaAcao, resumoDaSerie, seriesDe, variacaoConsumo } from '../src/lib/summary.ts';
+import { billsDue, buildSchedule, remindersByDue } from '../src/lib/calc.ts';
+import type { Entry, Reminder } from '../src/types.ts';
+
+const ref = '2026-11-03';
+let n = 0;
+const entry = (p: Partial<Entry>): Entry => ({
+  id: `e${++n}`, kind: 'expense', date: ref, odometer: null, amount: 100, category: 'Seguro', description: '', notes: '', createdAt: n, ...p,
+});
+
+/** série 24× R$ 146,35 a partir de 19/08/2026: 3 pagas (ago, set, out), as outras a vencer */
+const serie = buildSchedule('recurring', '2026-08-19', 146.35, 24).map((r, i) =>
+  entry({ date: r.date, amount: r.amount, series: { id: 's1', type: 'installments', index: i + 1, count: 24 } }),
+);
+
+test('isPaid: "Pago" manda; sem ele, data até hoje', () => {
+  assert.equal(isPaid({ date: '2026-12-01', paid: true }, ref), true);
+  assert.equal(isPaid({ date: '2026-10-01', paid: false }, ref), false);
+  assert.equal(isPaid({ date: '2026-10-01' }, ref), true);
+  assert.equal(isPaid({ date: '2026-12-01' }, ref), false);
+});
+
+test('parcelas futuras ficam fora do gasto pago e entram no previsto', () => {
+  const list = [...serie, entry({ kind: 'fuel', amount: 200, date: '2026-10-05' })];
+  assert.equal(gastoPagoNoAno(list, ref), 200 + 3 * 146.35); // ago, set, out + combustível
+  assert.equal(gastoPrevistoNoAno(list, ref), 2 * 146.35); // nov e dez deste ano
+});
+
+test('rótulo da parcela: posição na série, igual para parcelado e recorrente', () => {
+  assert.equal(rotuloParcela(serie[2]), 'parcela 3 de 24');
+  assert.equal(tituloConta(serie[2]), 'Seguro · parcela 3 de 24');
+  assert.equal(tituloConta({ category: 'IPVA' }), 'IPVA');
+});
+
+test('últimos registros: só o que já aconteceu nos últimos 30 dias, do mais recente', () => {
+  const list = [
+    entry({ id: 'hoje', date: ref }),
+    entry({ id: 'limite', date: '2026-10-04' }), // 30 dias antes de 03/11
+    entry({ id: 'velho', date: '2026-10-03' }),
+    entry({ id: 'futuro', date: '2026-11-10' }), // ainda não aconteceu
+    entry({ id: 'aberta', date: '2026-10-20', paid: false }), // conta não paga
+  ];
+  assert.deepEqual(registrosRecentes(list, ref).map((x) => x.id), ['hoje', 'limite']);
+});
+
+test('resumo da série: 3 de 24 pagas', () => {
+  const r = resumoDaSerie(seriesDe(serie)[0], ref);
+  assert.equal(r.total, 24);
+  assert.equal(r.pagas, 3);
+  assert.equal(r.valorPago, 439.05);
+  assert.equal(r.restante, 3073.35);
+  assert.equal(r.proxima?.date, '2026-11-19');
+});
+
+const rem = (p: Partial<Reminder>): Reminder => ({
+  id: p.title ?? 'r', title: 'r', intervalKm: null, intervalMonths: null, lastKm: null, lastDate: null, createdAt: 0, ...p,
+});
+
+test('próxima ação: vencido por data antes de vencido por km', () => {
+  const porKm = rem({ title: 'Óleo', intervalKm: 10000, lastKm: 180000 }); // venceu em 190.000
+  const porData = rem({ title: 'IPVA', intervalMonths: 12, lastDate: '2025-10-01' }); // venceu 01/10/2026
+  const emBreve = rem({ title: 'Revisão', intervalKm: 20000, lastKm: 175000 }); // faltam 500 km
+  assert.equal(proximaAcao([porKm, emBreve, porData], 194500, ref)?.r.title, 'IPVA');
+  assert.equal(proximaAcao([porKm, emBreve], 194500, ref)?.r.title, 'Óleo');
+  assert.equal(proximaAcao([emBreve], 194500, ref)?.r.title, 'Revisão');
+  assert.equal(proximaAcao([], 194500, ref), null);
+});
+
+test('cards da tela inicial: lembretes e contas dentro do aviso, com a cor de cada janela', () => {
+  const vencido = rem({ title: 'Óleo', intervalKm: 10000, lastKm: 180000 }); // venceu em 190.000
+  const urgente = rem({ title: 'Pneus', intervalKm: 20000, lastKm: 174600 }); // faltam 100 km
+  const aviso = rem({ title: 'Revisão', intervalKm: 20000, lastKm: 175000 }); // faltam 500 km
+  const longe = rem({ title: 'Correia', intervalKm: 50000, lastKm: 160000 }); // faltam 15.500 km
+  const due = remindersByDue([longe, aviso, urgente, vencido], 194500, null, ref);
+  const bills = billsDue(serie, ref); // parcela de 19/11 (16 dias: verde); a de 19/12 fica fora de 1 mês
+  const cards = cardsDoInicio(due, bills);
+  const title = (c: (typeof cards)[number]) => (c.type === 'bill' ? `Seguro ${c.bill.e.series?.index}` : c.due.r.title);
+  const level = (c: (typeof cards)[number]) => (c.type === 'bill' ? c.bill.s.level : c.due.s.level);
+  assert.deepEqual(cards.map(title), ['Óleo', 'Pneus', 'Seguro 4', 'Revisão']); // em dia: com data antes de só km
+  assert.deepEqual(cards.map(level), ['overdue', 'soon', 'ok', 'ok']); // vermelho, laranja, verde
+  const largo = remindersByDue([longe], 194500, null, ref, { km: 20000, months: 1, urgentKm: 200, urgentDays: 7 });
+  assert.equal(cardsDoInicio(largo, []).length, 1); // aviso de 20.000 km: a correia entra
+});
+
+test('consumo: variação em relação ao mês anterior', () => {
+  const f = (km: number, liters: number, date: string): Entry => entry({ kind: 'fuel', odometer: km, liters, fullTank: true, date, amount: 0 });
+  // outubro: 400 km / 40 L = 10 km/l · novembro: 412 km / 40 L = 10,3 km/l → +3%
+  const list = [f(1000, 40, '2026-10-01'), f(1400, 40, '2026-10-20'), f(1812, 40, '2026-11-02')];
+  assert.equal(Math.round(variacaoConsumo(list, ref)! * 100), 3);
+  assert.equal(variacaoConsumo(list.slice(0, 2), ref), null); // sem dados em novembro
+});

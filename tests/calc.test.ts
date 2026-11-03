@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, sortEntriesByKm } from '../src/lib/calc.ts';
-import { addDays, addMonths, diffDays } from '../src/lib/dates.ts';
-import { parseDecimal, parseInteger } from '../src/lib/format.ts';
+import { billsDue, buildSchedule, fuelChoice, costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, serviceItems, sortEntriesByKm, sumItems } from '../src/lib/calc.ts';
+import { addDays, addMonths, diffDays, endOfMonth } from '../src/lib/dates.ts';
+import { maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../src/lib/format.ts';
+import { categoryOptions } from '../src/constants.ts';
 import type { Entry, Reminder } from '../src/types.ts';
 
 let n = 0;
@@ -44,21 +45,42 @@ const rem = (p: Partial<Reminder>): Reminder => ({
   id: 'r', title: 'Óleo', intervalKm: 10000, intervalMonths: 12, lastKm: 50000, lastDate: '2026-01-15', createdAt: 0, ...p,
 });
 
-test('lembrete: ok, em breve por km, vencido por data', () => {
-  assert.equal(reminderStatus(rem({}), 55000, '2026-06-01').level, 'ok');
-  const soon = reminderStatus(rem({}), 59200, '2026-06-01');
-  assert.equal(soon.level, 'soon');
-  assert.equal(soon.kmLeft, 800);
+test('lembrete: em dia, perto, urgente por km, vencido por data', () => {
+  const ok = reminderStatus(rem({}), 55000, '2026-06-01');
+  assert.equal(ok.level, 'ok');
+  assert.equal(ok.near, false);
+  const near = reminderStatus(rem({}), 59200, '2026-06-01'); // faltam 800: aviso (≤ 1.000), ainda verde
+  assert.equal(near.level, 'ok');
+  assert.equal(near.near, true);
+  assert.equal(near.kmLeft, 800);
+  assert.equal(reminderStatus(rem({}), 59850, '2026-06-01').level, 'soon'); // faltam 150 ≤ 200: laranja
   const late = reminderStatus(rem({}), 52000, '2027-01-20');
   assert.equal(late.level, 'overdue');
   assert.equal(late.nextDate, '2027-01-15');
   assert.equal(late.daysLeft, -5);
 });
 
+test('janelas configuráveis: aviso (aparece) e urgente (laranja)', () => {
+  const custom = { km: 2000, months: 3, urgentKm: 500, urgentDays: 15 };
+  const r = rem({ intervalKm: 50000, intervalMonths: null, lastKm: 10000 }); // vence em 60.000 km
+  assert.equal(reminderStatus(r, 58500, '2026-06-01').near, false); // faltam 1.500 > 1.000 (padrão)
+  assert.equal(reminderStatus(r, 59100, '2026-06-01').near, true); // faltam 900
+  assert.equal(reminderStatus(r, 58500, '2026-06-01', custom).near, true);
+  assert.equal(reminderStatus(r, 59600, '2026-06-01', custom).level, 'soon'); // faltam 400 ≤ 500
+  const d = rem({ intervalKm: null, intervalMonths: 12, lastDate: '2026-01-15' }); // vence 15/01/2027
+  assert.equal(reminderStatus(d, 0, '2026-11-10').near, false); // 2 meses antes
+  assert.equal(reminderStatus(d, 0, '2026-12-20').near, true); // menos de 1 mês
+  assert.equal(reminderStatus(d, 0, '2026-12-20').level, 'ok'); // 26 dias: ainda verde
+  assert.equal(reminderStatus(d, 0, '2027-01-10').level, 'soon'); // 5 dias ≤ 7: laranja
+  assert.equal(reminderStatus(d, 0, '2027-01-02', custom).level, 'soon'); // 13 dias ≤ 15
+  assert.equal(reminderStatus(d, 0, '2027-01-16').level, 'overdue');
+});
+
 test('lembrete só por tempo', () => {
   const s = reminderStatus(rem({ intervalKm: null, intervalMonths: 24 }), 999999, '2027-12-20');
   assert.equal(s.nextKm, null);
-  assert.equal(s.level, 'soon');
+  assert.equal(s.near, true); // vence 15/01/2028
+  assert.equal(s.level, 'ok');
 });
 
 test('histórico pelo km; sem km entra pelo km da data', () => {
@@ -105,4 +127,83 @@ test('números em formato brasileiro', () => {
   assert.equal(parseDecimal('6.19'), 6.19);
   assert.equal(parseDecimal(''), null);
   assert.equal(parseInteger('85.300 km'), 85300);
+});
+
+test('tipos de serviço: padrões + personalizados, "Outro" por último, sem repetidos', () => {
+  const opts = categoryOptions(['Troca de óleo', 'Freios', 'Outro'], ['Lavagem a seco', ' troca  DE óleo ', 'Alarme', 'outro'], 'Polimento');
+  assert.deepEqual(opts, ['Troca de óleo', 'Freios', 'Alarme', 'Lavagem a seco', 'Polimento', 'Outro']);
+  assert.deepEqual(categoryOptions(['A', 'Outro']), ['A', 'Outro']);
+});
+
+test('serviço com vários itens: soma exata e compatível com serviços antigos', () => {
+  const items = [
+    { category: 'Correia', amount: 850.1 },
+    { category: 'Embreagem', amount: 1200.2 },
+    { category: "Bomba d'água", amount: 0.1 },
+  ];
+  assert.equal(sumItems(items), 2050.4); // sem 2050.3999999…
+  assert.deepEqual(serviceItems({ items, category: 'Correia', amount: 2050.4 }), items);
+  assert.deepEqual(serviceItems({ category: 'Freios', amount: 300 }), [{ category: 'Freios', amount: 300 }]);
+});
+
+test('despesa parcelada e recorrente: datas mês a mês e centavos exatos', () => {
+  const p = buildSchedule('installments', '2026-01-31', 1000, 3);
+  assert.deepEqual(p.map((x) => x.date), ['2026-01-31', '2026-02-28', '2026-03-31']);
+  assert.deepEqual(p.map((x) => x.amount), [333.34, 333.33, 333.33]);
+  assert.equal(sumItems(p), 1000);
+  const r = buildSchedule('recurring', '2026-11-10', 89.9, 12);
+  assert.equal(r.length, 12);
+  assert.equal(r[11].date, '2027-10-10');
+  assert.ok(r.every((x) => x.amount === 89.9));
+});
+
+test('contas: só em aberto dentro do aviso, vencidas incluídas', () => {
+  const bill = (id: string, date: string, extra: Partial<Entry> = {}): Entry => ({
+    ...fuel(0, 0, true, date), id, kind: 'expense', odometer: null, amount: 100, category: 'IPVA', ...extra,
+  });
+  const series = { id: 's', type: 'installments' as const, index: 1, count: 3 };
+  const list = [
+    bill('pago', '2026-11-05', { paid: true, series }),
+    bill('futura', '2026-12-10', { paid: false, series }),
+    bill('urgente', '2026-11-08', { paid: false, series }),
+    bill('mes', '2026-11-25', { paid: false, series }),
+    bill('vencida', '2026-10-20', { paid: false }),
+    bill('antiga', '2026-10-10', { series }), // sem `paid`, antes deste mês: conta como paga
+    bill('legado', '2026-11-30', { series }), // sem `paid`, neste mês: em aberto
+    bill('comum', '2026-11-02'), // despesa normal
+  ];
+  const due = billsDue(list, '2026-11-03'); // aviso de 1 mês: até 03/12
+  assert.deepEqual(due.map((x) => x.e.id), ['vencida', 'urgente', 'mes', 'legado']);
+  assert.deepEqual(due.map((x) => x.s.level), ['overdue', 'soon', 'ok', 'ok']);
+  const dois = billsDue(list, '2026-11-03', { km: 1000, months: 2, urgentKm: 200, urgentDays: 7 });
+  assert.equal(dois.at(-1)?.e.id, 'futura'); // aviso de 2 meses: a de 10/12 entra
+  assert.equal(endOfMonth('2028-02-10'), '2028-02-29');
+});
+
+test('calculadora etanol x gasolina', () => {
+  // regra dos 70%
+  assert.equal(fuelChoice(4.09, 6.19).best, 'etanol'); // 66%
+  assert.equal(fuelChoice(4.49, 6.19).best, 'gasolina'); // 72,5%
+  assert.equal(fuelChoice(7, 10).best, 'gasolina'); // exatamente 70%: empate → gasolina
+  // consumo do carro: 9 km/l etanol, 12 km/l gasolina → limite 75%
+  const c = fuelChoice(4.49, 6.19, 9, 12);
+  assert.equal(c.threshold, 0.75);
+  assert.equal(c.best, 'etanol'); // 72,5% < 75%
+  assert.ok(c.perKm!.etanol < c.perKm!.gasolina);
+});
+
+test('máscaras: km com até 6 dígitos, valores com duas casas', () => {
+  assert.equal(maskKm('1234567'), '123456');
+  assert.equal(maskKm('12a.3-4'), '1234');
+  // digitando 1, 2, 3, 4, 5, 6 um a um
+  const typed: string[] = [];
+  let v = '';
+  for (const d of '123456') typed.push((v = maskMoney(v + d)));
+  assert.deepEqual(typed, ['0,01', '0,12', '1,23', '12,34', '123,45', '1.234,56']);
+  assert.equal(maskMoney('1.234,5'), '123,45'); // apagar o último dígito
+  assert.equal(maskMoney('0,0'), ''); // apagou tudo
+  assert.equal(maskMoney('R$ 5,4x9'), '5,49'); // letras e símbolos ignorados
+  assert.equal(maskMoney('12345678901'), '1.234.567,89'); // limite de 9 dígitos
+  assert.equal(parseDecimal(maskMoney('123456')), 1234.56);
+  assert.equal(toInput(1234.5, 2), '1.234,50');
 });

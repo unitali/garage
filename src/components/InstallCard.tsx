@@ -32,7 +32,7 @@ export default function InstallCard({ className = '' }: { className?: string }) 
       <span className={avatarSmall}>📲</span>
       <span className={grow}>
         <strong>Instalar o app</strong>
-        <span className="text-sm text-muted">
+        <span className="text-sm text-slate-600 dark:text-slate-400">
           {install.kind === 'ios' ? (
             <>
               No Safari, toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>.
@@ -47,7 +47,7 @@ export default function InstallCard({ className = '' }: { className?: string }) 
           Instalar
         </button>
       )}
-      <button className="pb-0.5 pl-1 text-2xl leading-none text-muted" aria-label="Dispensar" onClick={dismiss}>
+      <button className="pb-0.5 pl-1 text-2xl leading-none text-slate-600 dark:text-slate-400" aria-label="Dispensar" onClick={dismiss}>
         ×
       </button>
     </div>

@@ -1,0 +1,123 @@
+import { useMemo, useState } from 'react';
+import { Fuel } from 'lucide-react';
+import { ETHANOL_THRESHOLD, fuelChoice } from '../lib/calc';
+import { brl, maskMoney, num, parseDecimal, toInput } from '../lib/format';
+import type { Entry } from '../types';
+import { btn, card, checkbox, checkField, field, FUEL_SOFT, FUEL_TEXT, grid2, hint, input, sectionTitle } from '../ui';
+
+export type FuelOption = 'Etanol' | 'Gasolina';
+
+/** Último preço por litro registrado para o combustível (abastecimentos do veículo). */
+function lastPrice(entries: Entry[], fuelType: string): string {
+  const last = entries
+    .filter((e) => e.kind === 'fuel' && e.fuelType === fuelType && e.pricePerLiter)
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  return last ? toInput(last.pricePerLiter, 2) : '';
+}
+
+/**
+ * Etanol ou gasolina? Não grava nada. Os preços começam com `initial` (ou os últimos registrados).
+ * Com `onUse`, o resultado ganha o botão "Usar …" (no abastecimento: preenche combustível e preço).
+ */
+export default function FuelCalculator({
+  entries,
+  initial = {},
+  onUse,
+}: {
+  entries: Entry[];
+  initial?: Partial<Record<FuelOption, string>>;
+  onUse?: (fuel: FuelOption, price: string) => void;
+}) {
+  const [ethanol, setEthanol] = useState(() => initial.Etanol || lastPrice(entries, 'Etanol'));
+  const [gas, setGas] = useState(() => initial.Gasolina || lastPrice(entries, 'Gasolina'));
+  const [useCar, setUseCar] = useState(false);
+  const [kmlEthanol, setKmlEthanol] = useState('');
+  const [kmlGas, setKmlGas] = useState('');
+
+  const pe = parseDecimal(ethanol);
+  const pg = parseDecimal(gas);
+  const ke = useCar ? parseDecimal(kmlEthanol) : null;
+  const kg = useCar ? parseDecimal(kmlGas) : null;
+  const result = useMemo(() => (pe && pg ? fuelChoice(pe, pg, ke, kg) : null), [pe, pg, ke, kg]);
+  const pct = (n: number) => `${num(n * 100, 1)}%`;
+  const best: FuelOption | null = result ? (result.best === 'etanol' ? 'Etanol' : 'Gasolina') : null;
+
+  return (
+    <div className="flex flex-col gap-4">
+      <section className={`${card} flex flex-col gap-3.5`}>
+        <h2 className={sectionTitle}>Etanol ou gasolina?</h2>
+        <div className={grid2}>
+          <label className={field}>
+            Etanol (R$/L)
+            <input className={input} value={ethanol} onChange={(e) => setEthanol(maskMoney(e.target.value))} inputMode="numeric" placeholder="0,00" />
+          </label>
+          <label className={field}>
+            Gasolina (R$/L)
+            <input className={input} value={gas} onChange={(e) => setGas(maskMoney(e.target.value))} inputMode="numeric" placeholder="0,00" />
+          </label>
+        </div>
+
+        <label className={checkField}>
+          <input className={checkbox} type="checkbox" checked={useCar} onChange={(e) => setUseCar(e.target.checked)} />
+          <span>
+            Usar o consumo do meu carro
+            <small className={hint}> — mais preciso que a regra dos 70%</small>
+          </span>
+        </label>
+        {useCar && (
+          <div className={grid2}>
+            <label className={field}>
+              Com etanol (km/l)
+              <input className={input} value={kmlEthanol} onChange={(e) => setKmlEthanol(maskMoney(e.target.value))} inputMode="numeric" placeholder="0,00" />
+            </label>
+            <label className={field}>
+              Com gasolina (km/l)
+              <input className={input} value={kmlGas} onChange={(e) => setKmlGas(maskMoney(e.target.value))} inputMode="numeric" placeholder="0,00" />
+            </label>
+          </div>
+        )}
+      </section>
+
+      {result && best ? (
+        <section className={`${card} flex flex-col items-center gap-2 py-6 text-center`} aria-live="polite">
+          <span className={`grid size-14 place-items-center rounded-full ${FUEL_SOFT[best]}`}>
+            <Fuel className="size-7" />
+          </span>
+          <span className="text-sm text-slate-600 dark:text-slate-400">Compensa abastecer com</span>
+          <strong className={`text-3xl uppercase ${FUEL_TEXT[best]}`}>{result.best}</strong>
+          <p className="text-sm">
+            O etanol custa <b>{pct(result.ratio)}</b> do preço da gasolina — {result.best === 'etanol' ? 'abaixo' : 'acima'} do limite de{' '}
+            <b>{pct(result.threshold)}</b>
+            {result.threshold === ETHANOL_THRESHOLD ? ' (regra dos 70%)' : ' (rendimento do seu carro)'}.
+          </p>
+          {result.perKm && (
+            <dl className="mt-2 grid w-full grid-cols-2 gap-2 text-sm">
+              <div className="rounded-xl bg-slate-100 dark:bg-slate-950 p-2.5">
+                <dt className="text-slate-600 dark:text-slate-400">Etanol</dt>
+                <dd className="font-bold">{brl(result.perKm.etanol)}/km</dd>
+              </div>
+              <div className="rounded-xl bg-slate-100 dark:bg-slate-950 p-2.5">
+                <dt className="text-slate-600 dark:text-slate-400">Gasolina</dt>
+                <dd className="font-bold">{brl(result.perKm.gasolina)}/km</dd>
+              </div>
+            </dl>
+          )}
+          {onUse && (
+            <button type="button" className={`${btn('primary')} mt-3 w-full`} onClick={() => onUse(best, best === 'Etanol' ? ethanol : gas)}>
+              Usar {best.toLowerCase()} a R$ {best === 'Etanol' ? ethanol : gas}/L
+            </button>
+          )}
+        </section>
+      ) : (
+        <p className="text-center text-sm text-slate-600 dark:text-slate-400">Informe o preço do etanol e da gasolina.</p>
+      )}
+
+      {!useCar && (
+        <p className="text-xs text-slate-600 dark:text-slate-400">
+          Regra dos 70%: o etanol rende cerca de 30% menos por litro, então só compensa se custar até 70% da gasolina. Cada
+          carro é diferente — marque "Usar o consumo do meu carro" para o cálculo exato.
+        </p>
+      )}
+    </div>
+  );
+}

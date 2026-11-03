@@ -7,8 +7,8 @@ import { deleteReminder, saveReminder } from '../db';
 import { REMINDER_PRESETS } from '../constants';
 import { currentOdometer } from '../lib/calc';
 import { today } from '../lib/dates';
-import { parseInteger } from '../lib/format';
-import type { Reminder } from '../types';
+import { digitsOnly, MAX_KM_DIGITS, maskKm, parseInteger } from '../lib/format';
+import type { Reminder, Vehicle } from '../types';
 import { btn, chip, chips, error as errorText, field, fieldset, form, grid2, hint, input, legend, main, splash } from '../ui';
 import { paths } from '../routes/paths';
 
@@ -30,7 +30,7 @@ export default function ReminderFormPage() {
       key={rid ?? 'new'}
       uid={uid}
       vid={vid}
-      vehicleName={vehicle.data.name}
+      vehicle={vehicle.data}
       current={currentOdometer(vehicle.data, entries.data)}
       reminder={reminder}
     />
@@ -40,14 +40,14 @@ export default function ReminderFormPage() {
 interface Props {
   uid: string;
   vid: string;
-  vehicleName: string;
+  vehicle: Vehicle;
   current: number;
   reminder: Reminder | null;
 }
 
 const str = (n: number | null | undefined) => (n == null ? '' : String(n));
 
-function ReminderForm({ uid, vid, vehicleName, current, reminder }: Props) {
+function ReminderForm({ uid, vid, vehicle, current, reminder }: Props) {
   const navigate = useNavigate();
   const back = paths.vehicle(vid, 'lembretes');
 
@@ -71,14 +71,20 @@ function ReminderForm({ uid, vid, vehicleName, current, reminder }: Props) {
     if (!title.trim()) return setError('Dê um nome ao lembrete.');
     if (!intervalKm && !intervalMonths) return setError('Defina um intervalo em km, em meses, ou os dois.');
 
-    saveReminder(uid, vid, reminder?.id, {
-      title: title.trim(),
-      intervalKm,
-      intervalMonths,
-      lastKm: parseInteger(lastKm) ?? current,
-      lastDate: lastDate || today(),
-      createdAt: reminder?.createdAt ?? Date.now(),
-    });
+    saveReminder(
+      uid,
+      vid,
+      reminder?.id,
+      {
+        title: title.trim(),
+        intervalKm,
+        intervalMonths,
+        lastKm: parseInteger(lastKm) ?? current,
+        lastDate: lastDate || today(),
+        createdAt: reminder?.createdAt ?? Date.now(),
+      },
+      reminder,
+    );
     navigate(back, { replace: true });
   }
 
@@ -90,7 +96,7 @@ function ReminderForm({ uid, vid, vehicleName, current, reminder }: Props) {
 
   return (
     <>
-      <Header title={reminder ? 'Editar lembrete' : 'Novo lembrete'} subtitle={vehicleName} back={back} />
+      <Header title={reminder ? 'Editar lembrete' : 'Novo lembrete'} vehicle={vehicle} odometer={current} back={back} />
       <main className={main}>
         <form className={form} onSubmit={submit}>
           {!reminder && (
@@ -105,7 +111,7 @@ function ReminderForm({ uid, vid, vehicleName, current, reminder }: Props) {
 
           <label className={field}>
             Nome
-            <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Troca de óleo" />
+            <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Troca de óleo" maxLength={60} />
           </label>
 
           <fieldset className={fieldset}>
@@ -113,11 +119,11 @@ function ReminderForm({ uid, vid, vehicleName, current, reminder }: Props) {
             <div className={grid2}>
               <label className={field}>
                 Km
-                <input className={input} value={everyKm} onChange={(e) => setEveryKm(e.target.value)} inputMode="numeric" placeholder="10000" />
+                <input className={input} value={everyKm} onChange={(e) => setEveryKm(maskKm(e.target.value))} inputMode="numeric" pattern="[0-9]*" maxLength={MAX_KM_DIGITS} placeholder="10000" />
               </label>
               <label className={field}>
                 Meses
-                <input className={input} value={everyMonths} onChange={(e) => setEveryMonths(e.target.value)} inputMode="numeric" placeholder="12" />
+                <input className={input} value={everyMonths} onChange={(e) => setEveryMonths(digitsOnly(e.target.value, 3))} inputMode="numeric" pattern="[0-9]*" maxLength={3} placeholder="12" />
               </label>
             </div>
             <small className={hint}>Preenchendo os dois, vale o que vencer primeiro.</small>
@@ -128,7 +134,7 @@ function ReminderForm({ uid, vid, vehicleName, current, reminder }: Props) {
             <div className={grid2}>
               <label className={field}>
                 Km
-                <input className={input} value={lastKm} onChange={(e) => setLastKm(e.target.value)} inputMode="numeric" />
+                <input className={input} value={lastKm} onChange={(e) => setLastKm(maskKm(e.target.value))} inputMode="numeric" pattern="[0-9]*" maxLength={MAX_KM_DIGITS} />
               </label>
               <label className={field}>
                 Data

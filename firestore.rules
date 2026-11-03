@@ -1,9 +1,106 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Cada usuário só lê e escreve dentro de users/{seu uid}/...
-    match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+    // Tudo o que não está listado abaixo é negado (inclusive outras coleções dentro de users/{uid}).
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function text(v, max) {
+      return v is string && v.size() <= max;
+    }
+    function optText(d, k, max) {
+      return !(k in d) || text(d[k], max);
+    }
+    function optNum(d, k) {
+      return !(k in d) || d[k] == null || d[k] is number;
+    }
+    function optInt(d, k) {
+      return !(k in d) || d[k] == null || d[k] is int;
+    }
+    function optList(d, k, max) {
+      return !(k in d) || (d[k] is list && d[k].size() <= max);
+    }
+    function isDate(v) {
+      return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    // users/{uid}: preferências da conta
+    function validPrefs(d) {
+      return d.keys().hasOnly(['serviceCategories', 'expenseCategories', 'alertKm', 'alertMonths', 'urgentKm', 'urgentDays'])
+        && optList(d, 'serviceCategories', 200) && optList(d, 'expenseCategories', 200)
+        && optInt(d, 'alertKm') && optInt(d, 'alertMonths') && optInt(d, 'urgentKm') && optInt(d, 'urgentDays');
+    }
+
+    function validVehicle(d) {
+      return d.keys().hasOnly(['name', 'type', 'plate', 'initialOdometer', 'odometer', 'createdAt'])
+        && d.keys().hasAll(['name', 'type', 'initialOdometer', 'createdAt'])
+        && text(d.name, 60) && d.name.size() > 0
+        && d.type in ['carro', 'moto', 'bike', 'caminhao', 'outro']
+        && optText(d, 'plate', 10)
+        && d.initialOdometer is number && d.initialOdometer >= 0
+        && optNum(d, 'odometer')
+        && d.createdAt is int;
+    }
+
+    function validEntry(d) {
+      return d.keys().hasOnly(['kind', 'date', 'odometer', 'amount', 'category', 'description', 'notes', 'createdAt',
+                               'fuelType', 'liters', 'pricePerLiter', 'fullTank', 'title', 'items', 'series', 'paid'])
+        && d.keys().hasAll(['kind', 'date', 'amount', 'category', 'createdAt'])
+        && d.kind in ['fuel', 'service', 'expense']
+        && isDate(d.date)
+        && d.amount is number && d.amount >= 0 && d.amount < 100000000
+        && optNum(d, 'odometer')
+        && text(d.category, 60)
+        && optText(d, 'description', 2000) && optText(d, 'notes', 2000) && optText(d, 'title', 60) && optText(d, 'fuelType', 40)
+        && optNum(d, 'liters') && optNum(d, 'pricePerLiter')
+        && (!('fullTank' in d) || d.fullTank is bool)
+        && (!('paid' in d) || d.paid is bool)
+        && optList(d, 'items', 50)
+        && (!('series' in d) || (d.series is map && d.series.keys().hasOnly(['id', 'type', 'index', 'count'])))
+        && d.createdAt is int;
+    }
+
+    function validReminder(d) {
+      return d.keys().hasOnly(['title', 'intervalKm', 'intervalMonths', 'lastKm', 'lastDate', 'createdAt'])
+        && d.keys().hasAll(['title', 'createdAt'])
+        && text(d.title, 60) && d.title.size() > 0
+        && optNum(d, 'intervalKm') && optInt(d, 'intervalMonths') && optNum(d, 'lastKm')
+        && (!('lastDate' in d) || d.lastDate == null || isDate(d.lastDate))
+        && d.createdAt is int;
+    }
+
+    // Cada usuário só lê e escreve os próprios dados; cada lançamento/lembrete fica dentro do seu veículo.
+    match /users/{uid} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid) && validPrefs(request.resource.data);
+
+      match /vehicles/{vid} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validVehicle(request.resource.data);
+
+        match /entries/{eid} {
+          allow read, delete: if isOwner(uid);
+          allow create, update: if isOwner(uid) && validEntry(request.resource.data);
+        }
+        match /reminders/{rid} {
+          allow read, delete: if isOwner(uid);
+          allow create, update: if isOwner(uid) && validReminder(request.resource.data);
+        }
+      }
+    }
+
+    // Cópia ao excluir a conta: o app só cria (não lê, não altera, não apaga).
+    // Restaurar é coisa de administrador: scripts/restore-account.mjs
+    match /trash/{uid}/backups/{bid} {
+      allow create: if isOwner(uid)
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'name', 'deletedAt', 'docs'])
+        && request.resource.data.uid == uid;
+      match /docs/{doc} {
+        allow create: if isOwner(uid)
+          && request.resource.data.keys().hasOnly(['path', 'data'])
+          && text(request.resource.data.path, 300);
+      }
     }
   }
 }
