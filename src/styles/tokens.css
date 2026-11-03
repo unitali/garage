@@ -1,86 +1,89 @@
 /*
  * Tokens de design do Unitali Garage — fonte única das cores, raios e fonte.
  * O styles.css expõe estes valores ao Tailwind (bg-brand, text-muted, bg-warn-bg…).
- * Regras: vermelho só para vencido; âmbar só para "em breve"; futuro fica neutro.
+ * Cores da paleta do Tailwind (var(--color-slate-900)…); hex só no que é marca: o azul-marinho
+ * do logo e a faixa tricolor.
+ * Regras: vermelho para vencido; laranja para próximo; verde para em dia.
  * As cores por tipo valem só para o ícone, nunca como borda de status.
  */
 :root {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
+  /* marca: azul-marinho do logo */
   --color-primary: #0f2747;
-  --color-primary-600: #1d4e89;
-  --on-primary: #ffffff;
-  --primary-soft: #e8eef7;
+  --color-primary-600: var(--color-blue-800);
+  --on-primary: var(--color-white);
+  --primary-soft: var(--color-blue-50);
 
-  --bg: #f3f5f8;
-  --surface: #ffffff;
-  --text: #0f172a;
-  --muted: #5b6575;
-  --border: #e2e7ee;
-  --outside: #d5dce6; /* fora da coluna do app, em telas maiores que um tablet */
+  --bg: var(--color-slate-100);
+  --surface: var(--color-white);
+  --text: var(--color-slate-900);
+  --muted: var(--color-slate-600);
+  --border: var(--color-slate-200);
+  --outside: var(--color-slate-300); /* fora da coluna do app, em telas maiores que um tablet */
 
-  /* barra do topo (azul-marinho nos dois temas) */
+  /* barra do topo (azul-marinho da marca nos dois temas) */
   --bar: #0f2747;
-  --bar-ink: #ffffff;
+  --bar-ink: var(--color-white);
 
-  --danger: #b42318;
-  --danger-bg: #fef3f2;
-  --warning: #b54708;
-  --warning-bg: #fffaeb;
-  --warning-border: #fedf89;
-  --success: #067647;
-  --success-bg: #e6f4ea;
+  --danger: var(--color-red-700);
+  --danger-bg: var(--color-red-50);
+  --warning: var(--color-orange-700);
+  --warning-bg: var(--color-orange-50);
+  --warning-border: var(--color-orange-200);
+  --success: var(--color-emerald-700);
+  --success-bg: var(--color-emerald-50);
 
   /* tipo de registro: só no ícone */
-  --type-fuel: #067647;
-  --type-fuel-bg: #e6f4ea;
-  --type-service: #b54708;
-  --type-service-bg: #fdf0e6;
-  --type-expense: #1d4e89;
-  --type-expense-bg: #eef2f7;
-  --type-reminder: #5b3fa8;
-  --type-reminder-bg: #f1ecfb;
+  --type-fuel: var(--color-emerald-700);
+  --type-fuel-bg: var(--color-emerald-50);
+  --type-service: var(--color-orange-700);
+  --type-service-bg: var(--color-orange-50);
+  --type-expense: var(--color-blue-800);
+  --type-expense-bg: var(--color-blue-50);
+  --type-reminder: var(--color-violet-700);
+  --type-reminder-bg: var(--color-violet-50);
 
-  /* faixa tricolor */
+  /* faixa tricolor (cores da bandeira italiana) */
   --flag-green: #009246;
-  --flag-white: #ffffff;
+  --flag-white: var(--color-white);
   --flag-red: #ce2b37;
 }
 
 /* modo escuro: mesmos tokens, outros valores */
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-primary: #8db7ec;
-    --color-primary-600: #b5d0f3;
-    --on-primary: #0b1b33;
-    --primary-soft: #16304f;
+    --color-primary: var(--color-blue-300);
+    --color-primary-600: var(--color-blue-200);
+    --on-primary: var(--color-blue-950);
+    --primary-soft: var(--color-blue-950);
 
-    --bg: #0b1220;
-    --surface: #121b2b;
-    --text: #e8edf5;
-    --muted: #a3adbd;
-    --border: #233046;
-    --outside: #05080f;
+    --bg: var(--color-slate-950);
+    --surface: var(--color-slate-900);
+    --text: var(--color-slate-100);
+    --muted: var(--color-slate-400);
+    --border: var(--color-slate-800);
+    --outside: var(--color-black);
 
     --bar: #0b1b33;
-    --bar-ink: #ffffff;
+    --bar-ink: var(--color-white);
 
-    --danger: #f97066;
-    --danger-bg: #3a1714;
-    --warning: #fdb022;
-    --warning-bg: #33250b;
-    --warning-border: #6b4e14;
-    --success: #47cd89;
-    --success-bg: #0f2e1f;
+    --danger: var(--color-red-400);
+    --danger-bg: var(--color-red-950);
+    --warning: var(--color-orange-400);
+    --warning-bg: var(--color-orange-950);
+    --warning-border: var(--color-orange-900);
+    --success: var(--color-emerald-400);
+    --success-bg: var(--color-emerald-950);
 
-    --type-fuel: #47cd89;
-    --type-fuel-bg: #0f2e1f;
-    --type-service: #f7a94a;
-    --type-service-bg: #3a250f;
-    --type-expense: #8db7ec;
-    --type-expense-bg: #16273d;
-    --type-reminder: #b69cf3;
-    --type-reminder-bg: #2a2145;
+    --type-fuel: var(--color-emerald-400);
+    --type-fuel-bg: var(--color-emerald-950);
+    --type-service: var(--color-orange-300);
+    --type-service-bg: var(--color-orange-950);
+    --type-expense: var(--color-blue-300);
+    --type-expense-bg: var(--color-blue-950);
+    --type-reminder: var(--color-violet-300);
+    --type-reminder-bg: var(--color-violet-950);
 
     --flag-green: #2fbf71;
     --flag-red: #ef5a63;
