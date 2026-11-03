@@ -97,3 +97,5 @@ export const OIL_MONTH_OPTIONS = [6, 12, 18];
 /** Antecedência do aviso de lembrete (Configurações → Lembretes). */
 export const ALERT_KM_OPTIONS = [500, 1000, 2000, 5000];
 export const ALERT_MONTH_OPTIONS = [1, 2, 3];
+export const URGENT_KM_OPTIONS = [100, 200, 500, 1000];
+export const URGENT_DAY_OPTIONS = [3, 7, 15, 30];

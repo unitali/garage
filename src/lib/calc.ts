@@ -100,19 +100,27 @@ export interface ReminderStatus {
   nextDate: string | null;
   kmLeft: number | null;
   daysLeft: number | null;
+  /** cor: vencido (vermelho), urgente (laranja) ou em dia (verde) */
   level: ReminderLevel;
+  /** dentro da antecedência de aviso (ou urgente/vencido): aparece no topo do histórico */
+  near: boolean;
 }
 
-/** Antecedência do aviso: lembrete fica "em breve" faltando até `km` ou até `months` meses. */
+/**
+ * Janelas dos lembretes (Configurações → Lembretes):
+ * - aviso: faltando até `km` ou `months` meses → aparece no topo do histórico
+ * - urgente: faltando até `urgentKm` ou `urgentDays` dias → laranja
+ */
 export interface AlertWindow {
   km: number;
   months: number;
+  urgentKm: number;
+  urgentDays: number;
 }
 
-/** Padrão (configurável em Configurações → Lembretes). */
-export const DEFAULT_ALERT: AlertWindow = { km: 1000, months: 1 };
+export const DEFAULT_ALERT: AlertWindow = { km: 1000, months: 1, urgentKm: 200, urgentDays: 7 };
 
-/** Vencido: passou do km ou da data. Em breve: dentro da janela de aviso (`alert`). */
+/** Vencido: passou do km ou da data. Urgente: dentro da janela urgente. Em dia: o resto. */
 export function reminderStatus(r: Reminder, current: number, ref = today(), alert = DEFAULT_ALERT): ReminderStatus {
   const nextKm = r.intervalKm && r.lastKm != null ? r.lastKm + r.intervalKm : null;
   const nextDate = r.intervalMonths && r.lastDate ? addMonths(r.lastDate, r.intervalMonths) : null;
@@ -121,10 +129,14 @@ export function reminderStatus(r: Reminder, current: number, ref = today(), aler
 
   let level: ReminderLevel = 'ok';
   if ((kmLeft != null && kmLeft <= 0) || (daysLeft != null && daysLeft <= 0)) level = 'overdue';
-  else if ((kmLeft != null && kmLeft <= alert.km) || (nextDate != null && nextDate <= addMonths(ref, alert.months)))
-    level = 'soon';
+  else if ((kmLeft != null && kmLeft <= alert.urgentKm) || (daysLeft != null && daysLeft <= alert.urgentDays)) level = 'soon';
 
-  return { nextKm, nextDate, kmLeft, daysLeft, level };
+  const near =
+    level !== 'ok' ||
+    (kmLeft != null && kmLeft <= alert.km) ||
+    (nextDate != null && nextDate <= addMonths(ref, alert.months));
+
+  return { nextKm, nextDate, kmLeft, daysLeft, level, near };
 }
 
 const LEVEL_ORDER: Record<ReminderLevel, number> = { overdue: 0, soon: 1, ok: 2 };

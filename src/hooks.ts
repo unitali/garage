@@ -65,8 +65,13 @@ export const useReminders = (uid: string, vid?: string) =>
 /** Preferências da conta (users/{uid}), como os tipos de serviço/despesa personalizados. */
 export const useUserPrefs = (uid: string) => useLiveDoc<UserPrefs>(() => userDoc(uid), `prefs/${uid}`);
 
-/** Antecedência do aviso de lembrete da conta, com o padrão quando não configurada. */
+/** Janelas de aviso e de urgência dos lembretes da conta, com o padrão quando não configuradas. */
 export function useAlertWindow(uid: string): AlertWindow {
   const { data } = useUserPrefs(uid);
-  return { km: data?.alertKm ?? DEFAULT_ALERT.km, months: data?.alertMonths ?? DEFAULT_ALERT.months };
+  return {
+    km: data?.alertKm ?? DEFAULT_ALERT.km,
+    months: data?.alertMonths ?? DEFAULT_ALERT.months,
+    urgentKm: data?.urgentKm ?? DEFAULT_ALERT.urgentKm,
+    urgentDays: data?.urgentDays ?? DEFAULT_ALERT.urgentDays,
+  };
 }

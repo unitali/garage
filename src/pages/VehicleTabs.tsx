@@ -42,7 +42,7 @@ export function History({ v, entries, due }: { v: Vehicle; entries: Entry[]; due
   );
 
   // só os que estão perto de vencer (janela de Configurações → Lembretes) ou vencidos
-  const near = due.filter((x) => x.s.level !== 'ok');
+  const near = due.filter((x) => x.s.near);
 
   return (
     <div className="flex flex-col gap-4">
@@ -95,7 +95,7 @@ export function History({ v, entries, due }: { v: Vehicle; entries: Entry[]; due
 export function Summary({ v, entries, due, current }: { v: Vehicle; entries: Entry[]; due: DueReminder[]; current: number }) {
   const cost = useMemo(() => costSummary(entries, v, current), [entries, v, current]);
   const fuel = useMemo(() => fuelStats(entries), [entries]);
-  const alerts = due.filter((x) => x.s.level !== 'ok');
+  const alerts = due.filter((x) => x.s.near);
   const unit = v.type === 'bike' ? 'km/kWh' : 'km/l';
 
   return (
@@ -242,7 +242,7 @@ export function Reminders({ uid, v, due, current }: { uid: string; v: Vehicle; d
           <Link to={paths.reminder(v.id, r.id)} className={grow}>
             <strong>{r.title}</strong>
             <span className={`text-sm ${LEVEL_TEXT[s.level]}`}>{dueText(s)}</span>
-            <span className="text-xs text-muted">
+            <span className={`text-xs ${s.level === 'overdue' ? 'font-semibold text-danger' : 'text-muted'}`}>
               Próximo:{' '}
               {[s.nextKm != null ? km(s.nextKm) : null, when ? `${estimated ? '≈ ' : ''}${date(when)}` : null].filter(Boolean).join(' · ')}
             </span>

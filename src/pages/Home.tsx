@@ -66,7 +66,7 @@ function VehicleHome({ uid, v, vehicles }: { uid: string; v: Vehicle; vehicles: 
   const alert = useAlertWindow(uid);
   const due = useMemo(
     () => remindersByDue(reminders.data, current, rate, undefined, alert),
-    [reminders.data, current, rate, alert.km, alert.months], // eslint-disable-line react-hooks/exhaustive-deps
+    [reminders.data, current, rate, alert.km, alert.months, alert.urgentKm, alert.urgentDays], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   // mantém o km do veículo em dia (inclusive após editar/excluir registros)

@@ -17,7 +17,7 @@
   --color-flag-green: #009247;
   --color-flag-red: #cf2b36;
   --color-danger: #cf2b36;
-  --color-warn: #b45309;
+  --color-warn: #ea580c; /* laranja: lembrete urgente, avisos */
   --color-ok: #009247;
   /* tipos de registro no histórico */
   --color-fuel: #eab308;
@@ -43,7 +43,7 @@
     --color-flag-green: #2fbf71;
     --color-flag-red: #ef5a63;
     --color-danger: #ef5a63;
-    --color-warn: #fbbf24;
+    --color-warn: #fb923c;
     --color-ok: #2fbf71;
     --color-fuel: #facc15;
     --color-service: #60a5fa;

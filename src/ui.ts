@@ -73,18 +73,14 @@ export const KIND_TEXT: Record<EntryKind, string> = { fuel: 'text-fuel', service
 
 // ---------- status dos lembretes ----------
 
-export const LEVEL_TEXT: Record<ReminderLevel, string> = { ok: 'text-muted', soon: 'text-warn', overdue: 'text-danger' };
+// lembretes: verde (em dia) · laranja (urgente) · vermelho (vencido)
+export const LEVEL_TEXT: Record<ReminderLevel, string> = { ok: 'text-ok', soon: 'text-warn', overdue: 'text-danger' };
 export const LEVEL_DOT: Record<ReminderLevel, string> = { ok: 'bg-ok', soon: 'bg-warn', overdue: 'bg-danger' };
-export const LEVEL_LABEL: Record<ReminderLevel, string> = { ok: 'Em dia', soon: 'Em breve', overdue: 'Vencido' };
+export const LEVEL_LABEL: Record<ReminderLevel, string> = { ok: 'Em dia', soon: 'Urgente', overdue: 'Vencido' };
 export const LEVEL_BADGE: Record<ReminderLevel, string> = {
   ok: 'bg-ok/15 text-ok',
   soon: 'bg-warn/15 text-warn',
   overdue: 'bg-danger/15 text-danger',
-};
-export const LEVEL_BORDER_TOP: Record<ReminderLevel, string> = {
-  ok: 'border-t-ok',
-  soon: 'border-t-warn',
-  overdue: 'border-t-danger',
 };
 export const LEVEL_BORDER: Record<ReminderLevel, string> = {
   ok: 'border-l-ok',
