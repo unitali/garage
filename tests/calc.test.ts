@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, sortEntriesByKm } from '../src/lib/calc.ts';
+import { costSummary, currentOdometer, fuelStats, kmPerDay, reminderStatus, remindersByDue, serviceItems, sortEntriesByKm, sumItems } from '../src/lib/calc.ts';
 import { addDays, addMonths, diffDays } from '../src/lib/dates.ts';
 import { maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../src/lib/format.ts';
 import { categoryOptions } from '../src/constants.ts';
@@ -112,6 +112,17 @@ test('tipos de serviço: padrões + personalizados, "Outro" por último, sem rep
   const opts = categoryOptions(['Troca de óleo', 'Freios', 'Outro'], ['Lavagem a seco', ' troca  DE óleo ', 'Alarme', 'outro'], 'Polimento');
   assert.deepEqual(opts, ['Troca de óleo', 'Freios', 'Alarme', 'Lavagem a seco', 'Polimento', 'Outro']);
   assert.deepEqual(categoryOptions(['A', 'Outro']), ['A', 'Outro']);
+});
+
+test('serviço com vários itens: soma exata e compatível com serviços antigos', () => {
+  const items = [
+    { category: 'Correia', amount: 850.1 },
+    { category: 'Embreagem', amount: 1200.2 },
+    { category: "Bomba d'água", amount: 0.1 },
+  ];
+  assert.equal(sumItems(items), 2050.4); // sem 2050.3999999…
+  assert.deepEqual(serviceItems({ items, category: 'Correia', amount: 2050.4 }), items);
+  assert.deepEqual(serviceItems({ category: 'Freios', amount: 300 }), [{ category: 'Freios', amount: 300 }]);
 });
 
 test('máscaras: km com até 6 dígitos, valores com duas casas', () => {

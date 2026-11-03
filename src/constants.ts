@@ -30,6 +30,9 @@ export const SERVICE_CATEGORIES = [
   'Elétrica',
   'Ar-condicionado',
   'Lavagem',
+  'Embreagem',
+  "Bomba d'água",
+  'Mão de obra',
   'Outro',
 ];
 

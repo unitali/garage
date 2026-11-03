@@ -30,7 +30,15 @@ export interface Entry {
   pricePerLiter?: number;
   fuelType?: string;
   fullTank?: boolean;
+  /** só serviço com vários itens feitos juntos: `amount` é a soma e `category` é o 1º item */
+  items?: ServiceItem[];
   createdAt: number;
+}
+
+/** Um item de um serviço (ex: correia dentada, embreagem e bomba d'água no mesmo dia). */
+export interface ServiceItem {
+  category: string;
+  amount: number;
 }
 
 export interface Reminder {

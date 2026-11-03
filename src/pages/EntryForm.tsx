@@ -2,11 +2,12 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import CategorySelect from '../components/CategorySelect';
+import ServiceItemsField, { newItem, type ItemDraft } from '../components/ServiceItemsField';
 import { useUid } from '../auth';
 import { useEntries, useReminders, useVehicle } from '../hooks';
 import { deleteEntry, markReminderDone, saveEntry, syncVehicleOdometer } from '../db';
 import { ENTRY_KINDS, EXPENSE_CATEGORIES, FUEL_TYPES, SERVICE_CATEGORIES } from '../constants';
-import { currentOdometer } from '../lib/calc';
+import { currentOdometer, serviceItems, sumItems } from '../lib/calc';
 import { today } from '../lib/dates';
 import { km, MAX_KM_DIGITS, maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../lib/format';
 import type { Entry, EntryKind, Reminder, Vehicle } from '../types';
@@ -75,7 +76,10 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
   const [price, setPrice] = useState(toInput(entry?.pricePerLiter, 2));
   const [liters, setLiters] = useState(toInput(entry?.liters, 2));
   const [fullTank, setFullTank] = useState(entry?.fullTank ?? true);
-  // serviço
+  // serviço: lista do que foi feito (serviço antigo vira um item só)
+  const [items, setItems] = useState<ItemDraft[]>(() =>
+    kind !== 'service' ? [] : entry ? serviceItems(entry).map((i) => newItem(i.category, toInput(i.amount, 2))) : [newItem()],
+  );
   const [reminderId, setReminderId] = useState('');
   const [error, setError] = useState('');
 
@@ -109,8 +113,11 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
 
   function submit(e: FormEvent) {
     e.preventDefault();
-    const value = parseDecimal(amount);
-    if (!value || value <= 0) return setError('Informe o valor.');
+    const isService = kind === 'service';
+    const serviceList = items.map((i) => ({ category: i.category, amount: Math.round((parseDecimal(i.amount) ?? 0) * 100) / 100 }));
+    if (isService && serviceList.some((i) => !i.category)) return setError('Escolha o serviço de cada item.');
+    const value = isService ? sumItems(serviceList) : parseDecimal(amount);
+    if (!value || value <= 0) return setError(isService ? 'Informe o valor de pelo menos um item.' : 'Informe o valor.');
     if (!day) return setError('Informe a data.');
 
     const base = {
@@ -118,7 +125,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
       date: day,
       odometer: odoNum,
       amount: Math.round(value * 100) / 100,
-      category: kind === 'fuel' ? 'Combustível' : category,
+      category: kind === 'fuel' ? 'Combustível' : isService ? serviceList[0].category : category,
       description: description.trim(),
       notes: notes.trim(),
       createdAt: entry?.createdAt ?? Date.now(),
@@ -136,8 +143,9 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
         fullTank,
       });
     } else {
-      saveEntry(uid, vid, entry?.id, base);
-      if (kind === 'service' && reminderId) markReminderDone(uid, vid, reminderId, odoNum ?? lastKm, day);
+      // um item só: grava como antes (sem lista); vários: a lista, e amount/category resumem
+      saveEntry(uid, vid, entry?.id, isService && serviceList.length > 1 ? { ...base, items: serviceList } : base);
+      if (isService && reminderId) markReminderDone(uid, vid, reminderId, odoNum ?? lastKm, day);
     }
     if (odoNum != null && odoNum > (vehicle.odometer ?? 0)) syncVehicleOdometer(uid, vid, odoNum);
     navigate(back, { replace: true });
@@ -202,15 +210,31 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
             </>
           )}
 
-          {kind !== 'fuel' && (
+          {kind === 'service' && (
+            <>
+              <ServiceItemsField uid={uid} items={items} onChange={setItems} />
+              <label className={field}>
+                Descrição <span className={opt}>(opcional)</span>
+                <input
+                  className={input}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Ex: revisão dos 60 mil km"
+                />
+              </label>
+            </>
+          )}
+
+          {kind === 'expense' && (
             <>
               <CategorySelect uid={uid} kind={kind} value={category} onChange={setCategory} />
               <label className={field}>
                 Descrição <span className={opt}>(opcional)</span>
-                <input className={input}
+                <input
+                  className={input}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder={kind === 'service' ? 'Ex: óleo 5W30 + filtro de óleo' : 'Ex: IPVA 2027 — cota única'}
+                  placeholder="Ex: IPVA 2027 — cota única"
                 />
               </label>
               <label className={field}>

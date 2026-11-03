@@ -1,4 +1,4 @@
-import type { Entry, Reminder, Vehicle } from '../types';
+import type { Entry, Reminder, ServiceItem, Vehicle } from '../types';
 import { addDays, addMonths, diffDays, fromTimestamp, today } from './dates.ts';
 
 /** km atual = maior km entre o cadastro e os registros */
@@ -187,4 +187,14 @@ export function sortEntriesByKm(list: Entry[], initialOdometer = 0): Entry[] {
   return [...list].sort(
     (a, b) => effective.get(b.id)! - effective.get(a.id)! || b.date.localeCompare(a.date) || b.createdAt - a.createdAt,
   );
+}
+
+/** Itens de um serviço; serviços antigos (sem lista) viram um item só com a categoria e o valor do registro. */
+export function serviceItems(e: Pick<Entry, 'items' | 'category' | 'amount'>): ServiceItem[] {
+  return e.items?.length ? e.items : [{ category: e.category, amount: e.amount }];
+}
+
+/** Soma em centavos para não acumular erro de ponto flutuante (0,1 + 0,2). */
+export function sumItems(items: { amount: number }[]): number {
+  return items.reduce((cents, i) => cents + Math.round(i.amount * 100), 0) / 100;
 }

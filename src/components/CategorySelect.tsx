@@ -22,15 +22,18 @@ export default function CategorySelect({
   kind,
   value,
   onChange,
+  label = 'Categoria',
 }: {
   uid: string;
   kind: CategoryKind;
+  /** '' = nada escolhido ainda ("Selecione…") */
   value: string;
   onChange: (category: string) => void;
+  label?: string;
 }) {
   const prefs = useUserPrefs(uid);
   const custom = (kind === 'service' ? prefs.data?.serviceCategories : prefs.data?.expenseCategories) ?? [];
-  const options = categoryOptions(DEFAULT_CATEGORIES[kind], custom, value);
+  const options = categoryOptions(DEFAULT_CATEGORIES[kind], custom, value || undefined);
   const [adding, setAdding] = useState(false);
   const [name, setName] = useState('');
 
@@ -52,12 +55,17 @@ export default function CategorySelect({
   return (
     <div className="flex flex-col gap-1.5">
       <label className={field}>
-        Categoria
+        {label}
         <select
           className={input}
           value={value}
           onChange={(e) => (e.target.value === ADD ? setAdding(true) : onChange(e.target.value))}
         >
+          {value === '' && (
+            <option value="" disabled>
+              Selecione…
+            </option>
+          )}
           {options.map((c) => (
             <option key={c}>{c}</option>
           ))}
