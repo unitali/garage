@@ -143,14 +143,20 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
     const existing = findReminder(reminders, title);
     // serviço mais antigo que a última vez registrada no lembrete: só atualiza o intervalo
     const newer = !existing?.lastDate || day >= existing.lastDate;
-    saveReminder(uid, vid, existing?.id, {
-      title: existing?.title ?? title,
-      intervalKm,
-      intervalMonths,
-      lastKm: newer ? (odoNum ?? lastKm) : existing.lastKm,
-      lastDate: newer ? day : existing.lastDate,
-      createdAt: existing?.createdAt ?? Date.now(),
-    });
+    saveReminder(
+      uid,
+      vid,
+      existing?.id,
+      {
+        title: existing?.title ?? title,
+        intervalKm,
+        intervalMonths,
+        lastKm: newer ? (odoNum ?? lastKm) : existing.lastKm,
+        lastDate: newer ? day : existing.lastDate,
+        createdAt: existing?.createdAt ?? Date.now(),
+      },
+      existing,
+    );
   }
 
   // total ÷ preço → litros; litros × preço → total (tudo com duas casas, formatado ao digitar)
@@ -209,13 +215,19 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
       const l = parseDecimal(liters);
       if (odoNum == null) return setError('No abastecimento o km é obrigatório (é com ele que o consumo é calculado).');
       if (!l || l <= 0) return setError(`Informe a quantidade (${unit}).`);
-      saveEntry(uid, vid, entry?.id, {
-        ...base,
-        fuelType,
-        liters: l,
-        pricePerLiter: parseDecimal(price) ?? Math.round((value / l) * 1000) / 1000,
-        fullTank,
-      });
+      saveEntry(
+        uid,
+        vid,
+        entry?.id,
+        {
+          ...base,
+          fuelType,
+          liters: l,
+          pricePerLiter: parseDecimal(price) ?? Math.round((value / l) * 1000) / 1000,
+          fullTank,
+        },
+        entry,
+      );
     } else {
       // um item só: grava como antes (sem lista); vários: a lista, e amount/category resumem
       saveEntry(
@@ -230,8 +242,9 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
               // conta: o que estiver marcado; despesa nova com vencimento futuro nasce em aberto
               paid: kind === 'expense' ? paid : undefined,
             },
+        entry,
       );
-      if (isService && reminderId) markReminderDone(uid, vid, reminderId, odoNum ?? lastKm, day);
+      if (isService && reminderId) markReminderDone(uid, vid, reminderId, odoNum ?? lastKm, day, reminders.find((r) => r.id === reminderId));
       if (hasOilChange) upsertReminder(OIL_CHANGE, oilKm, oilMonths);
       for (const r of itemReminders) upsertReminder(r.title, r.km, r.months);
     }

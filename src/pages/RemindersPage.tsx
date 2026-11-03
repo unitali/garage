@@ -83,7 +83,7 @@ export default function RemindersPage() {
                       <button
                         className={`${btn('default', 'sm')} shrink-0`}
                         onClick={() => {
-                          if (confirm(`Marcar "${r.title}" como feito hoje com ${km(current)}?`)) markReminderDone(uid, vehicle.id, r.id, current, today());
+                          if (confirm(`Marcar "${r.title}" como feito hoje com ${km(current)}?`)) markReminderDone(uid, vehicle.id, r.id, current, today(), r);
                         }}
                       >
                         Feito

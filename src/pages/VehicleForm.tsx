@@ -34,14 +34,19 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
     if (!name.trim()) return setError('Dê um nome ao veículo.');
     if (initialOdometer == null) return setError('Informe a quilometragem atual.');
 
-    const id = saveVehicle(uid, vid, {
-      name: name.trim(),
-      type,
-      plate: plate.trim().toUpperCase(),
-      initialOdometer,
-      odometer: Math.max(initial?.odometer ?? 0, initialOdometer),
-      createdAt: initial?.createdAt ?? Date.now(),
-    });
+    const id = saveVehicle(
+      uid,
+      vid,
+      {
+        name: name.trim(),
+        type,
+        plate: plate.trim().toUpperCase(),
+        initialOdometer,
+        odometer: Math.max(initial?.odometer ?? 0, initialOdometer),
+        createdAt: initial?.createdAt ?? Date.now(),
+      },
+      initial,
+    );
     // veículo novo vira o selecionado e volta para a tela inicial; edição volta de onde veio
     if (vid) return navigate(-1);
     selectVehicle(id);

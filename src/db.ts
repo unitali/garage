@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { trackWrite } from './sync';
+import { sameDoc } from './lib/same';
 import type { CategoryKind, Data, Entry, EntrySeries, Reminder, UserPrefs, Vehicle } from './types';
 
 // Estrutura:
@@ -41,9 +42,11 @@ function fire(p: Promise<unknown>) {
   });
 }
 
-export function saveVehicle(uid: string, vid: string | undefined, data: Data<Vehicle>): string {
+// `prev` (o documento como está): salvar sem mudar nada não grava.
+
+export function saveVehicle(uid: string, vid: string | undefined, data: Data<Vehicle>, prev?: Vehicle | null): string {
   const ref = vid ? vehicleDoc(uid, vid) : doc(vehiclesCol(uid));
-  fire(setDoc(ref, data, { merge: true }));
+  if (!sameDoc(prev, data, true)) fire(setDoc(ref, data, { merge: true }));
   return ref.id;
 }
 
@@ -68,9 +71,9 @@ export async function deleteVehicle(uid: string, vid: string) {
   fire(deleteDoc(vehicleDoc(uid, vid)));
 }
 
-export function saveEntry(uid: string, vid: string, id: string | undefined, data: Data<Entry>) {
+export function saveEntry(uid: string, vid: string, id: string | undefined, data: Data<Entry>, prev?: Entry | null) {
   const ref = id ? doc(entriesCol(uid, vid), id) : doc(entriesCol(uid, vid));
-  fire(setDoc(ref, data));
+  if (!sameDoc(prev, data)) fire(setDoc(ref, data));
   return ref.id;
 }
 
@@ -98,13 +101,14 @@ export function deleteEntry(uid: string, vid: string, id: string) {
   fire(deleteDoc(doc(entriesCol(uid, vid), id)));
 }
 
-export function saveReminder(uid: string, vid: string, id: string | undefined, data: Data<Reminder>) {
+export function saveReminder(uid: string, vid: string, id: string | undefined, data: Data<Reminder>, prev?: Reminder | null) {
   const ref = id ? doc(remindersCol(uid, vid), id) : doc(remindersCol(uid, vid));
-  fire(setDoc(ref, data));
+  if (!sameDoc(prev, data)) fire(setDoc(ref, data));
   return ref.id;
 }
 
-export function markReminderDone(uid: string, vid: string, id: string, lastKm: number, lastDate: string) {
+export function markReminderDone(uid: string, vid: string, id: string, lastKm: number, lastDate: string, prev?: Reminder | null) {
+  if (prev?.lastKm === lastKm && prev.lastDate === lastDate) return; // já está feito com esses valores
   fire(updateDoc(doc(remindersCol(uid, vid), id), { lastKm, lastDate }));
 }
 

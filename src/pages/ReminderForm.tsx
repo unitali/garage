@@ -71,14 +71,20 @@ function ReminderForm({ uid, vid, vehicle, current, reminder }: Props) {
     if (!title.trim()) return setError('Dê um nome ao lembrete.');
     if (!intervalKm && !intervalMonths) return setError('Defina um intervalo em km, em meses, ou os dois.');
 
-    saveReminder(uid, vid, reminder?.id, {
-      title: title.trim(),
-      intervalKm,
-      intervalMonths,
-      lastKm: parseInteger(lastKm) ?? current,
-      lastDate: lastDate || today(),
-      createdAt: reminder?.createdAt ?? Date.now(),
-    });
+    saveReminder(
+      uid,
+      vid,
+      reminder?.id,
+      {
+        title: title.trim(),
+        intervalKm,
+        intervalMonths,
+        lastKm: parseInteger(lastKm) ?? current,
+        lastDate: lastDate || today(),
+        createdAt: reminder?.createdAt ?? Date.now(),
+      },
+      reminder,
+    );
     navigate(back, { replace: true });
   }
 
