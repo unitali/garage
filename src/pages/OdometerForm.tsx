@@ -29,7 +29,7 @@ export default function OdometerForm() {
 
   return (
     <>
-      <Header title="Atualizar km" subtitle={vehicle.name} back={paths.home()} />
+      <Header title="Atualizar km" vehicle={vehicle} odometer={current} back={paths.home()} />
       <main className={main}>
         <form className={`${card} ${form}`} onSubmit={submit}>
           <div className="flex items-center gap-3">

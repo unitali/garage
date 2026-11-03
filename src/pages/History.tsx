@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import EntryRow from '../components/EntryRow';
 import SeriesCard from '../components/SeriesCard';
-import VehicleSwitcher from '../components/VehicleSwitcher';
 import { ENTRY_KINDS } from '../constants';
 import { useGarage } from '../garage';
 import { fuelStats, sortEntriesByKm } from '../lib/calc';
@@ -27,7 +26,7 @@ const sum = (list: Entry[]) => list.reduce((c, e) => c + Math.round(e.amount * 1
 
 /** Histórico: séries parceladas/recorrentes e os registros já realizados, por mês. */
 export default function History() {
-  const { uid, vehicles, vehicle, entries, current, loading } = useGarage();
+  const { uid, vehicle, entries, current, loading } = useGarage();
   const [params, setParams] = useSearchParams();
   const tipo = params.get('tipo') as HistoryFilter | null;
   const kind = tipo && FILTER_KIND[tipo] ? FILTER_KIND[tipo] : null;
@@ -55,10 +54,7 @@ export default function History() {
 
   return (
     <>
-      <Header
-        title="Histórico"
-        right={vehicle ? <VehicleSwitcher vehicles={vehicles} current={vehicle} odometer={current} variant="compact" /> : undefined}
-      />
+      <Header title="Histórico" odometer={current} />
       <main className={`${main} flex flex-col gap-4`}>
         <div className={chips} role="group" aria-label="Filtrar por tipo">
           {FILTERS.map((f) => {

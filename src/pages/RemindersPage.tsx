@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { Plus, Settings2 } from 'lucide-react';
 import Header from '../components/Header';
 import BillRow from '../components/BillRow';
-import VehicleSwitcher from '../components/VehicleSwitcher';
 import { markReminderDone } from '../db';
 import { useGarage } from '../garage';
 import { today } from '../lib/dates';
@@ -15,7 +14,7 @@ const groupTitle = 'mb-2 px-1 text-xs font-bold tracking-wider text-muted upperc
 
 /** Lembretes: contas dentro do aviso (com "Pago") e lembretes de manutenção (com "Feito"), do mais urgente ao menos. */
 export default function RemindersPage() {
-  const { uid, vehicles, vehicle, reminders, current, rate, alert, due, bills, loading } = useGarage();
+  const { uid, vehicle, reminders, current, rate, alert, due, bills, loading } = useGarage();
   if (loading) return <div className={splash}>Carregando…</div>;
 
   // o mais urgente (o mesmo do card "Próxima manutenção") primeiro; depois vencido > próximo > o resto
@@ -25,10 +24,7 @@ export default function RemindersPage() {
 
   return (
     <>
-      <Header
-        title="Lembretes"
-        right={vehicle ? <VehicleSwitcher vehicles={vehicles} current={vehicle} odometer={current} variant="compact" /> : undefined}
-      />
+      <Header title="Lembretes" odometer={current} />
       <main className={`${main} flex flex-col gap-4`}>
         {!vehicle ? (
           <p className={emptyText}>Cadastre um veículo para criar lembretes.</p>

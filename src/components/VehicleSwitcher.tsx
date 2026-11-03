@@ -9,38 +9,61 @@ import { paths } from '../routes/paths';
 
 const menuItem = 'flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left active:bg-bg';
 
+const box = 'flex min-h-14 w-full items-center gap-3 rounded-2xl bg-white/12 px-3 py-2 text-left';
+
+/** Ícone, nome e placa · km do veículo (dentro da barra azul). */
+function Label({ v, odometer }: { v: Vehicle; odometer: number }) {
+  const Icon = VEHICLE_ICON[v.type] ?? VEHICLE_ICON.outro;
+  return (
+    <>
+      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white/15">
+        <Icon className="size-6" aria-hidden />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col leading-tight">
+        <strong className="text-lg break-words">{v.name}</strong>
+        <span className="text-sm opacity-85">{[v.plate, km(odometer)].filter(Boolean).join(' · ')}</span>
+      </span>
+    </>
+  );
+}
+
 /**
- * Pílula com o veículo selecionado (nome + placa + chevron) que abre a lista de veículos.
- * `header`: na barra azul da tela inicial; `compact`: no canto do cabeçalho (Histórico, Lembretes).
+ * Veículo no cabeçalho, na largura toda: toca para abrir a lista e trocar.
+ * `readOnly`: só mostra (formulários de um veículo específico — trocar ali mudaria o registro de dono).
  */
 export default function VehicleSwitcher({
   vehicles,
   current,
-  odometer,
-  variant = 'header',
+  odometer = current.odometer ?? current.initialOdometer,
+  readOnly,
 }: {
   vehicles: Vehicle[];
   current: Vehicle;
-  odometer: number;
-  variant?: 'header' | 'compact';
+  /** km atual (padrão: o salvo no veículo) */
+  odometer?: number;
+  readOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
+  if (readOnly)
+    return (
+      <div className={box}>
+        <Label v={current} odometer={odometer} />
+      </div>
+    );
+
   return (
-    <div className="relative min-w-0">
+    <div className="relative">
       <button
-        className="flex min-h-11 max-w-full items-center gap-2 rounded-full bg-white/12 px-3 py-1.5 text-left active:bg-white/20"
+        className={`${box} active:bg-white/20`}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={`Veículo: ${current.name}. Trocar de veículo`}
         onClick={() => setOpen(!open)}
       >
-        <span className="flex min-w-0 flex-col leading-tight">
-          <strong className="break-words">{current.name}</strong>
-          {variant === 'header' && current.plate && <span className="text-xs opacity-85">{current.plate}</span>}
-        </span>
-        <ChevronDown className={`size-5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <Label v={current} odometer={odometer} />
+        <ChevronDown className={`size-6 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
       </button>
 
       {open && (
@@ -48,9 +71,7 @@ export default function VehicleSwitcher({
           <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
           <div
             role="menu"
-            className={`absolute top-full z-30 mt-2 w-[min(20rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-line bg-surface text-ink shadow-xl ${
-              variant === 'compact' ? 'right-0' : 'left-0'
-            }`}
+            className="absolute top-full left-0 z-30 mt-2 w-full overflow-hidden rounded-2xl border border-line bg-surface text-ink shadow-xl"
           >
             <ul className="max-h-[50dvh] overflow-y-auto">
               {vehicles.map((v) => {

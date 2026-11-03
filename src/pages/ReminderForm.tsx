@@ -8,7 +8,7 @@ import { REMINDER_PRESETS } from '../constants';
 import { currentOdometer } from '../lib/calc';
 import { today } from '../lib/dates';
 import { digitsOnly, MAX_KM_DIGITS, maskKm, parseInteger } from '../lib/format';
-import type { Reminder } from '../types';
+import type { Reminder, Vehicle } from '../types';
 import { btn, chip, chips, error as errorText, field, fieldset, form, grid2, hint, input, legend, main, splash } from '../ui';
 import { paths } from '../routes/paths';
 
@@ -30,7 +30,7 @@ export default function ReminderFormPage() {
       key={rid ?? 'new'}
       uid={uid}
       vid={vid}
-      vehicleName={vehicle.data.name}
+      vehicle={vehicle.data}
       current={currentOdometer(vehicle.data, entries.data)}
       reminder={reminder}
     />
@@ -40,14 +40,14 @@ export default function ReminderFormPage() {
 interface Props {
   uid: string;
   vid: string;
-  vehicleName: string;
+  vehicle: Vehicle;
   current: number;
   reminder: Reminder | null;
 }
 
 const str = (n: number | null | undefined) => (n == null ? '' : String(n));
 
-function ReminderForm({ uid, vid, vehicleName, current, reminder }: Props) {
+function ReminderForm({ uid, vid, vehicle, current, reminder }: Props) {
   const navigate = useNavigate();
   const back = paths.vehicle(vid, 'lembretes');
 
@@ -90,7 +90,7 @@ function ReminderForm({ uid, vid, vehicleName, current, reminder }: Props) {
 
   return (
     <>
-      <Header title={reminder ? 'Editar lembrete' : 'Novo lembrete'} subtitle={vehicleName} back={back} />
+      <Header title={reminder ? 'Editar lembrete' : 'Novo lembrete'} vehicle={vehicle} odometer={current} back={back} />
       <main className={main}>
         <form className={form} onSubmit={submit}>
           {!reminder && (

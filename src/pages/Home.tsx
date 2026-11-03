@@ -4,10 +4,7 @@ import { Car, Check, CheckCircle2, Plus, TrendingDown, TrendingUp } from 'lucide
 import Header from '../components/Header';
 import Carousel from '../components/Carousel';
 import EntryRow from '../components/EntryRow';
-import FlagStripe from '../components/FlagStripe';
 import InstallCard from '../components/InstallCard';
-import StatusStrip from '../components/StatusStrip';
-import VehicleSwitcher from '../components/VehicleSwitcher';
 import { markPaid, syncVehicleOdometer } from '../db';
 import { useGarage } from '../garage';
 import { fuelStats, type AlertWindow, type DueBill, type DueReminder, type ReminderLevel } from '../lib/calc';
@@ -25,7 +22,6 @@ import {
 import { monthsLabel } from './ReminderSettings';
 import { paths } from '../routes/paths';
 import type { Vehicle } from '../types';
-import logoUrl from '../assets/logo.png';
 import {
   badge,
   btn,
@@ -50,7 +46,7 @@ export default function Home() {
 function NoVehicle() {
   return (
     <>
-      <Header title="Unitali Garage" logo />
+      <Header title="Início" />
       <main className={`${main} flex min-h-[70dvh] flex-col items-center justify-center gap-3 text-center`}>
         <span className="grid size-20 place-items-center rounded-full bg-brand-soft text-brand">
           <Car className="size-10" aria-hidden />
@@ -71,7 +67,7 @@ type Garage = ReturnType<typeof useGarage>;
 
 /** Tela inicial (resumo do veículo selecionado). */
 function Summary({ g, v }: { g: Garage; v: Vehicle }) {
-  const { uid, vehicles, entries, reminders, current, rate, alert, due, bills } = g;
+  const { uid, entries, reminders, current, rate, alert, due, bills } = g;
   const ref = today();
 
   // mantém o km do veículo em dia (inclusive após editar/excluir registros)
@@ -94,13 +90,7 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
 
   return (
     <>
-      <header className="flex items-center gap-3 bg-bar px-4 pt-[calc(12px+env(safe-area-inset-top))] pb-3 text-bar-ink">
-        {/* fundo branco: o U azul-marinho sumiria na barra da mesma cor */}
-        <img src={logoUrl} alt="Unitali Garage" className="size-10 shrink-0 rounded-xl bg-white object-contain p-1" />
-        <VehicleSwitcher vehicles={vehicles} current={v} odometer={current} />
-      </header>
-      <FlagStripe className="h-1" />
-      <StatusStrip />
+      <Header title="Início" odometer={current} />
 
       <main className={`${main} flex flex-col gap-3`}>
         <Upcoming uid={uid} vid={v.id} cards={cards} next={next} alert={alert} />

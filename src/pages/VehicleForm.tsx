@@ -56,7 +56,7 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
 
   return (
     <>
-      <Header title={vid ? 'Editar veículo' : 'Novo veículo'} back={vid ? paths.vehicle(vid) : paths.home()} />
+      <Header title={vid ? 'Editar veículo' : 'Novo veículo'} vehicle={false} back={vid ? paths.vehicle(vid) : paths.home()} />
       <main className={main}>
         <form className={form} onSubmit={submit}>
           <label className={field}>

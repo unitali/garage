@@ -279,7 +279,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
 
   return (
     <>
-      <Header title={`${entry ? 'Editar' : 'Novo'} ${meta.label.toLowerCase()}`} subtitle={vehicle.name} back={back} />
+      <Header title={`${entry ? 'Editar' : 'Novo'} ${meta.label.toLowerCase()}`} vehicle={vehicle} back={back} />
       <main className={main}>
         <form className={form} onSubmit={submit}>
           <div className={grid2}>
