@@ -6,13 +6,11 @@
 //   node scripts/restore-account.mjs <uid> --apply         → restaura o backup mais recente em users/{uid}
 //   opções: --backup <id>  escolhe o backup · --to <uid>  restaura em outro usuário (ex: conta Google nova)
 //
-// Acesso: GOOGLE_ACCESS_TOKEN (ex: `gcloud auth print-access-token`) ou o login do Firebase CLI
-// (`firebase login`). O backup não é apagado — dá para restaurar de novo.
+// Acesso: GOOGLE_ACCESS_TOKEN ou o login do Firebase CLI (scripts/google-auth.mjs).
+// O backup não é apagado — dá para restaurar de novo.
 
-import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { accessToken, projectId } from './google-auth.mjs';
 
 const API = 'https://firestore.googleapis.com/v1';
 
@@ -27,24 +25,6 @@ export function toWrites(docs, project, to) {
 /** "vehicles/a/entries/b" → "entries" (resumo do que será restaurado) */
 export const kindOf = (path) => (path === '.' ? 'perfil' : path.split('/').at(-2));
 
-async function token() {
-  if (process.env.GOOGLE_ACCESS_TOKEN) return process.env.GOOGLE_ACCESS_TOKEN;
-  // login do Firebase CLI (o mesmo do `firebase deploy`): troca o refresh token por um access token
-  const cfg = JSON.parse(readFileSync(join(homedir(), '.config/configstore/firebase-tools.json'), 'utf8'));
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    body: new URLSearchParams({
-      refresh_token: cfg.tokens.refresh_token,
-      // cliente OAuth público do Firebase CLI
-      client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
-      client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
-      grant_type: 'refresh_token',
-    }),
-  });
-  if (!res.ok) throw new Error(`Sem acesso: rode \`firebase login\` ou defina GOOGLE_ACCESS_TOKEN (${res.status})`);
-  return (await res.json()).access_token;
-}
-
 async function main() {
   const args = process.argv.slice(2);
   const uid = args.find((a) => !a.startsWith('--') && args[args.indexOf(a) - 1] !== '--backup' && args[args.indexOf(a) - 1] !== '--to');
@@ -54,8 +34,8 @@ async function main() {
     process.exit(1);
   }
   const to = opt('--to') ?? uid;
-  const project = JSON.parse(readFileSync(new URL('../.firebaserc', import.meta.url), 'utf8')).projects.default;
-  const auth = { Authorization: `Bearer ${await token()}` };
+  const project = projectId();
+  const auth = { Authorization: `Bearer ${await accessToken()}` };
   const docsUrl = `${API}/projects/${project}/databases/(default)/documents`;
 
   async function list(path) {
