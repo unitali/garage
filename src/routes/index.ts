@@ -1,6 +1,10 @@
 import { createElement } from 'react';
 import { Navigate, type RouteObject } from 'react-router-dom';
 import Home from '../pages/Home';
+import History from '../pages/History';
+import RemindersPage from '../pages/RemindersPage';
+import More from '../pages/More';
+import OdometerForm from '../pages/OdometerForm';
 import Profile from '../pages/Profile';
 import Settings from '../pages/Settings';
 import Calculator from '../pages/Calculator';
@@ -16,15 +20,18 @@ import { PATTERNS, paths } from './paths';
 export * from './paths';
 
 export interface RouteHandle {
-  /** mostra a barra de atalhos de baixo; formulários ocupam a tela toda, como num app */
-  tabBar?: boolean;
+  /** mostra a barra de baixo; formulários ocupam a tela toda, como num app */
+  bottomNav?: boolean;
 }
 
-const tabBar: RouteHandle = { tabBar: true };
+const tabBar: RouteHandle = { bottomNav: true };
 
 /** Todas as telas do app (usuário logado). */
 export const routes: RouteObject[] = [
   { path: PATTERNS.home, Component: Home, handle: tabBar },
+  { path: PATTERNS.history, Component: History, handle: tabBar },
+  { path: PATTERNS.reminders, Component: RemindersPage, handle: tabBar },
+  { path: PATTERNS.more, Component: More, handle: tabBar },
   { path: PATTERNS.calculator, Component: Calculator, handle: tabBar },
   { path: PATTERNS.settings, Component: Settings, handle: tabBar },
   { path: PATTERNS.profile, Component: Profile, handle: tabBar },
@@ -34,6 +41,7 @@ export const routes: RouteObject[] = [
   { path: PATTERNS.newVehicle, Component: VehicleForm },
   { path: PATTERNS.vehicle, Component: OpenVehicle },
   { path: PATTERNS.editVehicle, Component: VehicleForm },
+  { path: PATTERNS.odometer, Component: OdometerForm },
   { path: PATTERNS.newEntry, Component: EntryForm },
   { path: PATTERNS.entry, Component: EntryForm },
   { path: PATTERNS.newReminder, Component: ReminderForm },

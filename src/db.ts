@@ -32,6 +32,11 @@ export function saveVehicle(uid: string, vid: string | undefined, data: Data<Veh
   return ref.id;
 }
 
+/** "Atualizar km": leitura manual do hodômetro, com a data (o "atualizado há X dias" da tela inicial). */
+export function updateOdometer(uid: string, vid: string, odometer: number) {
+  fire(updateDoc(vehicleDoc(uid, vid), { odometer, odometerUpdatedAt: Date.now() }));
+}
+
 export function syncVehicleOdometer(uid: string, vid: string, odometer: number) {
   fire(updateDoc(vehicleDoc(uid, vid), { odometer }));
 }

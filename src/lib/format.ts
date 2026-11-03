@@ -68,3 +68,19 @@ export function dueText(s: ReminderStatus): string {
   }
   return parts.join(' · ');
 }
+
+/** dd/mm no ano corrente, dd/mm/aaaa nos outros */
+export function shortDate(s: string, ref = new Date().getFullYear().toString()): string {
+  const full = date(s);
+  return s.startsWith(ref) ? full.slice(0, 5) : full;
+}
+
+/** "hoje", "ontem", "há 3 dias" */
+export function daysAgo(days: number): string {
+  return days <= 0 ? 'hoje' : days === 1 ? 'ontem' : `há ${days} dias`;
+}
+
+/** "em 16 dias", "hoje", "há 2 dias" (vencimento) */
+export function dueIn(days: number): string {
+  return days === 0 ? 'vence hoje' : days > 0 ? `em ${days} dia${days === 1 ? '' : 's'}` : `venceu há ${-days} dia${days === -1 ? '' : 's'}`;
+}

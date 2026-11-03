@@ -4,12 +4,19 @@ import type { EntryKind } from '../types';
 // Caminhos das telas. Fica separado de index.ts (que importa as telas) para as telas poderem
 // importar daqui sem dependência circular.
 
-/** abas da tela inicial (veículo selecionado); sem `tab` na URL abre o Histórico */
+/** destino ao "abrir" um veículo (/v/:vid?tab=…): os formulários voltam por aqui */
 export type VehicleTab = 'historico' | 'resumo' | 'despesas' | 'lembretes';
+
+/** filtro do histórico (?tipo=) */
+export type HistoryFilter = 'abastecimento' | 'servico' | 'despesa';
+export const FILTER_KIND: Record<HistoryFilter, EntryKind> = { abastecimento: 'fuel', servico: 'service', despesa: 'expense' };
 
 /** Padrões que o React Router casa com a URL. */
 export const PATTERNS = {
   home: '/',
+  history: '/historico',
+  reminders: '/lembretes',
+  more: '/mais',
   calculator: '/calculadora',
   settings: '/config',
   profile: '/config/perfil',
@@ -19,6 +26,7 @@ export const PATTERNS = {
   newVehicle: '/v/new',
   vehicle: '/v/:vid',
   editVehicle: '/v/:vid/edit',
+  odometer: '/v/:vid/km',
   newEntry: '/v/:vid/entry/new',
   entry: '/v/:vid/entry/:eid',
   newReminder: '/v/:vid/reminder/new',
@@ -32,7 +40,10 @@ function withQuery(path: string, query: Record<string, string | undefined>) {
 
 /** URLs prontas para Link/navigate — nenhuma tela monta caminho na mão. */
 export const paths = {
-  home: (tab?: VehicleTab) => withQuery(PATTERNS.home, { tab }),
+  home: () => PATTERNS.home,
+  history: (tipo?: HistoryFilter) => withQuery(PATTERNS.history, { tipo }),
+  reminders: () => PATTERNS.reminders,
+  more: () => PATTERNS.more,
   calculator: () => PATTERNS.calculator,
   settings: () => PATTERNS.settings,
   profile: () => PATTERNS.profile,
@@ -40,10 +51,13 @@ export const paths = {
   categories: () => PATTERNS.categories,
   reminderSettings: () => PATTERNS.reminderSettings,
   newVehicle: () => PATTERNS.newVehicle,
-  /** seleciona o veículo e abre a tela inicial na aba */
+  /** seleciona o veículo e abre a tela correspondente (histórico, lembretes…) */
   vehicle: (vid: string, tab?: VehicleTab) => withQuery(generatePath(PATTERNS.vehicle, { vid }), { tab }),
   editVehicle: (vid: string) => generatePath(PATTERNS.editVehicle, { vid }),
-  newEntry: (vid: string, kind?: EntryKind) => withQuery(generatePath(PATTERNS.newEntry, { vid }), { kind }),
+  odometer: (vid: string) => generatePath(PATTERNS.odometer, { vid }),
+  /** `lembrete`: serviço já com o lembrete selecionado (card "Próxima manutenção") */
+  newEntry: (vid: string, kind?: EntryKind, opts: { lembrete?: string } = {}) =>
+    withQuery(generatePath(PATTERNS.newEntry, { vid }), { kind, lembrete: opts.lembrete }),
   entry: (vid: string, eid: string) => generatePath(PATTERNS.entry, { vid, eid }),
   newReminder: (vid: string) => generatePath(PATTERNS.newReminder, { vid }),
   reminder: (vid: string, rid: string) => generatePath(PATTERNS.reminder, { vid, rid }),

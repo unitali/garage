@@ -43,6 +43,8 @@ export default function EntryFormPage() {
       entry={entry}
       others={entries.data.filter((e) => e.id !== eid)}
       reminders={reminders.data}
+      // "Registrar serviço" do card Próxima manutenção: já com o lembrete selecionado
+      preset={kind === 'service' && !entry ? reminders.data.find((r) => r.id === params.get('lembrete')) : undefined}
     />
   );
 }
@@ -55,6 +57,8 @@ interface Props {
   entry: Entry | null;
   others: Entry[];
   reminders: Reminder[];
+  /** serviço novo já com este lembrete como item */
+  preset?: Reminder;
 }
 
 function lastFuelType(others: Entry[]) {
@@ -62,7 +66,7 @@ function lastFuelType(others: Entry[]) {
   return fuels[0]?.fuelType ?? FUEL_TYPES[0];
 }
 
-function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props) {
+function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }: Props) {
   const navigate = useNavigate();
   const back = paths.vehicle(vid, 'historico');
   const lastKm = useMemo(() => currentOdometer(vehicle, others), [vehicle, others]);
@@ -85,7 +89,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
       ? []
       : entry
         ? serviceItems(entry).map((i) => withExistingReminder(newItem(i.category, toInput(i.amount, 2)), reminders))
-        : [newItem()],
+        : [preset ? withExistingReminder(newItem(preset.title), reminders) : newItem()],
   );
   const [reminderId, setReminderId] = useState('');
   // despesa nova: cota única, parcelado ou recorrente (uma despesa por vencimento)
@@ -104,7 +108,8 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
   // parcelas da mesma série (para "excluir todas")
   const seriesIds = entry?.series ? [entry.id, ...others.filter((o) => o.series?.id === entry.series!.id).map((o) => o.id)] : [];
   // troca de óleo (só em serviço novo): intervalo da próxima → lembrete
-  const currentOil = entry ? findReminder(reminders, OIL_CHANGE) : undefined;
+  // editando, ou vindo do lembrete de óleo: badges já marcados com o intervalo atual
+  const currentOil = entry || (preset && isOilChange(preset.title)) ? findReminder(reminders, OIL_CHANGE) : undefined;
   const [oilKm, setOilKm] = useState<number | null>(() =>
     currentOil?.intervalKm && OIL_KM_OPTIONS.includes(currentOil.intervalKm) ? currentOil.intervalKm : null,
   );

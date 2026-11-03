@@ -1,14 +1,15 @@
 import type { CategoryKind, EntryKind, VehicleType } from './types';
 
-export const VEHICLE_TYPES: Record<VehicleType, { label: string; icon: string }> = {
-  carro: { label: 'Carro', icon: '🚗' },
-  moto: { label: 'Moto / scooter', icon: '🛵' },
-  bike: { label: 'Bike elétrica', icon: '🚲' },
-  caminhao: { label: 'Caminhão / van', icon: '🚚' },
-  outro: { label: 'Outro', icon: '🚙' },
-};
+// ícone de cada tipo fica em ui.ts (VEHICLE_ICON)
+export const VEHICLE_TYPES: Record<VehicleType, { label: string }> = {
+  carro: { label: 'Carro' },
+  moto: { label: 'Moto / scooter' },
+  bike: { label: 'Bike elétrica' },
+  caminhao: { label: 'Caminhão / van' },
+  outro: { label: 'Outro' },
+}
 
-// ícone e cor de cada tipo ficam em ui.ts (KIND_ICON, KIND_BORDER…)
+// ícone e cor de cada tipo ficam em ui.ts (KIND_ICON, KIND_SOFT)
 export const ENTRY_KINDS: Record<EntryKind, { label: string; plural: string }> = {
   fuel: { label: 'Abastecimento', plural: 'Abastecimentos' },
   service: { label: 'Serviço', plural: 'Serviços' },

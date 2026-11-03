@@ -69,7 +69,7 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
             <select className={input} value={type} onChange={(e) => setType(e.target.value as VehicleType)}>
               {Object.entries(VEHICLE_TYPES).map(([k, t]) => (
                 <option key={k} value={k}>
-                  {t.icon} {t.label}
+                  {t.label}
                 </option>
               ))}
             </select>

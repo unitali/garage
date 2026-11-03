@@ -23,13 +23,13 @@ export default function Settings() {
 
   return (
     <>
-      <Header title="Configurações" />
+      <Header title="Configurações" back={paths.more()} />
       <main className={`${main} flex flex-col gap-5`}>
         <Link to={paths.profile()} className={`${card} flex items-center gap-3`}>
           <UserAvatar user={user} name={name} className="size-14 text-lg" />
           <span className="flex min-w-0 flex-1 flex-col">
-            <strong className="truncate text-lg">{name}</strong>
-            {user.email && <span className="truncate text-sm text-muted">{user.email}</span>}
+            <strong className="text-lg break-words">{name}</strong>
+            {user.email && <span className="text-sm break-all text-muted">{user.email}</span>}
           </span>
           <ChevronRight className="size-5 shrink-0 text-muted" />
         </Link>

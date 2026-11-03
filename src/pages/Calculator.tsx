@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Fuel } from 'lucide-react';
 import Header from '../components/Header';
+import { paths } from '../routes/paths';
 import { useUid } from '../auth';
 import { useEntries, useVehicles } from '../hooks';
 import { ETHANOL_THRESHOLD, fuelChoice } from '../lib/calc';
@@ -46,7 +47,7 @@ export default function Calculator() {
 
   return (
     <>
-      <Header title="Calculadora" />
+      <Header title="Calculadora" back={paths.more()} />
       <main className={`${main} flex flex-col gap-4`}>
         <section className={`${card} flex flex-col gap-3.5`}>
           <h2 className={sectionTitle}>Etanol ou gasolina?</h2>
@@ -84,12 +85,10 @@ export default function Calculator() {
 
         {result ? (
           <section
-            className={`${card} flex flex-col items-center gap-2 border-l-4 py-6 text-center ${
-              result.best === 'etanol' ? 'border-l-ok' : 'border-l-brand'
-            }`}
+            className={`${card} flex flex-col items-center gap-2 py-6 text-center`}
             aria-live="polite"
           >
-            <span className={`grid size-14 place-items-center rounded-full ${result.best === 'etanol' ? 'bg-ok/15 text-ok' : 'bg-brand-soft text-brand'}`}>
+            <span className={`grid size-14 place-items-center rounded-full ${result.best === 'etanol' ? 'bg-ok-bg text-ok' : 'bg-brand-soft text-brand'}`}>
               <Fuel className="size-7" />
             </span>
             <span className="text-sm text-muted">Compensa abastecer com</span>

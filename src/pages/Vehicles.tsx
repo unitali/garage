@@ -7,7 +7,8 @@ import { VEHICLE_TYPES } from '../constants';
 import { km } from '../lib/format';
 import { paths } from '../routes/paths';
 import { useSelectedVehicle } from '../selection';
-import { btn, cardRow, emptyText, grow, list, main } from '../ui';
+import { btn, cardRow, emptyText, grow, list, main, VEHICLE_ICON } from '../ui';
+import type { VehicleType } from '../types';
 
 /** Configurações → Veículos: editar ou adicionar. */
 export default function Vehicles() {
@@ -28,12 +29,12 @@ export default function Vehicles() {
             {vehicles.map((v) => (
               <li key={v.id}>
                 <Link className={cardRow} to={paths.editVehicle(v.id)}>
-                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-[1.4rem]">
-                    {VEHICLE_TYPES[v.type]?.icon ?? '🚙'}
+                  <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
+                    <VehicleIcon type={v.type} />
                   </span>
                   <span className={grow}>
                     <strong className="flex items-center gap-2">
-                      <span className="truncate">{v.name}</span>
+                      <span className="break-words">{v.name}</span>
                       {v.id === selected?.id && (
                         <span className="shrink-0 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand">na tela inicial</span>
                       )}
@@ -55,4 +56,9 @@ export default function Vehicles() {
       </main>
     </>
   );
+}
+
+function VehicleIcon({ type }: { type: VehicleType }) {
+  const Icon = VEHICLE_ICON[type] ?? VEHICLE_ICON.outro;
+  return <Icon className="size-6" />;
 }

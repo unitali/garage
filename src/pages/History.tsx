@@ -1,0 +1,134 @@
+import { useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import Header from '../components/Header';
+import EntryRow from '../components/EntryRow';
+import SeriesCard from '../components/SeriesCard';
+import VehicleSwitcher from '../components/VehicleSwitcher';
+import { ENTRY_KINDS } from '../constants';
+import { useGarage } from '../garage';
+import { fuelStats, sortEntriesByKm } from '../lib/calc';
+import { today } from '../lib/dates';
+import { brl } from '../lib/format';
+import { isPaid, seriesDe } from '../lib/summary';
+import { FILTER_KIND, type HistoryFilter } from '../routes/paths';
+import type { Entry } from '../types';
+import { card, chip, chips, emptyText, KIND_ICON, main, sectionTitle, splash } from '../ui';
+
+const FILTERS: { id: HistoryFilter | null; label: string }[] = [
+  { id: null, label: 'Tudo' },
+  { id: 'abastecimento', label: ENTRY_KINDS.fuel.plural },
+  { id: 'servico', label: ENTRY_KINDS.service.plural },
+  { id: 'despesa', label: ENTRY_KINDS.expense.plural },
+];
+
+const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const monthTitle = (ym: string) => `${MONTHS[Number(ym.slice(5, 7)) - 1]} ${ym.slice(0, 4)}`;
+const sum = (list: Entry[]) => list.reduce((c, e) => c + Math.round(e.amount * 100), 0) / 100;
+
+/** Histórico: séries parceladas/recorrentes e os registros já realizados, por mês. */
+export default function History() {
+  const { uid, vehicles, vehicle, entries, current, loading } = useGarage();
+  const [params, setParams] = useSearchParams();
+  const tipo = params.get('tipo') as HistoryFilter | null;
+  const kind = tipo && FILTER_KIND[tipo] ? FILTER_KIND[tipo] : null;
+  const ref = today();
+
+  const consumption = useMemo(() => fuelStats(entries).byEntry, [entries]);
+  const series = useMemo(() => (kind && kind !== 'expense' ? [] : seriesDe(entries)), [entries, kind]);
+  // só o que já foi realizado/pago; parcelas em aberto ficam no card da série (e nos lembretes)
+  const done = useMemo(() => entries.filter((e) => isPaid(e, ref) && (!kind || e.kind === kind)), [entries, kind, ref]);
+  const months = useMemo(() => {
+    const map = new Map<string, Entry[]>();
+    for (const e of done) map.set(e.date.slice(0, 7), [...(map.get(e.date.slice(0, 7)) ?? []), e]);
+    return [...map]
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([ym, list]) => [ym, sortEntriesByKm(list, vehicle?.initialOdometer)] as const); // dentro do mês, pelo km
+  }, [done, vehicle]);
+  const byCategory = useMemo(() => {
+    if (kind !== 'expense') return [];
+    const map = new Map<string, number>();
+    for (const e of done) map.set(e.category || 'Outro', (map.get(e.category || 'Outro') ?? 0) + e.amount);
+    return [...map].sort((a, b) => b[1] - a[1]);
+  }, [done, kind]);
+
+  if (loading) return <div className={splash}>Carregando…</div>;
+
+  return (
+    <>
+      <Header
+        title="Histórico"
+        right={vehicle ? <VehicleSwitcher vehicles={vehicles} current={vehicle} odometer={current} variant="compact" /> : undefined}
+      />
+      <main className={`${main} flex flex-col gap-4`}>
+        <div className={chips} role="group" aria-label="Filtrar por tipo">
+          {FILTERS.map((f) => {
+            const active = (tipo ?? null) === f.id;
+            const Icon = f.id ? KIND_ICON[FILTER_KIND[f.id]] : null;
+            return (
+              <button
+                key={f.label}
+                aria-pressed={active}
+                className={chip(active)}
+                onClick={() => setParams(f.id ? { tipo: f.id } : {}, { replace: true })}
+              >
+                {Icon && <Icon className="size-4" aria-hidden />}
+                {f.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {!vehicle ? (
+          <p className={emptyText}>Cadastre um veículo para começar.</p>
+        ) : (
+          <>
+            {series.length > 0 && (
+              <section>
+                <h2 className="mb-2 text-xs font-bold tracking-wider text-muted uppercase">Parcelados e recorrentes</h2>
+                <div className="flex flex-col gap-3">
+                  {series.map((parcelas) => (
+                    <SeriesCard key={parcelas[0].series!.id} uid={uid} vid={vehicle.id} parcelas={parcelas} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {byCategory.length > 1 && (
+              <section className={card}>
+                <h2 className={sectionTitle}>Por categoria</h2>
+                <dl>
+                  {byCategory.map(([c, value]) => (
+                    <div key={c} className="flex justify-between gap-3 border-b border-line py-2 last:border-b-0">
+                      <dt className="break-words">{c}</dt>
+                      <dd className="shrink-0 font-semibold whitespace-nowrap">{brl(value)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            )}
+
+            {months.length === 0 && series.length === 0 ? (
+              <p className={emptyText}>{entries.length === 0 ? 'Nada registrado ainda. Toque em + para começar.' : 'Nenhum registro deste tipo.'}</p>
+            ) : (
+              months.map(([ym, list]) => (
+                <section key={ym}>
+                  <h2 className="mb-2 flex justify-between gap-3 px-1 text-xs font-bold tracking-wider text-muted uppercase">
+                    <span>{monthTitle(ym)}</span>
+                    <span className="whitespace-nowrap">{brl(sum(list))}</span>
+                  </h2>
+                  <ul className={`${card} divide-y divide-line py-0`}>
+                    {list.map((e) => (
+                      <li key={e.id}>
+                        <EntryRow vid={vehicle.id} entry={e} kml={consumption[e.id]} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ))
+            )}
+          </>
+        )}
+      </main>
+    </>
+  );
+}

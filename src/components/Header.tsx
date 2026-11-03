@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import FlagStripe from './FlagStripe';
 import StatusStrip from './StatusStrip';
 import logoUrl from '../assets/logo.png';
@@ -27,21 +28,21 @@ export default function Header({ title, subtitle, back, logo, right, bottom, chi
       <header className="bg-bar px-4 pt-[calc(10px+env(safe-area-inset-top))] pb-2.5 text-bar-ink">
         <div className="flex items-center gap-2">
           {back && (
-            <button className="pr-2 pb-1 text-[2rem] leading-none" aria-label="Voltar" onClick={() => navigate(back)}>
-              ‹
+            <button className="-ml-2 grid size-11 shrink-0 place-items-center rounded-xl active:bg-white/10" aria-label="Voltar" onClick={() => navigate(back)}>
+              <ChevronLeft className="size-7" aria-hidden />
             </button>
           )}
           {/* fundo branco: o U azul-marinho sumiria na barra da mesma cor */}
           {logo && <img src={logoUrl} alt="" className="size-8 shrink-0 rounded-lg bg-white object-contain p-1" />}
           <div className="min-w-0 flex-1">
-            <h1 className="truncate text-lg font-bold">{title}</h1>
+            <h1 className="text-lg font-bold break-words">{title}</h1>
             {subtitle && <span className="text-[0.8rem] opacity-85">{subtitle}</span>}
           </div>
           {right}
         </div>
         {bottom && <div className="relative mt-2.5">{bottom}</div>}
       </header>
-      <FlagStripe className="h-0.75" />
+      <FlagStripe className="h-1" />
     </>
   );
   const pinned = (
