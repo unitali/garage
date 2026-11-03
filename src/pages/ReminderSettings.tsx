@@ -43,7 +43,7 @@ export default function ReminderSettings() {
       <main className={`${main} flex flex-col gap-4`}>
         <section className={`${card} flex flex-col gap-3`}>
           <h2 className={sectionTitle}>Avisar com antecedência</h2>
-          <p className="text-sm text-muted">
+          <p className="text-sm text-slate-600 dark:text-slate-400">
             O lembrete aparece em card na tela inicial quando faltar menos que isso — o que acontecer primeiro.
             Vencidos aparecem sempre.
           </p>
@@ -60,9 +60,9 @@ export default function ReminderSettings() {
         <section className={`${card} flex flex-col gap-3`}>
           <h2 className={sectionTitle}>Cores do card</h2>
           <ul className="flex flex-col gap-1.5 text-sm">
-            <Legend color="bg-ok" label="Verde" text={`em dia: faltando até ${km(alert.km)} ou ${monthsLabel(alert.months)}`} />
-            <Legend color="bg-warn" label="Laranja" text={`próximo: faltando até ${km(alert.urgentKm)} ou ${daysLabel(alert.urgentDays)}`} />
-            <Legend color="bg-danger" label="Vermelho" text="vencido: passou do km ou da data" />
+            <Legend color="bg-emerald-700 dark:bg-emerald-400" label="Verde" text={`em dia: faltando até ${km(alert.km)} ou ${monthsLabel(alert.months)}`} />
+            <Legend color="bg-orange-700 dark:bg-orange-400" label="Laranja" text={`próximo: faltando até ${km(alert.urgentKm)} ou ${daysLabel(alert.urgentDays)}`} />
+            <Legend color="bg-red-700 dark:bg-red-400" label="Vermelho" text="vencido: passou do km ou da data" />
           </ul>
           <Chips
             label="Laranja faltando até"

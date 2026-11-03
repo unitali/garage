@@ -1,48 +1,20 @@
 /*
- * Tokens de design do Unitali Garage — fonte única das cores, raios e fonte.
- * O styles.css expõe estes valores ao Tailwind (bg-brand, text-muted, bg-warn-bg…).
- * Cores da paleta do Tailwind (var(--color-slate-900)…); hex só no que é marca: o azul-marinho
- * do logo e a faixa tricolor.
- * Regras: vermelho para vencido; laranja para próximo; verde para em dia.
- * As cores por tipo valem só para o ícone, nunca como borda de status.
+ * Tokens do Unitali Garage: só o que não existe na paleta do Tailwind — a fonte e as cores da marca.
+ * O resto (status, superfícies, texto, bordas, cores por tipo) usa as classes do Tailwind direto no
+ * código, com a variante dark: (ex: text-red-700 dark:text-red-400).
  */
 :root {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
-  /* marca: azul-marinho do logo */
+  /* marca: azul-marinho do logo; no escuro, um azul claro para ter contraste */
   --color-primary: #0f2747;
   --color-primary-600: var(--color-blue-800);
   --on-primary: var(--color-white);
   --primary-soft: var(--color-blue-50);
 
-  --bg: var(--color-slate-100);
-  --surface: var(--color-white);
-  --text: var(--color-slate-900);
-  --muted: var(--color-slate-600);
-  --border: var(--color-slate-200);
-  --outside: var(--color-slate-300); /* fora da coluna do app, em telas maiores que um tablet */
-
   /* barra do topo (azul-marinho da marca nos dois temas) */
   --bar: #0f2747;
   --bar-ink: var(--color-white);
-
-  --danger: var(--color-red-700);
-  --danger-bg: var(--color-red-50);
-  --warning: var(--color-orange-700);
-  --warning-bg: var(--color-orange-50);
-  --warning-border: var(--color-orange-200);
-  --success: var(--color-emerald-700);
-  --success-bg: var(--color-emerald-50);
-
-  /* tipo de registro: só no ícone */
-  --type-fuel: var(--color-emerald-700);
-  --type-fuel-bg: var(--color-emerald-50);
-  --type-service: var(--color-orange-700);
-  --type-service-bg: var(--color-orange-50);
-  --type-expense: var(--color-blue-800);
-  --type-expense-bg: var(--color-blue-50);
-  --type-reminder: var(--color-violet-700);
-  --type-reminder-bg: var(--color-violet-50);
 
   /* faixa tricolor (cores da bandeira italiana) */
   --flag-green: #009246;
@@ -50,7 +22,6 @@
   --flag-red: #ce2b37;
 }
 
-/* modo escuro: mesmos tokens, outros valores */
 @media (prefers-color-scheme: dark) {
   :root {
     --color-primary: var(--color-blue-300);
@@ -58,32 +29,7 @@
     --on-primary: var(--color-blue-950);
     --primary-soft: var(--color-blue-950);
 
-    --bg: var(--color-slate-950);
-    --surface: var(--color-slate-900);
-    --text: var(--color-slate-100);
-    --muted: var(--color-slate-400);
-    --border: var(--color-slate-800);
-    --outside: var(--color-black);
-
     --bar: #0b1b33;
-    --bar-ink: var(--color-white);
-
-    --danger: var(--color-red-400);
-    --danger-bg: var(--color-red-950);
-    --warning: var(--color-orange-400);
-    --warning-bg: var(--color-orange-950);
-    --warning-border: var(--color-orange-900);
-    --success: var(--color-emerald-400);
-    --success-bg: var(--color-emerald-950);
-
-    --type-fuel: var(--color-emerald-400);
-    --type-fuel-bg: var(--color-emerald-950);
-    --type-service: var(--color-orange-300);
-    --type-service-bg: var(--color-orange-950);
-    --type-expense: var(--color-blue-300);
-    --type-expense-bg: var(--color-blue-950);
-    --type-reminder: var(--color-violet-300);
-    --type-reminder-bg: var(--color-violet-950);
 
     --flag-green: #2fbf71;
     --flag-red: #ef5a63;

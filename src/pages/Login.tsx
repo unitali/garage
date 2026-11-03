@@ -50,17 +50,17 @@ export default function Login() {
         Unitali <span className="text-brand">Garage</span>
       </h1>
       {/* contorno: no fundo claro o branco do meio sumiria */}
-      <FlagStripe className="h-1.5 w-16 overflow-hidden rounded-full ring-1 ring-line" />
-      <p className="mb-3 max-w-[300px] text-muted">Manutenções, abastecimentos e despesas dos seus veículos, sempre à mão.</p>
+      <FlagStripe className="h-1.5 w-16 overflow-hidden rounded-full ring-1 ring-slate-200 dark:ring-slate-800" />
+      <p className="mb-3 max-w-[300px] text-slate-600 dark:text-slate-400">Manutenções, abastecimentos e despesas dos seus veículos, sempre à mão.</p>
 
       {offerInstall && (
         <section className={`${card} mb-2 flex w-full max-w-sm flex-col gap-3 text-left`}>
           {justInstalled ? (
             <div className="flex items-start gap-3">
-              <CircleCheck className="size-6 shrink-0 text-ok" />
+              <CircleCheck className="size-6 shrink-0 text-emerald-700 dark:text-emerald-400" />
               <div className="flex flex-col gap-0.5">
                 <strong>App instalado!</strong>
-                <span className="text-sm text-muted">Abra o Unitali Garage pela tela inicial e entre por lá.</span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">Abra o Unitali Garage pela tela inicial e entre por lá.</span>
               </div>
             </div>
           ) : (
@@ -71,7 +71,7 @@ export default function Login() {
                 </span>
                 <div className="flex flex-col gap-0.5">
                   <strong>Baixe o app</strong>
-                  <span className="text-sm text-muted">Instale e entre direto pelo app: abre da tela inicial e funciona sem internet.</span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Instale e entre direto pelo app: abre da tela inicial e funciona sem internet.</span>
                 </div>
               </div>
               {install?.kind === 'prompt' && (
@@ -98,7 +98,7 @@ export default function Login() {
         </section>
       )}
 
-      {offerInstall && <span className="text-sm text-muted">ou continue no navegador</span>}
+      {offerInstall && <span className="text-sm text-slate-600 dark:text-slate-400">ou continue no navegador</span>}
       <button className={btn(offerInstall ? 'default' : 'primary')} onClick={handleLogin} disabled={busy}>
         {busy ? 'Entrando…' : 'Entrar com Google'}
       </button>
@@ -112,7 +112,7 @@ function Step({ n, icon, children }: { n: number; icon: ReactNode; children: Rea
     <li className="flex items-center gap-2.5">
       <span className="grid size-6 shrink-0 place-items-center rounded-full bg-brand text-xs font-bold text-brand-contrast">{n}</span>
       <span className="flex-1">{children}</span>
-      <span className="text-muted">{icon}</span>
+      <span className="text-slate-600 dark:text-slate-400">{icon}</span>
     </li>
   );
 }

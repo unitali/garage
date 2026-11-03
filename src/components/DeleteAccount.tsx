@@ -76,9 +76,9 @@ function ConfirmDialog({ onClose }: { onClose: () => void }) {
         aria-modal="true"
         aria-labelledby="delete-title"
         aria-describedby="delete-text"
-        className="w-full max-w-sm rounded-3xl bg-surface p-5 text-ink shadow-2xl"
+        className="w-full max-w-sm rounded-3xl bg-white dark:bg-slate-900 p-5 text-slate-900 dark:text-slate-100 shadow-2xl"
       >
-        <span className="mb-3 grid size-12 place-items-center rounded-full bg-danger-bg text-danger">
+        <span className="mb-3 grid size-12 place-items-center rounded-full bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400">
           <TriangleAlert className="size-6" aria-hidden />
         </span>
         <h2 id="delete-title" className="text-lg font-bold">
@@ -91,7 +91,7 @@ function ConfirmDialog({ onClose }: { onClose: () => void }) {
           <p>Os dados serão perdidos e não será possível recuperá-los pelo app. Em seguida, você sai da conta.</p>
         </div>
         {error && (
-          <p className="mt-3 text-sm text-danger" role="alert">
+          <p className="mt-3 text-sm text-red-700 dark:text-red-400" role="alert">
             {error}
           </p>
         )}

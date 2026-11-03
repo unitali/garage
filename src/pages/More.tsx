@@ -23,9 +23,9 @@ export default function More() {
           <UserAvatar user={user} name={name} className="size-14 text-lg" />
           <span className="flex min-w-0 flex-1 flex-col">
             <strong className="text-lg break-words">{name}</strong>
-            {user.email && <span className="text-sm break-all text-muted">{user.email}</span>}
+            {user.email && <span className="text-sm break-all text-slate-600 dark:text-slate-400">{user.email}</span>}
           </span>
-          <ChevronRight className="size-5 shrink-0 text-muted" />
+          <ChevronRight className="size-5 shrink-0 text-slate-600 dark:text-slate-400" />
         </Link>
 
         {/* tudo num menu só, cada item com o nome da tela que abre */}
@@ -41,7 +41,7 @@ export default function More() {
 
         <DeleteAccount />
 
-        <p className="text-center text-xs text-muted">Unitali Garage v{__APP_VERSION__}</p>
+        <p className="text-center text-xs text-slate-600 dark:text-slate-400">Unitali Garage v{__APP_VERSION__}</p>
       </main>
     </>
   );

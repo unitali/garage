@@ -106,12 +106,12 @@ export default function ExpensePaymentField({
             </label>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-2xl border border-line p-3">
+          <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3">
             <span className="text-sm font-bold">Vencimentos</span>
             <ul className="flex flex-col gap-2">
               {rows.map((r, idx) => (
                 <li key={r.key} className="grid grid-cols-[2rem_minmax(0,1fr)_7.5rem] items-center gap-2">
-                  <span className="text-sm font-semibold text-muted">{idx + 1}ª</span>
+                  <span className="text-sm font-semibold text-slate-600 dark:text-slate-400">{idx + 1}ª</span>
                   <input
                     className={input}
                     type="date"
@@ -130,12 +130,12 @@ export default function ExpensePaymentField({
                 </li>
               ))}
             </ul>
-            <div className="flex items-baseline justify-between border-t border-line pt-2">
+            <div className="flex items-baseline justify-between border-t border-slate-200 dark:border-slate-800 pt-2">
               <span className="font-semibold">Total ({rows.length} {mode === 'installments' ? 'parcelas' : 'meses'})</span>
               <strong>{brl(total)}</strong>
             </div>
             {mode === 'installments' && typedTotal > 0 && Math.abs(total - typedTotal) >= 0.01 && (
-              <small className="text-xs text-warn">A soma das parcelas difere do valor total informado ({brl(typedTotal)}).</small>
+              <small className="text-xs text-orange-700 dark:text-orange-400">A soma das parcelas difere do valor total informado ({brl(typedTotal)}).</small>
             )}
           </div>
         </>

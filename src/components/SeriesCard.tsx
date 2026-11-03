@@ -30,16 +30,16 @@ export default function SeriesCard({ uid, vid, parcelas }: { uid: string; vid: s
             {first.category}
             {recurring ? ' · recorrente' : ''}
           </strong>
-          <span className="text-sm text-muted">
+          <span className="text-sm text-slate-600 dark:text-slate-400">
             {r.total}× {brl(valor)}
             {r.proxima ? ` · próxima ${date(r.proxima.date)}` : ' · quitado'}
           </span>
         </span>
-        <ChevronDown className={`mt-2 size-5 shrink-0 text-muted transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
+        <ChevronDown className={`mt-2 size-5 shrink-0 text-slate-600 dark:text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
       </button>
 
       <div
-        className="mt-3 h-2 overflow-hidden rounded-full bg-bg"
+        className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-950"
         role="progressbar"
         aria-label="Parcelas pagas"
         aria-valuemin={0}
@@ -55,11 +55,11 @@ export default function SeriesCard({ uid, vid, parcelas }: { uid: string; vid: s
           </b>{' '}
           pagas · {brl(r.valorPago)}
         </span>
-        <span className="text-muted">falta {brl(r.restante)}</span>
+        <span className="text-slate-600 dark:text-slate-400">falta {brl(r.restante)}</span>
       </div>
 
       {open && (
-        <ul className="mt-3 divide-y divide-line border-t border-line">
+        <ul className="mt-3 divide-y divide-slate-200 dark:divide-slate-800 border-t border-slate-200 dark:border-slate-800">
           {r.parcelas.map((e) => {
             const paid = isPaid(e);
             return (
@@ -67,7 +67,7 @@ export default function SeriesCard({ uid, vid, parcelas }: { uid: string; vid: s
                 <Link to={paths.entry(vid, e.id)} className="flex min-h-11 min-w-0 flex-1 items-center justify-between gap-3">
                   <span className="text-sm">
                     <b>{e.series?.index}ª</b> · {date(e.date)}
-                    <span className={paid ? 'text-ok' : 'text-muted'}> · {paid ? 'paga' : 'em aberto'}</span>
+                    <span className={paid ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}> · {paid ? 'paga' : 'em aberto'}</span>
                   </span>
                   <span className="shrink-0 whitespace-nowrap text-sm font-semibold">{brl(e.amount)}</span>
                 </Link>

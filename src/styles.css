@@ -2,18 +2,11 @@
 @import './styles/tokens.css';
 
 /*
- * Tailwind lendo os tokens (src/styles/tokens.css). `inline`: as classes usam var(--…),
- * então o modo escuro só troca os tokens.
+ * Cores da marca (src/styles/tokens.css) como classes: bg-brand, text-bar-ink, bg-flag-green…
+ * `inline`: as classes usam var(--…), então o modo escuro só troca os tokens.
  */
 @theme inline {
   --font-sans: var(--font-sans);
-
-  --color-outside: var(--outside);
-  --color-bg: var(--bg);
-  --color-surface: var(--surface);
-  --color-ink: var(--text);
-  --color-muted: var(--muted);
-  --color-line: var(--border);
 
   --color-brand: var(--color-primary);
   --color-brand-600: var(--color-primary-600);
@@ -21,28 +14,6 @@
   --color-brand-soft: var(--primary-soft);
   --color-bar: var(--bar);
   --color-bar-ink: var(--bar-ink);
-
-  --color-danger: var(--danger);
-  --color-danger-bg: var(--danger-bg);
-  --color-warn: var(--warning);
-  --color-warn-bg: var(--warning-bg);
-  --color-warn-border: var(--warning-border);
-  --color-ok: var(--success);
-  --color-ok-bg: var(--success-bg);
-
-  --color-fuel: var(--type-fuel);
-  --color-fuel-bg: var(--type-fuel-bg);
-  /* combustível do abastecimento: gasolina vermelha, etanol verde (seguem o modo escuro dos tokens) */
-  --color-gasolina: var(--danger);
-  --color-gasolina-bg: var(--danger-bg);
-  --color-etanol: var(--type-fuel);
-  --color-etanol-bg: var(--type-fuel-bg);
-  --color-service: var(--type-service);
-  --color-service-bg: var(--type-service-bg);
-  --color-expense: var(--type-expense);
-  --color-expense-bg: var(--type-expense-bg);
-  --color-reminder: var(--type-reminder);
-  --color-reminder-bg: var(--type-reminder-bg);
 
   --color-flag-green: var(--flag-green);
   --color-flag-white: var(--flag-white);

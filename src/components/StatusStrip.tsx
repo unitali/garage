@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { applyUpdate, useUpdateAvailable } from '../pwa';
 import { trackPendingFromLastSession, useOnline, usePendingWrites } from '../sync';
 
-const strip = 'flex items-center justify-between gap-2 border-b border-line px-4 py-1.5 text-sm font-semibold';
+const strip = 'flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 px-4 py-1.5 text-sm font-semibold';
 
 /** Faixas abaixo da barra do topo: nova versão, sem conexão e sincronização. */
 export default function StatusStrip() {
@@ -44,7 +44,7 @@ export default function StatusStrip() {
           </button>
         </div>
       )}
-      {sync && <div className={`${strip} bg-surface ${online ? 'text-ok' : 'text-warn'}`}>{sync}</div>}
+      {sync && <div className={`${strip} bg-white dark:bg-slate-900 ${online ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}`}>{sync}</div>}
     </>
   );
 }

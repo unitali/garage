@@ -39,11 +39,11 @@ export default function Vehicles() {
                         <span className="shrink-0 rounded-full bg-brand-soft px-2 py-0.5 text-xs font-bold text-brand">na tela inicial</span>
                       )}
                     </strong>
-                    <span className="text-sm text-muted">
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
                       {[VEHICLE_TYPES[v.type]?.label, v.plate, km(v.odometer ?? v.initialOdometer)].filter(Boolean).join(' · ')}
                     </span>
                   </span>
-                  <ChevronRight className="size-5 shrink-0 text-muted" />
+                  <ChevronRight className="size-5 shrink-0 text-slate-600 dark:text-slate-400" />
                 </Link>
               </li>
             ))}

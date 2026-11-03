@@ -53,7 +53,7 @@ function NoVehicle() {
           <Car className="size-10" aria-hidden />
         </span>
         <h2 className="text-xl font-bold">Nenhum veículo ainda</h2>
-        <p className="max-w-xs text-muted">Cadastre seu carro, moto ou bike para acompanhar abastecimentos, serviços e lembretes.</p>
+        <p className="max-w-xs text-slate-600 dark:text-slate-400">Cadastre seu carro, moto ou bike para acompanhar abastecimentos, serviços e lembretes.</p>
         <Link className={`${btn('primary')} mt-2 gap-2`} to={paths.newVehicle()}>
           <Plus className="size-5" aria-hidden />
           Cadastrar veículo
@@ -98,21 +98,21 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
 
         <section className="grid grid-cols-2 gap-3">
           <div className={card}>
-            <h2 className="text-sm text-muted">Gasto em {ref.slice(0, 4)}</h2>
+            <h2 className="text-sm text-slate-600 dark:text-slate-400">Gasto em {ref.slice(0, 4)}</h2>
             <p className="text-xl font-bold">{brl(pago)}</p>
-            <p className="text-xs text-muted">{previsto > 0 ? `pago · ${brl(previsto)} previsto` : 'pago'}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-400">{previsto > 0 ? `pago · ${brl(previsto)} previsto` : 'pago'}</p>
           </div>
           <div className={card}>
-            <h2 className="text-sm text-muted">Consumo médio</h2>
+            <h2 className="text-sm text-slate-600 dark:text-slate-400">Consumo médio</h2>
             <p className="text-xl font-bold">{consumption.avg ? `${num(consumption.avg, 1)} ${unit}` : '—'}</p>
             {variation != null ? (
-              <p className={`flex items-center gap-1 text-xs ${variation >= 0 ? 'text-ok' : 'text-muted'}`}>
+              <p className={`flex items-center gap-1 text-xs ${variation >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400'}`}>
                 {variation >= 0 ? <TrendingUp className="size-4" aria-hidden /> : <TrendingDown className="size-4" aria-hidden />}
                 {variation >= 0 ? '+' : ''}
                 {num(variation * 100, 0)}% vs. mês anterior
               </p>
             ) : (
-              <p className="text-xs text-muted">{consumption.avg ? 'média de todos os tanques' : 'precisa de 2 tanques cheios'}</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400">{consumption.avg ? 'média de todos os tanques' : 'precisa de 2 tanques cheios'}</p>
             )}
           </div>
         </section>
@@ -120,9 +120,9 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
         <section className={card}>
           <SectionHead title="Últimos registros" to={paths.history()} link="Histórico" />
           {recent.length === 0 ? (
-            <p className="py-2 text-sm text-muted">Nada registrado ainda. Toque em + para começar.</p>
+            <p className="py-2 text-sm text-slate-600 dark:text-slate-400">Nada registrado ainda. Toque em + para começar.</p>
           ) : (
-            <ul className="divide-y divide-line">
+            <ul className="divide-y divide-slate-200 dark:divide-slate-800">
               {recent.map((e) => (
                 <li key={e.id}>
                   <EntryRow vid={v.id} entry={e} kml={consumption.byEntry[e.id]} />
@@ -154,9 +154,9 @@ function SectionHead({ title, count, to, link }: { title: string; count?: number
 
 /** Cores dos cards: verde em dia, laranja próximo, vermelho vencido (Configurações → Lembretes). */
 const TONE: Record<ReminderLevel, { box: string; text: string; badge: string; button: string }> = {
-  overdue: { box: 'border-danger/30 bg-danger-bg', text: 'text-danger', badge: 'bg-danger text-bg', button: 'bg-danger text-bg' },
-  soon: { box: 'border-warn-border bg-warn-bg', text: 'text-warn', badge: 'bg-warn text-bg', button: 'bg-warn text-bg' },
-  ok: { box: 'border-ok/30 bg-ok-bg', text: 'text-ok', badge: 'bg-ok text-bg', button: 'bg-ok text-bg' },
+  overdue: { box: 'border-red-700/30 dark:border-red-400/30 bg-red-50 dark:bg-red-950', text: 'text-red-700 dark:text-red-400', badge: 'bg-red-700 dark:bg-red-400 text-slate-100 dark:text-slate-950', button: 'bg-red-700 dark:bg-red-400 text-slate-100 dark:text-slate-950' },
+  soon: { box: 'border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950', text: 'text-orange-700 dark:text-orange-400', badge: 'bg-orange-700 dark:bg-orange-400 text-slate-100 dark:text-slate-950', button: 'bg-orange-700 dark:bg-orange-400 text-slate-100 dark:text-slate-950' },
+  ok: { box: 'border-emerald-700/30 dark:border-emerald-400/30 bg-emerald-50 dark:bg-emerald-950', text: 'text-emerald-700 dark:text-emerald-400', badge: 'bg-emerald-700 dark:bg-emerald-400 text-slate-100 dark:text-slate-950', button: 'bg-emerald-700 dark:bg-emerald-400 text-slate-100 dark:text-slate-950' },
 };
 
 /**
@@ -184,7 +184,7 @@ function Upcoming({
         </span>
         <div className="min-w-0 flex-1">
           <h2 className="font-bold">Crie seu primeiro lembrete</h2>
-          <p className="text-sm text-muted">Troca de óleo, revisão, IPVA… avisamos antes de vencer.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Troca de óleo, revisão, IPVA… avisamos antes de vencer.</p>
         </div>
         <Link to={paths.newReminder(vid)} className={btn('primary', 'sm')}>
           Criar lembrete
@@ -195,10 +195,10 @@ function Upcoming({
   if (cards.length === 0 && next)
     return (
       <Link to={paths.reminders()} className={`flex items-center gap-3 rounded-2xl border p-3.5 ${TONE.ok.box}`}>
-        <CheckCircle2 className="size-6 shrink-0 text-ok" aria-hidden />
+        <CheckCircle2 className="size-6 shrink-0 text-emerald-700 dark:text-emerald-400" aria-hidden />
         <span className="flex min-w-0 flex-1 flex-col">
           <strong>Tudo em dia</strong>
-          <span className="text-sm text-muted">
+          <span className="text-sm text-slate-600 dark:text-slate-400">
             Nada vence nos próximos {km(alert.km)} ou {monthsLabel(alert.months)}. Próximo: {next.r.title}
             {dueText(next.s) ? ` (${dueText(next.s)})` : ''}.
           </span>
@@ -247,14 +247,14 @@ function ToneCard({
   return (
     <article className={`flex flex-col rounded-2xl border p-3.5 ${tone.box} ${className}`}>
       <div className="flex items-start gap-3">
-        <span className={`${iconCircle} bg-surface ${tone.text}`}>
+        <span className={`${iconCircle} bg-white dark:bg-slate-900 ${tone.text}`}>
           <Icon className="size-5" aria-hidden />
         </span>
         <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
           <span className={`${badge} ${tone.badge}`}>{LEVEL_LABEL[level]}</span>
           <h3 className="text-lg font-bold break-words">{title}</h3>
           <p className={`text-sm font-semibold ${tone.text}`}>{status}</p>
-          {detail && <p className="text-sm text-muted">{detail}</p>}
+          {detail && <p className="text-sm text-slate-600 dark:text-slate-400">{detail}</p>}
         </div>
       </div>
       {/* mt-auto: no carrossel as ações ficam alinhadas embaixo mesmo com textos de tamanhos diferentes */}

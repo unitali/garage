@@ -7,7 +7,7 @@ import type { Vehicle } from '../types';
 import { grow, VEHICLE_ICON } from '../ui';
 import { paths } from '../routes/paths';
 
-const menuItem = 'flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left active:bg-bg';
+const menuItem = 'flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left active:bg-slate-100 dark:active:bg-slate-950';
 
 const box = 'flex min-h-14 w-full items-center gap-3 rounded-2xl bg-white/12 px-3 py-2 text-left';
 
@@ -71,7 +71,7 @@ export default function VehicleSwitcher({
           <div className="fixed inset-0 z-20" onClick={() => setOpen(false)} />
           <div
             role="menu"
-            className="absolute top-full left-0 z-30 mt-2 w-full overflow-hidden rounded-2xl border border-line bg-surface text-ink shadow-xl"
+            className="absolute top-full left-0 z-30 mt-2 w-full overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xl"
           >
             <ul className="max-h-[50dvh] overflow-y-auto">
               {vehicles.map((v) => {
@@ -92,7 +92,7 @@ export default function VehicleSwitcher({
                       </span>
                       <span className={grow}>
                         <strong className="break-words">{v.name}</strong>
-                        <span className="text-sm text-muted">
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
                           {[v.plate, km(v.id === current.id ? odometer : (v.odometer ?? v.initialOdometer))].filter(Boolean).join(' · ')}
                         </span>
                       </span>
@@ -102,9 +102,9 @@ export default function VehicleSwitcher({
                 );
               })}
             </ul>
-            <div className="border-t border-line">
+            <div className="border-t border-slate-200 dark:border-slate-800">
               <button role="menuitem" className={`${menuItem} font-semibold`} onClick={() => navigate(paths.editVehicle(current.id))}>
-                <Pencil className="size-5 text-muted" />
+                <Pencil className="size-5 text-slate-600 dark:text-slate-400" />
                 Editar {current.name}
               </button>
               <button role="menuitem" className={`${menuItem} font-semibold text-brand`} onClick={() => navigate(paths.newVehicle())}>

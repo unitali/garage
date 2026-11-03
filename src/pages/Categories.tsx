@@ -29,7 +29,7 @@ export default function Categories() {
     <>
       <Header title={meta.title} back={paths.more()} />
       <main className={`${main} flex flex-col gap-5`}>
-        <p className="text-sm text-muted">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
           Tipos que você criou, além dos padrões. Aparecem na lista de categoria ao registrar {meta.one}, em todos os
           veículos. Remover um tipo não altera os registros que já usam ele.
         </p>
@@ -80,12 +80,12 @@ function Group({
 
   return (
     <SettingsGroup>
-      {sorted.length === 0 && <li className="px-4 py-3 text-sm text-muted">Nenhum ainda.</li>}
+      {sorted.length === 0 && <li className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">Nenhum ainda.</li>}
       {sorted.map((c) => (
         <li key={c} className="flex items-center gap-3 px-4 py-2.5">
           <span className="flex-1">{c}</span>
           <button
-            className="grid size-9 place-items-center rounded-lg text-danger active:bg-bg"
+            className="grid size-9 place-items-center rounded-lg text-red-700 dark:text-red-400 active:bg-slate-100 dark:active:bg-slate-950"
             aria-label={`Remover ${c}`}
             onClick={() => confirm(`Remover "${c}" da lista?`) && removeCategory(uid, kind, c)}
           >
@@ -111,11 +111,11 @@ function Group({
         </button>
       </li>
       {message && (
-        <li className={`px-4 pb-3 text-sm ${message.ok ? 'text-ok' : 'text-warn'}`} role="status">
+        <li className={`px-4 pb-3 text-sm ${message.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}`} role="status">
           {message.text}
         </li>
       )}
-      <li className="px-4 py-3 text-xs text-muted">
+      <li className="px-4 py-3 text-xs text-slate-600 dark:text-slate-400">
         <b>Já incluídos:</b> {defaults.join(', ')}.
       </li>
     </SettingsGroup>

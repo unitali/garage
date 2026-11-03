@@ -27,18 +27,18 @@ export default function EntryRow({ vid, entry: e, kml }: { vid: string; entry: E
           <strong className="min-w-0 break-words">{title(e)}</strong>
           <strong className="shrink-0 whitespace-nowrap">{brl(e.amount)}</strong>
         </span>
-        <span className="text-sm text-muted">{secondary(e, kml)}</span>
+        <span className="text-sm text-slate-600 dark:text-slate-400">{secondary(e, kml)}</span>
         {listItems && (
           <ul className="mt-1 flex flex-col gap-0.5 text-sm">
             {items.map((i, idx) => (
               <li key={idx} className="flex items-start justify-between gap-3">
                 <span className="min-w-0 break-words">{i.category}</span>
-                <span className="shrink-0 whitespace-nowrap text-muted">{brl(i.amount)}</span>
+                <span className="shrink-0 whitespace-nowrap text-slate-600 dark:text-slate-400">{brl(i.amount)}</span>
               </li>
             ))}
           </ul>
         )}
-        {note && <span className="break-words text-xs text-muted">{note}</span>}
+        {note && <span className="break-words text-xs text-slate-600 dark:text-slate-400">{note}</span>}
       </span>
     </Link>
   );

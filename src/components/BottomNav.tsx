@@ -22,7 +22,7 @@ export default function BottomNav() {
     <>
       <nav
         aria-label="Navegação principal"
-        className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-3xl border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:border-x"
+        className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-3xl border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pb-[env(safe-area-inset-bottom)] md:border-x"
       >
         <ul className="grid h-16 grid-cols-5">
           <Item to={paths.home()} icon={House} label="Início" active={pathname === paths.home()} />
@@ -30,13 +30,13 @@ export default function BottomNav() {
           <li className="flex justify-center">
             <button
               ref={plus}
-              className="flex flex-col items-center gap-0.5 text-xs font-medium text-muted"
+              className="flex flex-col items-center gap-0.5 text-xs font-medium text-slate-600 dark:text-slate-400"
               aria-haspopup="dialog"
               aria-expanded={adding}
               onClick={() => setAdding(true)}
             >
               {/* 56px, 24px acima da barra, borda de 4px na cor da superfície */}
-              <span className="-mt-6 grid size-14 place-items-center rounded-full border-4 border-surface bg-brand text-brand-contrast shadow-lg">
+              <span className="-mt-6 grid size-14 place-items-center rounded-full border-4 border-white dark:border-slate-900 bg-brand text-brand-contrast shadow-lg">
                 <Plus className="size-7" aria-hidden />
               </span>
               Adicionar
@@ -89,12 +89,12 @@ function Item({
         to={to}
         aria-current={active ? 'page' : undefined}
         aria-label={badge > 0 ? `${label}, ${badgeLabel}` : undefined}
-        className={`flex flex-1 flex-col items-center justify-center gap-1 text-xs ${active ? 'font-bold text-brand' : 'font-medium text-muted'}`}
+        className={`flex flex-1 flex-col items-center justify-center gap-1 text-xs ${active ? 'font-bold text-brand' : 'font-medium text-slate-600 dark:text-slate-400'}`}
       >
         <span className="relative">
           <Icon className="size-6" aria-hidden />
           {badge > 0 && (
-            <span className="absolute -top-1.5 -right-2.5 grid h-5 min-w-5 place-items-center rounded-full bg-danger px-1 text-[11px] font-bold text-bg">
+            <span className="absolute -top-1.5 -right-2.5 grid h-5 min-w-5 place-items-center rounded-full bg-red-700 dark:bg-red-400 px-1 text-[11px] font-bold text-slate-100 dark:text-slate-950">
               {badge > 9 ? '9+' : badge}
             </span>
           )}

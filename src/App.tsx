@@ -9,7 +9,7 @@ import Login from './pages/Login';
 
 /** Coluna do app: ocupa a tela toda no celular e para no tamanho de um tablet (768px). */
 function Shell({ children }: { children: ReactNode }) {
-  return <div className="mx-auto min-h-dvh max-w-3xl bg-bg md:border-x md:border-line">{children}</div>;
+  return <div className="mx-auto min-h-dvh max-w-3xl bg-slate-100 dark:bg-slate-950 md:border-x md:border-slate-200 dark:md:border-slate-800">{children}</div>;
 }
 
 export default function App() {

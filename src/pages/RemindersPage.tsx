@@ -11,7 +11,7 @@ import { isPaid, proximaAcao, seriesDe } from '../lib/summary';
 import { paths } from '../routes/paths';
 import { badge, btn, card, emptyText, iconCircle, LEVEL_BADGE, LEVEL_LABEL, LEVEL_TEXT, main, REMINDER_ICON, REMINDER_SOFT, splash } from '../ui';
 
-const groupTitle = 'mb-2 px-1 text-xs font-bold tracking-wider text-muted uppercase';
+const groupTitle = 'mb-2 px-1 text-xs font-bold tracking-wider text-slate-600 dark:text-slate-400 uppercase';
 
 /**
  * Lembretes (o que está por vir): contas dentro do aviso (com "Pago"), parcelados/recorrentes com parcelas
@@ -39,7 +39,7 @@ export default function RemindersPage() {
             {bills.length > 0 && (
               <section>
                 <h2 className={groupTitle}>Contas</h2>
-                <div className={`${card} divide-y divide-line py-0`}>
+                <div className={`${card} divide-y divide-slate-200 dark:divide-slate-800 py-0`}>
                   {bills.map((b) => (
                     <BillRow key={b.e.id} uid={uid} vid={vehicle.id} bill={b} />
                   ))}
@@ -61,9 +61,9 @@ export default function RemindersPage() {
             <section>
               <h2 className={groupTitle}>Manutenção</h2>
               {ordered.length === 0 ? (
-                <p className={`${card} text-sm text-muted`}>Nenhum lembrete. Crie por km e/ou por tempo — troca de óleo, revisão, IPVA…</p>
+                <p className={`${card} text-sm text-slate-600 dark:text-slate-400`}>Nenhum lembrete. Crie por km e/ou por tempo — troca de óleo, revisão, IPVA…</p>
               ) : (
-                <ul className={`${card} divide-y divide-line py-0`}>
+                <ul className={`${card} divide-y divide-slate-200 dark:divide-slate-800 py-0`}>
                   {ordered.map(({ r, s, due: when, estimated }) => (
                     <li key={r.id} className="flex items-start gap-3 py-3">
                       <span className={`${iconCircle} ${REMINDER_SOFT}`}>
@@ -75,7 +75,7 @@ export default function RemindersPage() {
                           {s.level !== 'ok' && <span className={`${badge} ${LEVEL_BADGE[s.level]}`}>{LEVEL_LABEL[s.level]}</span>}
                         </span>
                         <span className={`text-sm ${LEVEL_TEXT[s.level]}`}>{dueText(s)}</span>
-                        <span className="text-xs text-muted">
+                        <span className="text-xs text-slate-600 dark:text-slate-400">
                           Próximo:{' '}
                           {[s.nextKm != null ? km(s.nextKm) : null, when ? `${estimated ? '≈ ' : ''}${date(when)}` : null].filter(Boolean).join(' · ')}
                         </span>

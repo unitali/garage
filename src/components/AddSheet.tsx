@@ -55,12 +55,12 @@ export default function AddSheet({
 
 function Tile({ icon: Icon, tone, title, hint, onClick }: { icon: LucideIcon; tone: string; title: string; hint: ReactNode; onClick: () => void }) {
   return (
-    <button className="flex min-h-11 flex-col items-start gap-2 rounded-2xl border border-line p-3.5 text-left active:bg-bg" onClick={onClick}>
+    <button className="flex min-h-11 flex-col items-start gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3.5 text-left active:bg-slate-100 dark:active:bg-slate-950" onClick={onClick}>
       <span className={`${iconCircle} ${tone}`}>
         <Icon className="size-5" aria-hidden />
       </span>
       <strong>{title}</strong>
-      <span className="text-sm text-muted">{hint}</span>
+      <span className="text-sm text-slate-600 dark:text-slate-400">{hint}</span>
     </button>
   );
 }

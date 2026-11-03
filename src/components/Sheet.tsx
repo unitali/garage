@@ -65,17 +65,17 @@ export default function Sheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="mx-auto max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-t-3xl bg-surface px-4 pt-3 pb-[calc(16px+env(safe-area-inset-bottom))] text-ink shadow-2xl"
+        className="mx-auto max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-t-3xl bg-white dark:bg-slate-900 px-4 pt-3 pb-[calc(16px+env(safe-area-inset-bottom))] text-slate-900 dark:text-slate-100 shadow-2xl"
       >
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line" aria-hidden />
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden />
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <h2 id={titleId} className="text-lg font-bold">
               {title}
             </h2>
-            {subtitle && <p className="text-sm text-muted">{subtitle}</p>}
+            {subtitle && <p className="text-sm text-slate-600 dark:text-slate-400">{subtitle}</p>}
           </div>
-          <button type="button" className="grid size-11 place-items-center rounded-xl text-muted active:bg-bg" aria-label="Fechar" onClick={onClose}>
+          <button type="button" className="grid size-11 place-items-center rounded-xl text-slate-600 dark:text-slate-400 active:bg-slate-100 dark:active:bg-slate-950" aria-label="Fechar" onClick={onClose}>
             <X className="size-6" />
           </button>
         </div>

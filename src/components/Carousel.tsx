@@ -80,7 +80,7 @@ export default function Carousel({ children, label }: { children: ReactNode; lab
             aria-current={i === active}
             onClick={() => go(i)}
           >
-            <span className={`h-2 rounded-full transition-all ${i === active ? 'w-4 bg-brand' : 'w-2 bg-line dark:bg-muted'}`} />
+            <span className={`h-2 rounded-full transition-all ${i === active ? 'w-4 bg-brand' : 'w-2 bg-slate-200 dark:bg-slate-400'}`} />
           </button>
         ))}
       </div>

@@ -83,7 +83,7 @@ export default function FuelCalculator({
           <span className={`grid size-14 place-items-center rounded-full ${FUEL_SOFT[best]}`}>
             <Fuel className="size-7" />
           </span>
-          <span className="text-sm text-muted">Compensa abastecer com</span>
+          <span className="text-sm text-slate-600 dark:text-slate-400">Compensa abastecer com</span>
           <strong className={`text-3xl uppercase ${FUEL_TEXT[best]}`}>{result.best}</strong>
           <p className="text-sm">
             O etanol custa <b>{pct(result.ratio)}</b> do preço da gasolina — {result.best === 'etanol' ? 'abaixo' : 'acima'} do limite de{' '}
@@ -92,12 +92,12 @@ export default function FuelCalculator({
           </p>
           {result.perKm && (
             <dl className="mt-2 grid w-full grid-cols-2 gap-2 text-sm">
-              <div className="rounded-xl bg-bg p-2.5">
-                <dt className="text-muted">Etanol</dt>
+              <div className="rounded-xl bg-slate-100 dark:bg-slate-950 p-2.5">
+                <dt className="text-slate-600 dark:text-slate-400">Etanol</dt>
                 <dd className="font-bold">{brl(result.perKm.etanol)}/km</dd>
               </div>
-              <div className="rounded-xl bg-bg p-2.5">
-                <dt className="text-muted">Gasolina</dt>
+              <div className="rounded-xl bg-slate-100 dark:bg-slate-950 p-2.5">
+                <dt className="text-slate-600 dark:text-slate-400">Gasolina</dt>
                 <dd className="font-bold">{brl(result.perKm.gasolina)}/km</dd>
               </div>
             </dl>
@@ -109,11 +109,11 @@ export default function FuelCalculator({
           )}
         </section>
       ) : (
-        <p className="text-center text-sm text-muted">Informe o preço do etanol e da gasolina.</p>
+        <p className="text-center text-sm text-slate-600 dark:text-slate-400">Informe o preço do etanol e da gasolina.</p>
       )}
 
       {!useCar && (
-        <p className="text-xs text-muted">
+        <p className="text-xs text-slate-600 dark:text-slate-400">
           Regra dos 70%: o etanol rende cerca de 30% menos por litro, então só compensa se custar até 70% da gasolina. Cada
           carro é diferente — marque "Usar o consumo do meu carro" para o cálculo exato.
         </p>

@@ -23,7 +23,7 @@ const FILTERS: { id: HistoryFilter | null; label: string }[] = [
 /** filtro: ícone em cima (nas cores do tipo, como nos registros) e o nome embaixo; rola de lado quando não cabem */
 const filterTile = (active: boolean) =>
   `flex min-w-18 flex-auto shrink-0 snap-start flex-col items-center gap-1 rounded-2xl border-2 px-2.5 py-2 ${
-    active ? 'border-brand bg-surface text-brand' : 'border-line bg-surface text-muted'
+    active ? 'border-brand bg-white dark:bg-slate-900 text-brand' : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400'
   }`;
 
 const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -107,7 +107,7 @@ export default function History() {
                 <h2 className={sectionTitle}>Por categoria</h2>
                 <dl>
                   {byCategory.map(([c, value]) => (
-                    <div key={c} className="flex justify-between gap-3 border-b border-line py-2 last:border-b-0">
+                    <div key={c} className="flex justify-between gap-3 border-b border-slate-200 dark:border-slate-800 py-2 last:border-b-0">
                       <dt className="break-words">{c}</dt>
                       <dd className="shrink-0 font-semibold whitespace-nowrap">{brl(value)}</dd>
                     </div>
@@ -121,11 +121,11 @@ export default function History() {
             ) : (
               months.map(([ym, list]) => (
                 <section key={ym}>
-                  <h2 className="mb-2 flex justify-between gap-3 px-1 text-xs font-bold tracking-wider text-muted uppercase">
+                  <h2 className="mb-2 flex justify-between gap-3 px-1 text-xs font-bold tracking-wider text-slate-600 dark:text-slate-400 uppercase">
                     <span>{monthTitle(ym)}</span>
                     <span className="whitespace-nowrap">{brl(sum(list))}</span>
                   </h2>
-                  <ul className={`${card} divide-y divide-line py-0`}>
+                  <ul className={`${card} divide-y divide-slate-200 dark:divide-slate-800 py-0`}>
                     {list.map((e) => (
                       <li key={e.id}>
                         <EntryRow vid={vehicle.id} entry={e} kml={consumption[e.id]} />

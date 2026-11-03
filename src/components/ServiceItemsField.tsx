@@ -103,7 +103,7 @@ export default function ServiceItemsField({
             {items.length > 1 ? (
               <button
                 type="button"
-                className="grid size-9 place-items-center rounded-lg text-danger active:bg-bg"
+                className="grid size-9 place-items-center rounded-lg text-red-700 dark:text-red-400 active:bg-slate-100 dark:active:bg-slate-950"
                 aria-label={`Remover item ${idx + 1}`}
                 onClick={() => onChange(items.filter((i) => i.key !== item.key))}
               >
@@ -123,14 +123,14 @@ export default function ServiceItemsField({
 
       <button
         type="button"
-        className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-line py-2.5 text-sm font-semibold text-brand"
+        className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-800 py-2.5 text-sm font-semibold text-brand"
         onClick={() => onChange([...items, newItem()])}
       >
         <Plus className="size-4" />
         Adicionar item
       </button>
 
-      <div className="mt-1 flex items-baseline justify-between border-t border-line pt-3">
+      <div className="mt-1 flex items-baseline justify-between border-t border-slate-200 dark:border-slate-800 pt-3">
         <span className="font-semibold">Total{items.length > 1 ? ` (${items.length} itens)` : ''}</span>
         <strong className="text-lg">{brl(draftsTotal(items))}</strong>
       </div>
@@ -172,7 +172,7 @@ function ItemReminder({
           <BellRing className="size-4 text-brand" />
           Lembrar da próxima troca
         </span>
-        <button type="button" className="text-muted" aria-label="Sem lembrete" onClick={() => update({ remind: false, remindKm: '', remindMonths: '' })}>
+        <button type="button" className="text-slate-600 dark:text-slate-400" aria-label="Sem lembrete" onClick={() => update({ remind: false, remindKm: '', remindMonths: '' })}>
           <X className="size-5" />
         </button>
       </div>
@@ -202,7 +202,7 @@ function ItemReminder({
           />
         </label>
       </div>
-      <small className="text-xs text-muted">
+      <small className="text-xs text-slate-600 dark:text-slate-400">
         {next.length ? `Próxima: ${next.join(' ou ')}${next.length > 1 ? ', o que vier primeiro' : ''}.` : 'Preencha km, meses ou os dois.'}
       </small>
     </div>

@@ -41,7 +41,7 @@ export default function Profile() {
         <section className={`${card} flex flex-col items-center gap-2 py-6 text-center`}>
           <UserAvatar user={user} name={shownName} className="size-20 text-2xl ring-4 ring-brand-soft" />
           <strong className="text-lg">{shownName}</strong>
-          {user.email && <span className="text-sm text-muted">{user.email}</span>}
+          {user.email && <span className="text-sm text-slate-600 dark:text-slate-400">{user.email}</span>}
         </section>
 
         <section className={card}>

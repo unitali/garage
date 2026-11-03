@@ -33,10 +33,10 @@ export default function OdometerForm() {
       <main className={main}>
         <form className={`${card} ${form}`} onSubmit={submit}>
           <div className="flex items-center gap-3">
-            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-ok-bg text-ok">
+            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400">
               <Gauge className="size-6" aria-hidden />
             </span>
-            <p className="text-sm text-muted">Só a leitura do painel — não registra gasto. Mantém os lembretes por km em dia.</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Só a leitura do painel — não registra gasto. Mantém os lembretes por km em dia.</p>
           </div>
           <label className={field}>
             Km atual
