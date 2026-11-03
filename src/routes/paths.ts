@@ -10,7 +10,9 @@ export type VehicleTab = 'historico' | 'resumo' | 'despesas' | 'lembretes';
 /** Padrões que o React Router casa com a URL. */
 export const PATTERNS = {
   home: '/',
-  profile: '/perfil',
+  settings: '/config',
+  profile: '/config/perfil',
+  vehicles: '/config/veiculos',
   newVehicle: '/v/new',
   vehicle: '/v/:vid',
   editVehicle: '/v/:vid/edit',
@@ -28,7 +30,9 @@ function withQuery(path: string, query: Record<string, string | undefined>) {
 /** URLs prontas para Link/navigate — nenhuma tela monta caminho na mão. */
 export const paths = {
   home: (tab?: VehicleTab) => withQuery(PATTERNS.home, { tab }),
+  settings: () => PATTERNS.settings,
   profile: () => PATTERNS.profile,
+  vehicles: () => PATTERNS.vehicles,
   newVehicle: () => PATTERNS.newVehicle,
   /** seleciona o veículo e abre a tela inicial na aba */
   vehicle: (vid: string, tab?: VehicleTab) => withQuery(generatePath(PATTERNS.vehicle, { vid }), { tab }),
