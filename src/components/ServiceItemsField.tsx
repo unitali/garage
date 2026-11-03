@@ -38,6 +38,13 @@ export const findReminder = (reminders: Reminder[], category: string) =>
 /** Colunas de cada linha: serviço (resto) · valor · remover */
 const row = 'grid grid-cols-[minmax(0,1fr)_7.5rem_2.25rem] gap-2';
 
+/** Se o veículo já tem lembrete para este serviço, o item vem com ele ligado e o intervalo atual. */
+export function withExistingReminder(item: ItemDraft, reminders: Reminder[]): ItemDraft {
+  const r = findReminder(reminders, item.category);
+  if (!r || isOilChange(item.category)) return item;
+  return { ...item, remind: true, remindKm: r.intervalKm ? String(r.intervalKm) : '', remindMonths: r.intervalMonths ? String(r.intervalMonths) : '' };
+}
+
 /** Lista do que foi feito no serviço (categoria + valor de cada item), o total e o lembrete opcional de cada item. */
 export default function ServiceItemsField({
   uid,
@@ -52,7 +59,7 @@ export default function ServiceItemsField({
   items: ItemDraft[];
   onChange: (items: ItemDraft[]) => void;
   reminders: Reminder[];
-  /** só em serviço novo: o lembrete conta a partir do km e da data dele */
+  /** o lembrete conta a partir do km e da data deste serviço */
   allowReminders: boolean;
   fromKm: number;
   fromDate: string;
@@ -60,14 +67,10 @@ export default function ServiceItemsField({
   const update = (key: number, patch: Partial<ItemDraft>) => onChange(items.map((i) => (i.key === key ? { ...i, ...patch } : i)));
 
   function changeCategory(item: ItemDraft, category: string) {
-    // já existe lembrete para este serviço? vem ligado com o intervalo atual (reinicia a contagem ao salvar)
-    const r = findReminder(reminders, category);
-    update(
-      item.key,
-      r && allowReminders
-        ? { category, remind: true, remindKm: r.intervalKm ? String(r.intervalKm) : '', remindMonths: r.intervalMonths ? String(r.intervalMonths) : '' }
-        : { category },
-    );
+    // já existe lembrete para este serviço? vem ligado com o intervalo atual
+    const changed = { ...item, category };
+    const next = allowReminders ? withExistingReminder(changed, reminders) : changed;
+    onChange(items.map((i) => (i.key === item.key ? next : i)));
   }
 
   return (

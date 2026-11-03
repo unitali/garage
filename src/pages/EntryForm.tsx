@@ -2,12 +2,12 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import CategorySelect from '../components/CategorySelect';
-import ServiceItemsField, { findReminder, isOilChange, newItem, type ItemDraft } from '../components/ServiceItemsField';
+import ServiceItemsField, { findReminder, isOilChange, newItem, withExistingReminder, type ItemDraft } from '../components/ServiceItemsField';
 import OilChangeField from '../components/OilChangeField';
 import { useUid } from '../auth';
 import { useEntries, useReminders, useVehicle } from '../hooks';
 import { deleteEntry, markReminderDone, saveEntry, saveReminder, syncVehicleOdometer } from '../db';
-import { ENTRY_KINDS, EXPENSE_CATEGORIES, FUEL_TYPES, normalizeCategory, OIL_CHANGE, SERVICE_CATEGORIES } from '../constants';
+import { ENTRY_KINDS, EXPENSE_CATEGORIES, FUEL_TYPES, normalizeCategory, OIL_CHANGE, OIL_KM_OPTIONS, OIL_MONTH_OPTIONS, SERVICE_CATEGORIES } from '../constants';
 import { currentOdometer, serviceItems, sumItems } from '../lib/calc';
 import { today } from '../lib/dates';
 import { km, MAX_KM_DIGITS, maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../lib/format';
@@ -23,7 +23,7 @@ export default function EntryFormPage() {
   const entries = useEntries(uid, vid);
   const reminders = useReminders(uid, vid);
 
-  if (vehicle.loading || entries.loading) return <div className={splash}>Carregando…</div>;
+  if (vehicle.loading || entries.loading || reminders.loading) return <div className={splash}>Carregando…</div>;
   if (!vehicle.data || !vid) return <div className={splash}>Veículo não encontrado.</div>;
 
   const entry = eid ? entries.data.find((e) => e.id === eid) ?? null : null;
@@ -70,9 +70,9 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
   const [odo, setOdo] = useState(entry?.odometer != null ? String(entry.odometer) : '');
   const [amount, setAmount] = useState(toInput(entry?.amount, 2));
   const [category, setCategory] = useState(entry?.category ?? (kind === 'service' ? SERVICE_CATEGORIES[0] : EXPENSE_CATEGORIES[0]));
-  const [description, setDescription] = useState(entry?.description ?? '');
   const [title, setTitle] = useState(entry?.title ?? '');
-  const [notes, setNotes] = useState(entry?.notes ?? '');
+  // o campo "descrição" saiu: a de registros antigos passa para observações (nada se perde)
+  const [notes, setNotes] = useState(() => [entry?.description, entry?.notes].filter(Boolean).join('\n'));
   // abastecimento
   const [fuelType, setFuelType] = useState(entry?.fuelType ?? lastFuelType(others));
   const [price, setPrice] = useState(toInput(entry?.pricePerLiter, 2));
@@ -80,20 +80,29 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
   const [fullTank, setFullTank] = useState(entry?.fullTank ?? true);
   // serviço: lista do que foi feito (serviço antigo vira um item só)
   const [items, setItems] = useState<ItemDraft[]>(() =>
-    kind !== 'service' ? [] : entry ? serviceItems(entry).map((i) => newItem(i.category, toInput(i.amount, 2))) : [newItem()],
+    kind !== 'service'
+      ? []
+      : entry
+        ? serviceItems(entry).map((i) => withExistingReminder(newItem(i.category, toInput(i.amount, 2)), reminders))
+        : [newItem()],
   );
   const [reminderId, setReminderId] = useState('');
   // troca de óleo (só em serviço novo): intervalo da próxima → lembrete
-  const [oilKm, setOilKm] = useState<number | null>(null);
-  const [oilMonths, setOilMonths] = useState<number | null>(null);
+  const currentOil = entry ? findReminder(reminders, OIL_CHANGE) : undefined;
+  const [oilKm, setOilKm] = useState<number | null>(() =>
+    currentOil?.intervalKm && OIL_KM_OPTIONS.includes(currentOil.intervalKm) ? currentOil.intervalKm : null,
+  );
+  const [oilMonths, setOilMonths] = useState<number | null>(() =>
+    currentOil?.intervalMonths && OIL_MONTH_OPTIONS.includes(currentOil.intervalMonths) ? currentOil.intervalMonths : null,
+  );
   const [error, setError] = useState('');
 
   const electric = fuelType === 'Recarga elétrica';
   const unit = electric ? 'kWh' : 'L';
   const odoNum = parseInteger(odo);
   const odoBelow = odoNum != null && !entry && odoNum < lastKm;
-  // lembretes da próxima troca: só em serviço novo (contam a partir do km e da data dele)
-  const allowReminders = kind === 'service' && !entry;
+  // lembretes da próxima troca (novo ou editando): contam a partir do km e da data deste serviço
+  const allowReminders = kind === 'service';
   const hasOilChange = allowReminders && items.some((i) => isOilChange(i.category));
   const oilMissing = hasOilChange && (oilKm == null || oilMonths == null);
   const reminderItems = allowReminders ? items.filter((i) => i.remind && i.category && !isOilChange(i.category)) : [];
@@ -106,12 +115,14 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
   /** Cria ou atualiza o lembrete do veículo com este nome — nunca duplica. */
   function upsertReminder(title: string, intervalKm: number | null, intervalMonths: number | null) {
     const existing = findReminder(reminders, title);
+    // serviço mais antigo que a última vez registrada no lembrete: só atualiza o intervalo
+    const newer = !existing?.lastDate || day >= existing.lastDate;
     saveReminder(uid, vid, existing?.id, {
       title: existing?.title ?? title,
       intervalKm,
       intervalMonths,
-      lastKm: odoNum ?? lastKm,
-      lastDate: day,
+      lastKm: newer ? (odoNum ?? lastKm) : existing.lastKm,
+      lastDate: newer ? day : existing.lastDate,
       createdAt: existing?.createdAt ?? Date.now(),
     });
   }
@@ -162,7 +173,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
       odometer: odoNum,
       amount: Math.round(value * 100) / 100,
       category: kind === 'fuel' ? 'Combustível' : isService ? serviceList[0].category : category,
-      description: description.trim(),
+      description: '',
       notes: notes.trim(),
       createdAt: entry?.createdAt ?? Date.now(),
     };
@@ -286,30 +297,12 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
                   fromDate={day || today()}
                 />
               )}
-              <label className={field}>
-                Descrição <span className={opt}>(opcional)</span>
-                <input
-                  className={input}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Ex: revisão dos 60 mil km"
-                />
-              </label>
             </>
           )}
 
           {kind === 'expense' && (
             <>
               <CategorySelect uid={uid} kind={kind} value={category} onChange={setCategory} />
-              <label className={field}>
-                Descrição <span className={opt}>(opcional)</span>
-                <input
-                  className={input}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Ex: IPVA 2027 — cota única"
-                />
-              </label>
               <label className={field}>
                 Valor (R$)
                 <input className={input} value={amount} onChange={(e) => onAmount(e.target.value)} inputMode="numeric" placeholder="0,00" />
@@ -334,7 +327,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders }: Props)
 
           <label className={field}>
             Observações <span className={opt}>(opcional)</span>
-            <textarea className={input} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder={kind === 'fuel' ? 'Posto, etc.' : 'Oficina, garantia, etc.'} />
+            <textarea className={input} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder={kind === 'fuel' ? 'Posto, etc.' : kind === 'service' ? 'Oficina, garantia, peças…' : 'Ex: IPVA 2027 — cota única'} />
           </label>
 
           {error && <p className={errorText}>{error}</p>}

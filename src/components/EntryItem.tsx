@@ -55,11 +55,11 @@ function listedItems(e: Entry) {
   return items.length > 1 || e.title ? items : null;
 }
 
-/** Última linha: litros e consumo, ou a descrição do serviço/despesa. */
+/** Última linha: litros e consumo, ou as observações do serviço/despesa (descrição em registros antigos). */
 function entryDetail(e: Entry, kml?: number) {
   if (e.kind === 'fuel') {
     const parts = [e.liters ? `${num(e.liters, 2)} L` : null, kml ? `${num(kml, 1)} km/l` : null, e.fullTank ? null : 'parcial'];
     return parts.filter(Boolean).join(' · ');
   }
-  return e.description || null;
+  return (e.notes || e.description)?.split('\n')[0] || null;
 }
