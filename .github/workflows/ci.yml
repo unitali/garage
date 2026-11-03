@@ -1,12 +1,12 @@
-# Testes e build em todo PR e push na develop.
-# Obs.: o PR de release é aberto pelo próprio GitHub Actions, e o GitHub não dispara outros
-# workflows para ele — por isso este check não é obrigatório na main (o código já passou aqui na develop).
+# Testes e build em PR para a develop e em push na develop.
+# PRs para a main não passam aqui: o de release é aberto pelo GitHub Actions (que não dispara
+# workflows) e qualquer outro é encaminhado pelo pr-guard.yml — o código já foi testado na develop.
 
 name: CI
 
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [develop]
   push:
     branches: [develop]
 

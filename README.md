@@ -69,14 +69,16 @@ O service worker já ignora `/__/*`, então o proxy não é interceptado pelo ca
 ## Versões e releases
 
 ```
-feature/* ──PR──▶ develop ──(automático)──▶ PR "chore(release): vX.Y.Z" ──aprovar + merge──▶ main
-                                                                                    └─▶ tag + Release + develop sincronizada
+feature/* ──PR──▶ develop ──(automático)──▶ PR "chore(release): vX.Y.Z" ──merge──▶ main
+                                                                          └─▶ tag + Release + develop sincronizada
 ```
 
 - Todo trabalho entra na **develop** (push direto ou PR). A **main** só recebe código pelo PR de release.
-- A cada push na develop, o workflow [`release.yml`](.github/workflows/release.yml) cria ou atualiza o PR **`chore(release): vX.Y.Z`** (branch `release` → `main`) com a versão nova no `package.json` e o [`CHANGELOG.md`](CHANGELOG.md). Ele vai acumulando tudo até ser aprovado.
-- Ao **aprovar e fazer o merge** (use *Create a merge commit*), o workflow cria a tag `vX.Y.Z`, publica a Release no GitHub e faz o merge da main de volta na develop.
-- A versão aparece no app, no fim da tela **Perfil**.
+- A cada push na develop, o [`release-pr.yml`](.github/workflows/release-pr.yml) cria ou atualiza o PR **`chore(release): vX.Y.Z`** (branch `release` → `main`) com a versão nova no `package.json` e o [`CHANGELOG.md`](CHANGELOG.md). Ele vai acumulando tudo até o merge.
+- No **merge** (use *Create a merge commit*), o [`publish.yml`](.github/workflows/publish.yml) cria a tag `vX.Y.Z`, publica a Release no GitHub, faz o merge da main de volta na develop e recalcula o próximo PR de release.
+- PR aberto para a main por engano é tratado pelo [`pr-guard.yml`](.github/workflows/pr-guard.yml): `develop → main` é fechado e apontado para o PR de release; de outro branch, o destino vira a develop.
+- A versão aparece no app, em **Configurações → Versão**.
+- Na Vercel, só `release` (preview) e `main` (produção) fazem build — `ignoreCommand` no [`vercel.json`](vercel.json).
 
 **Mensagens de commit** ([Conventional Commits](https://www.conventionalcommits.org/pt-br/)) definem a versão e as seções do changelog:
 
@@ -87,7 +89,7 @@ feature/* ──PR──▶ develop ──(automático)──▶ PR "chore(relea
 | `perf:` `refactor:` `docs:` `chore:` `ci:` `test:` `style:` | `docs: fluxo de release` | 0.0.**X** |
 | `!` ou `BREAKING CHANGE:` | `feat!: novo formato dos dados` | 0.**X**.0 enquanto for 0.x, depois **X**.0.0 |
 
-O cálculo fica em [`scripts/release.mjs`](scripts/release.mjs), sem dependências. O [`ci.yml`](.github/workflows/ci.yml) roda testes e build em todo PR e push na develop.
+O cálculo fica em [`scripts/release.mjs`](scripts/release.mjs), sem dependências. O [`ci.yml`](.github/workflows/ci.yml) roda testes e build em PR para a develop e em push na develop.
 
 ## Estrutura do código
 

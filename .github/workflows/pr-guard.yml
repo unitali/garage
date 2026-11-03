@@ -1,0 +1,51 @@
+# Só o PR de release entra na main. PR aberto para a main a partir de outro branch:
+#   develop → main ─▶ fechado e apontado para o PR "chore(release)" (que é criado se não existir)
+#   outro   → main ─▶ destino trocado para a develop
+#
+# O PR de release é aberto pelo GITHUB_TOKEN, que não dispara workflows — ele nunca passa por aqui.
+# Eventos de PR usam o workflow da main: mudanças neste arquivo valem a partir do próximo release.
+
+name: PR guard
+
+on:
+  # pull_request_target: permissão de escrita mesmo em PR; nenhum código do PR é executado (sem checkout)
+  pull_request_target:
+    types: [opened, reopened]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+  actions: write # disparar o release-pr.yml
+
+jobs:
+  guard:
+    name: Encaminhar PR (só o release entra na main)
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      HEAD: ${{ github.head_ref }}
+    steps:
+      - name: Encaminhar
+        run: |
+          case "$HEAD" in
+            release)
+              echo "PR de release: nada a fazer"
+              ;;
+            develop)
+              release=$(gh pr list --head release --base main --state open --json number --jq '.[0].number')
+              if [ -n "$release" ]; then
+                msg="📦 Incorporado ao #$release (\`chore(release)\`). A **main** só recebe o PR de release — faça o merge dele."
+              else
+                gh workflow run release-pr.yml --ref develop
+                msg="📦 O PR \`chore(release)\` com estas mudanças está sendo aberto. A **main** só recebe o PR de release — faça o merge dele."
+              fi
+              # sem --delete-branch: a develop continua
+              gh pr close "$PR" --comment "$msg"
+              ;;
+            *)
+              gh pr edit "$PR" --base develop
+              gh pr comment "$PR" --body "↪️ A **main** só recebe o PR de release (\`chore(release)\`). Destino trocado para a **develop**."
+              ;;
+          esac

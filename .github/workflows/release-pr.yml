@@ -1,0 +1,87 @@
+# PR de release: develop → main
+#
+#   push na develop ─▶ cria/atualiza o PR "chore(release): vX.Y.Z" (branch release → main) com a
+#                      versão nova no package.json e o CHANGELOG.md; o merge dele é o único caminho para a main
+#
+# A versão sai dos commits (Conventional Commits): feat → 0.X.0, fix e demais → 0.0.X, "!" → incompatível.
+# Também é disparado pelo publish.yml (depois de um release) e pelo pr-guard.yml (PR develop → main sem chore aberto).
+
+name: Release PR
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# pushes seguidos: só o mais recente importa
+concurrency:
+  group: release-pr
+  cancel-in-progress: true
+
+jobs:
+  release-pr:
+    name: PR de release (develop → main)
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configurar git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Calcular versão e changelog
+        id: prepare
+        run: |
+          version=$(node scripts/release.mjs prepare)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Versão: ${version:-nada a lançar}"
+
+      - name: Criar, atualizar ou fechar o PR
+        env:
+          VERSION: ${{ steps.prepare.outputs.version }}
+        run: |
+          pr=$(gh pr list --head release --base main --state open --json number --jq '.[0].number')
+
+          if [ -z "$VERSION" ]; then
+            if [ -n "$pr" ]; then
+              gh pr close "$pr" --comment "A develop não tem nada novo em relação à main." --delete-branch
+            fi
+            exit 0
+          fi
+
+          git switch -C release
+          git add package.json package-lock.json CHANGELOG.md
+          git commit -m "chore(release): v$VERSION"
+          git push --force origin release
+
+          {
+            echo "## 🚀 Unitali Garage v$VERSION"
+            echo
+            echo "Este PR junta tudo o que entrou na **develop** desde a última versão e é atualizado a cada push."
+            echo "**Faça o merge** (\"Create a merge commit\") para levar à **main** e publicar a tag \`v$VERSION\`."
+            echo
+            echo "---"
+            echo
+            sed '1d' RELEASE_NOTES.md
+          } > body.md
+
+          title="chore(release): v$VERSION"
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --title "$title" --body-file body.md
+          else
+            gh pr create --head release --base main --title "$title" --body-file body.md
+          fi

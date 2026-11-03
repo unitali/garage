@@ -2,6 +2,16 @@
 
 Todas as versões do Unitali Garage, geradas a partir dos commits.
 
+## [0.4.0](https://github.com/unitali/garage/compare/v0.3.0...v0.4.0) (2026-11-03)
+
+### ✨ Novidades
+
+- **login:** baixar o app antes de entrar e login direto pelo app ([e288f54](https://github.com/unitali/garage/commit/e288f54aa27e976de2a46190c0895af9002bfdd4))
+
+### 🔧 Manutenção
+
+- um workflow por evento, sem execuções duplicadas ([987ee39](https://github.com/unitali/garage/commit/987ee39c57523ea2de6b75a3191b11e78b7ee5b6))
+
 ## [0.3.0](https://github.com/unitali/garage/compare/v0.2.0...v0.3.0) (2026-11-03)
 
 ### ✨ Novidades

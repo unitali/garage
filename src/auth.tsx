@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut, type User } from 'firebase/auth';
 import { auth, googleProvider } from './firebase';
+import { isStandalone } from './pwa';
 
 interface AuthState {
   user: User | null;
@@ -26,7 +27,13 @@ export function useUid(): string {
 
 const REDIRECT_FALLBACK = ['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment'];
 
+// handler do login no próprio domínio (proxy /__/auth do vercel.json): o redirecionamento não depende de cookie de terceiros
+const sameOriginAuth = import.meta.env.VITE_FIREBASE_AUTH_DOMAIN === location.host;
+
 export async function login() {
+  // No app instalado o popup costuma travar (iOS abre numa janela à parte que não volta);
+  // com o handler no mesmo domínio, o redirecionamento é o caminho confiável
+  if (isStandalone && sameOriginAuth) return signInWithRedirect(auth, googleProvider);
   try {
     await signInWithPopup(auth, googleProvider);
   } catch (e) {
