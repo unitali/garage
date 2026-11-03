@@ -1,32 +1,23 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
 import { updateProfile } from 'firebase/auth';
-import { Car, ChevronRight, LogOut } from 'lucide-react';
 import Header from '../components/Header';
-import InstallCard from '../components/InstallCard';
-import { logout, useAuth } from '../auth';
-import { useVehicles } from '../hooks';
+import UserAvatar from '../components/UserAvatar';
+import { useAuth } from '../auth';
 import { useOnline } from '../sync';
-import { btn, card, cardRow, error as errorText, field, form, hint, input, main, sectionTitle } from '../ui';
 import { paths } from '../routes/paths';
+import { btn, card, error as errorText, field, form, hint, input, main, sectionTitle } from '../ui';
 
+/** Configurações → Perfil: dados da conta Google e nome de exibição. */
 export default function Profile() {
   const { user } = useAuth();
   const online = useOnline();
-  const { data: vehicles } = useVehicles(user!.uid);
   const [name, setName] = useState(user?.displayName ?? '');
   // o objeto do Firebase muda por dentro sem re-renderizar: guardamos o nome salvo aqui
   const [savedName, setSavedName] = useState(user?.displayName ?? '');
-  const [photoFailed, setPhotoFailed] = useState(false);
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   if (!user) return null;
   const shownName = savedName || user.email || 'Você';
-  const initials = shownName
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase())
-    .join('');
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -43,22 +34,10 @@ export default function Profile() {
 
   return (
     <>
-      <Header title="Perfil" />
+      <Header title="Perfil" back={paths.settings()} />
       <main className={`${main} flex flex-col gap-4`}>
         <section className={`${card} flex flex-col items-center gap-2 py-6 text-center`}>
-          {user.photoURL && !photoFailed ? (
-            <img
-              src={user.photoURL}
-              alt=""
-              referrerPolicy="no-referrer"
-              className="size-20 rounded-full object-cover ring-4 ring-brand-soft"
-              onError={() => setPhotoFailed(true)}
-            />
-          ) : (
-            <span className="grid size-20 place-items-center rounded-full bg-brand text-2xl font-bold text-brand-contrast">
-              {initials}
-            </span>
-          )}
+          <UserAvatar user={user} name={shownName} className="size-20 text-2xl ring-4 ring-brand-soft" />
           <strong className="text-lg">{shownName}</strong>
           {user.email && <span className="text-sm text-muted">{user.email}</span>}
         </section>
@@ -90,28 +69,6 @@ export default function Profile() {
             </button>
           </form>
         </section>
-
-        <Link className={cardRow} to={paths.home()}>
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-soft text-brand">
-            <Car />
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <strong>Meus veículos</strong>
-            <span className="text-sm text-muted">
-              {vehicles.length === 1 ? '1 veículo' : `${vehicles.length} veículos`}
-            </span>
-          </span>
-          <ChevronRight className="text-muted" />
-        </Link>
-
-        <InstallCard />
-
-        <button className={`${btn('danger')} w-full gap-2`} onClick={() => confirm('Sair da conta?') && logout()}>
-          <LogOut className="size-5" />
-          Sair da conta
-        </button>
-
-        <p className="text-center text-xs text-muted">Unitali Garage v{__APP_VERSION__}</p>
       </main>
     </>
   );

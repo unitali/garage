@@ -1,12 +1,12 @@
 import type { ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Bell, CircleUserRound, Fuel, House, Wrench } from 'lucide-react';
+import { Bell, Fuel, House, Settings, Wrench } from 'lucide-react';
 import { useUid } from '../auth';
 import { useVehicles } from '../hooks';
 import { useSelectedVehicle } from '../selection';
 import { paths } from '../routes/paths';
 
-/** Barra fixa de atalhos, como num app: Início, Serviço, Abastecer, Lembretes e Perfil. */
+/** Barra fixa de atalhos, como num app: Início, Serviço, Abastecer, Lembretes e Configurações. */
 export default function TabBar() {
   const uid = useUid();
   const navigate = useNavigate();
@@ -39,7 +39,12 @@ export default function TabBar() {
           Abastecer
         </button>
         <Tab icon={<Bell />} label="Lembretes" active={onReminders} onClick={() => go(() => paths.home('lembretes'))} />
-        <Tab icon={<CircleUserRound />} label="Perfil" active={pathname === paths.profile()} onClick={() => navigate(paths.profile())} />
+        <Tab
+          icon={<Settings />}
+          label="Configurações"
+          active={pathname.startsWith(paths.settings())}
+          onClick={() => navigate(paths.settings())}
+        />
       </div>
     </nav>
   );
@@ -48,14 +53,15 @@ export default function TabBar() {
 function Tab({ icon, label, active, onClick }: { icon: ReactNode; label: string; active?: boolean; onClick: () => void }) {
   return (
     <button
-      className={`flex flex-col items-center justify-center gap-1 text-[11px] font-semibold [&_svg]:size-6 ${
+      className={`flex min-w-0 flex-col items-center justify-center gap-1 text-[11px] font-semibold [&_svg]:size-6 ${
         active ? 'text-brand' : 'text-muted'
       }`}
       aria-current={active ? 'page' : undefined}
       onClick={onClick}
     >
       {icon}
-      {label}
+      {/* "Configurações" é o rótulo mais longo: não deixa estourar a coluna em telas estreitas */}
+      <span className="max-w-full truncate px-0.5">{label}</span>
     </button>
   );
 }

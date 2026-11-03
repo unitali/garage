@@ -2,6 +2,8 @@ import { createElement } from 'react';
 import { Navigate, type RouteObject } from 'react-router-dom';
 import Home from '../pages/Home';
 import Profile from '../pages/Profile';
+import Settings from '../pages/Settings';
+import Vehicles from '../pages/Vehicles';
 import VehicleForm from '../pages/VehicleForm';
 import OpenVehicle from '../pages/OpenVehicle';
 import EntryForm from '../pages/EntryForm';
@@ -20,7 +22,9 @@ const tabBar: RouteHandle = { tabBar: true };
 /** Todas as telas do app (usuário logado). */
 export const routes: RouteObject[] = [
   { path: PATTERNS.home, Component: Home, handle: tabBar },
+  { path: PATTERNS.settings, Component: Settings, handle: tabBar },
   { path: PATTERNS.profile, Component: Profile, handle: tabBar },
+  { path: PATTERNS.vehicles, Component: Vehicles, handle: tabBar },
   { path: PATTERNS.newVehicle, Component: VehicleForm },
   { path: PATTERNS.vehicle, Component: OpenVehicle },
   { path: PATTERNS.editVehicle, Component: VehicleForm },
