@@ -20,6 +20,8 @@ const BTN_VARIANTS = {
   default: 'border-line bg-surface',
   primary: 'border-brand bg-brand text-brand-contrast',
   danger: 'border-line bg-transparent text-danger',
+  /** ação irreversível: vermelho com letras brancas */
+  destructive: 'border-danger bg-danger text-white',
 };
 const BTN_SIZES = { md: 'px-4 py-3', sm: 'px-3 py-2 text-sm' };
 

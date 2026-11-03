@@ -5,5 +5,13 @@ service cloud.firestore {
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+    // Cópia ao excluir a conta: o app só cria (não lê, não altera, não apaga).
+    // Restaurar é coisa de administrador: scripts/restore-account.mjs
+    match /trash/{uid}/backups/{bid} {
+      allow create: if request.auth != null && request.auth.uid == uid;
+      match /docs/{doc} {
+        allow create: if request.auth != null && request.auth.uid == uid;
+      }
+    }
   }
 }

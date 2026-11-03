@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Car, ChevronRight, LogOut } from 'lucide-react';
+import DeleteAccount from '../components/DeleteAccount';
 import Header from '../components/Header';
 import InstallCard from '../components/InstallCard';
 import UserAvatar from '../components/UserAvatar';
@@ -37,6 +38,8 @@ export default function More() {
         </SettingsGroup>
 
         <InstallCard />
+
+        <DeleteAccount />
 
         <p className="text-center text-xs text-muted">Unitali Garage v{__APP_VERSION__}</p>
       </main>

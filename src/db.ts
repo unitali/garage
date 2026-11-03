@@ -1,4 +1,18 @@
-import { arrayRemove, arrayUnion, collection, deleteDoc, doc, getDocs, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import {
+  arrayRemove,
+  arrayUnion,
+  collection,
+  deleteDoc,
+  doc,
+  getDocFromServer,
+  getDocs,
+  getDocsFromServer,
+  setDoc,
+  updateDoc,
+  writeBatch,
+  type DocumentReference,
+  type DocumentSnapshot,
+} from 'firebase/firestore';
 import { db } from './firebase';
 import { trackWrite } from './sync';
 import type { CategoryKind, Data, Entry, EntrySeries, Reminder, UserPrefs, Vehicle } from './types';
@@ -7,6 +21,7 @@ import type { CategoryKind, Data, Entry, EntrySeries, Reminder, UserPrefs, Vehic
 //   users/{uid}/vehicles/{vid}
 //   users/{uid}/vehicles/{vid}/entries/{id}     ← abastecimentos, serviços e despesas
 //   users/{uid}/vehicles/{vid}/reminders/{id}
+//   trash/{uid}/backups/{bid}/docs/{id}       ← cópia ao excluir a conta (o app só cria; restaurar: scripts/restore-account.mjs)
 
 export const userDoc = (uid: string) => doc(db, 'users', uid);
 export const vehiclesCol = (uid: string) => collection(db, 'users', uid, 'vehicles');
@@ -115,4 +130,45 @@ export function removeCategory(uid: string, kind: CategoryKind, name: string) {
 /** Preferências da conta (users/{uid}), mescladas com as que já existem. */
 export function savePrefs(uid: string, patch: Partial<UserPrefs>) {
   fire(setDoc(userDoc(uid), patch, { merge: true }));
+}
+
+// ---------- excluir conta ----------
+
+/** Lotes de até 500 operações (limite do Firestore), esperando cada um ser confirmado pelo servidor. */
+async function inBatches<T>(items: T[], apply: (batch: ReturnType<typeof writeBatch>, item: T) => void) {
+  for (let i = 0; i < items.length; i += 450) {
+    const batch = writeBatch(db);
+    items.slice(i, i + 450).forEach((item) => apply(batch, item));
+    await batch.commit();
+  }
+}
+
+/**
+ * Excluir conta: copia tudo de users/{uid} para trash/{uid}/backups/{bid} e só depois apaga.
+ * Lê do servidor e espera cada gravação (sem rede, falha antes de apagar qualquer coisa). Se cair no
+ * meio, nada se perde: a cópia vem primeiro e o documento do backup só é criado quando ela termina.
+ * Cada cópia guarda o caminho relativo (`vehicles/x/entries/y`) e os dados, para restaurar igual.
+ */
+export async function deleteAccount(uid: string, who: { email: string | null; name: string | null }) {
+  const profile = await getDocFromServer(userDoc(uid));
+  const vehicles = await getDocsFromServer(vehiclesCol(uid));
+  const children = await Promise.all(
+    vehicles.docs.map((v) => Promise.all([getDocsFromServer(entriesCol(uid, v.id)), getDocsFromServer(remindersCol(uid, v.id))])),
+  );
+  const leaves = children.flat().flatMap((s) => s.docs);
+  // ordem de exclusão: filhos antes dos pais
+  const all: DocumentSnapshot[] = [...leaves, ...vehicles.docs, ...(profile.exists() ? [profile] : [])];
+
+  const backup = doc(collection(db, 'trash', uid, 'backups'));
+  const root = userDoc(uid).path;
+  await inBatches(all, (batch, d) =>
+    batch.set(doc(collection(backup, 'docs')), { path: d.ref.path.slice(root.length + 1) || '.', data: d.data() }),
+  );
+  // por último: marca a cópia como completa
+  await setDoc(backup, { uid, email: who.email, name: who.name, deletedAt: Date.now(), docs: all.length });
+
+  await inBatches(
+    all.map((d) => d.ref),
+    (batch, ref: DocumentReference) => batch.delete(ref),
+  );
 }
