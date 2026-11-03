@@ -20,12 +20,12 @@ export function useGarage() {
   const rate = useMemo(() => kmPerDay(vehicle, entries.data), [vehicle, entries.data]);
   const due = useMemo(
     () => remindersByDue(reminders.data, current, rate, undefined, alert),
-    [reminders.data, current, rate, alert.km, alert.months], // eslint-disable-line react-hooks/exhaustive-deps
+    [reminders.data, current, rate, alert.km, alert.months, alert.urgentKm, alert.urgentDays], // eslint-disable-line react-hooks/exhaustive-deps
   );
   /** contas do mês (parcelas/recorrentes/despesas em aberto) */
   const bills = useMemo(
     () => billsDue(entries.data, undefined, alert),
-    [entries.data, alert.km, alert.months], // eslint-disable-line react-hooks/exhaustive-deps
+    [entries.data, alert.urgentDays], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const overdue = due.filter((d) => d.s.level === 'overdue').length + bills.filter((b) => b.s.level === 'overdue').length;
 

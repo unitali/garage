@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Car, Gauge, Plus, TrendingDown, TrendingUp } from 'lucide-react';
+import { Car, CheckCircle2, Gauge, Plus, TrendingDown, TrendingUp } from 'lucide-react';
 import Header from '../components/Header';
 import EntryRow from '../components/EntryRow';
 import FlagStripe from '../components/FlagStripe';
@@ -9,19 +9,31 @@ import StatusStrip from '../components/StatusStrip';
 import VehicleSwitcher from '../components/VehicleSwitcher';
 import { syncVehicleOdometer } from '../db';
 import { useGarage } from '../garage';
-import { fuelStats, type DueReminder, type ReminderLevel } from '../lib/calc';
-import { addMonths, diffDays, fromTimestamp, today } from '../lib/dates';
-import { brl, date, daysAgo, dueIn, km, num } from '../lib/format';
-import { aVencer, gastoPagoNoAno, gastoPrevistoNoAno, isPaid, proximaAcao, variacaoConsumo, type AVencerItem } from '../lib/summary';
+import { fuelStats, type AlertWindow, type DueReminder, type ReminderLevel } from '../lib/calc';
+import { diffDays, fromTimestamp, today } from '../lib/dates';
+import { brl, date, daysAgo, dueIn, dueText, km, num } from '../lib/format';
+import {
+  aVencer,
+  gastoPagoNoAno,
+  gastoPrevistoNoAno,
+  isPaid,
+  manutencoesNoAviso,
+  proximaAcao,
+  variacaoConsumo,
+  type AVencerItem,
+} from '../lib/summary';
+import { monthsLabel } from './ReminderSettings';
 import { paths } from '../routes/paths';
 import type { Entry, Vehicle } from '../types';
 import logoUrl from '../assets/logo.png';
 import {
+  badge,
   btn,
   card,
   iconCircle,
   KIND_ICON,
   KIND_SOFT,
+  LEVEL_LABEL,
   LEVEL_TEXT,
   main,
   REMINDER_ICON,
@@ -63,16 +75,16 @@ type Garage = ReturnType<typeof useGarage>;
 function Summary({ g, v }: { g: Garage; v: Vehicle }) {
   const { uid, vehicles, entries, reminders, current, rate, alert, due } = g;
   const ref = today();
-  // até quando uma conta fica "em breve" (âmbar): a mesma janela dos lembretes
-  const soonUntil = addMonths(ref, alert.months);
 
   // mantém o km do veículo em dia (inclusive após editar/excluir registros)
   useEffect(() => {
     if (v.odometer !== current) syncVehicleOdometer(uid, v.id, current);
   }, [v, uid, current]);
 
+  // cards: lembretes dentro da antecedência de aviso; sem nenhum, o mais próximo aparece como "em dia"
+  const cards = useMemo(() => manutencoesNoAviso(due), [due]);
   const next = useMemo(() => proximaAcao(reminders, current, ref, rate, alert), [reminders, current, ref, rate, alert]);
-  const upcoming = useMemo(() => aVencer(entries, due, ref, 3, next?.r.id), [entries, due, ref, next]);
+  const upcoming = useMemo(() => aVencer(entries, due, ref, 3, cards.map((c) => c.r.id)), [entries, due, ref, cards]);
   const recent = useMemo(
     () => entries.filter((e) => isPaid(e, ref)).sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt).slice(0, 3),
     [entries, ref],
@@ -106,7 +118,7 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
       <StatusStrip />
 
       <main className={`${main} flex flex-col gap-3`}>
-        <NextMaintenance vid={v.id} next={next} />
+        <Maintenance vid={v.id} cards={cards} next={next} alert={alert} />
 
         <section className="grid grid-cols-2 gap-3">
           <div className={card}>
@@ -134,7 +146,7 @@ function Summary({ g, v }: { g: Garage; v: Vehicle }) {
             <SectionHead title="A vencer" to={paths.reminders()} link="Ver todos" />
             <ul className="divide-y divide-line">
               {upcoming.map((item) => (
-                <UpcomingRow key={item.type === 'bill' ? item.entry.id : item.due.r.id} vid={v.id} item={item} soonUntil={soonUntil} />
+                <UpcomingRow key={item.type === 'bill' ? item.entry.id : item.due.r.id} vid={v.id} item={item} urgentDays={alert.urgentDays} />
               ))}
             </ul>
           </section>
@@ -181,14 +193,18 @@ function SectionHead({ title, to, link }: { title: string; to: string; link: str
   );
 }
 
-const NEXT_TONE: Record<ReminderLevel, { box: string; label: string; button: string }> = {
-  overdue: { box: 'border-danger/30 bg-danger-bg', label: 'text-danger', button: 'bg-danger text-bg' },
-  soon: { box: 'border-warn-border bg-warn-bg', label: 'text-warn', button: 'bg-warn text-bg' },
-  ok: { box: 'border-line bg-surface', label: 'text-muted', button: 'bg-brand text-brand-contrast' },
+/** Cores dos cards de manutenção: verde em dia, laranja urgente, vermelho vencido (Configurações → Lembretes). */
+const TONE: Record<ReminderLevel, { box: string; text: string; badge: string; button: string }> = {
+  overdue: { box: 'border-danger/30 bg-danger-bg', text: 'text-danger', badge: 'bg-danger text-bg', button: 'bg-danger text-bg' },
+  soon: { box: 'border-warn-border bg-warn-bg', text: 'text-warn', badge: 'bg-warn text-bg', button: 'bg-warn text-bg' },
+  ok: { box: 'border-ok/30 bg-ok-bg', text: 'text-ok', badge: 'bg-ok text-bg', button: 'bg-ok text-bg' },
 };
 
-/** Lembrete mais urgente, com atalho para registrar o serviço já com ele selecionado. */
-function NextMaintenance({ vid, next }: { vid: string; next: DueReminder | null }) {
+/**
+ * Próxima manutenção: um card por lembrete dentro da antecedência de aviso, do mais urgente,
+ * com rolagem lateral quando há mais de um. Sem nenhum na janela, mostra o mais próximo como "em dia".
+ */
+function Maintenance({ vid, cards, next, alert }: { vid: string; cards: DueReminder[]; next: DueReminder | null; alert: AlertWindow }) {
   if (!next)
     return (
       <section className={`${card} flex flex-wrap items-center gap-3`}>
@@ -205,48 +221,78 @@ function NextMaintenance({ vid, next }: { vid: string; next: DueReminder | null 
       </section>
     );
 
-  const { r, s, due, estimated } = next;
-  const tone = NEXT_TONE[s.level];
-  const kmPart = s.kmLeft != null ? (s.kmLeft > 0 ? `em ${km(s.kmLeft)}` : `passou ${km(-s.kmLeft)}`) : null;
-  const when = s.nextDate ? `até ${date(s.nextDate)}` : due ? `${estimated ? '≈ ' : ''}${date(due)}` : null;
-  const detail = [kmPart ? (when ? `ou ${when}` : null) : s.daysLeft != null ? dueIn(s.daysLeft) : when, r.lastKm != null ? `última em ${km(r.lastKm)}` : null]
-    .filter(Boolean)
-    .join(' · ');
-  const ServiceIcon = KIND_ICON.service;
+  if (cards.length === 0)
+    return (
+      <Link to={paths.reminders()} className={`flex items-center gap-3 rounded-2xl border p-3.5 ${TONE.ok.box}`}>
+        <CheckCircle2 className="size-6 shrink-0 text-ok" aria-hidden />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <strong>Manutenção em dia</strong>
+          <span className="text-sm text-muted">
+            Nada vence nos próximos {km(alert.km)} ou {monthsLabel(alert.months)}. Próxima: {next.r.title}
+            {dueText(next.s) ? ` (${dueText(next.s)})` : ''}.
+          </span>
+        </span>
+      </Link>
+    );
 
   return (
-    <section className={`rounded-2xl border p-3.5 ${tone.box}`}>
-      <div className="flex items-start gap-3">
-        <span className={`${iconCircle} ${KIND_SOFT.service}`}>
-          <ServiceIcon className="size-5" aria-hidden />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className={`text-xs font-bold tracking-wide uppercase ${tone.label}`}>
-            {s.level === 'overdue' ? 'Manutenção vencida' : 'Próxima manutenção'}
-          </p>
-          <h2 className="text-lg font-bold break-words">
-            {r.title}
-            {kmPart ? ` ${kmPart}` : ''}
-          </h2>
-          {detail && <p className="text-sm text-muted">{detail}</p>}
+    <section>
+      <SectionHead title="Próxima manutenção" to={paths.reminders()} link="Ver todos" />
+      {cards.length === 1 ? (
+        <MaintenanceCard vid={vid} item={cards[0]} />
+      ) : (
+        // -mx-4/px-4: os cards encostam na borda da tela ao rolar, mas começam alinhados ao conteúdo
+        <div className="-mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
+          {cards.map((d) => (
+            <MaintenanceCard key={d.r.id} vid={vid} item={d} className="w-[85%] max-w-sm shrink-0 snap-start" />
+          ))}
         </div>
-      </div>
-      <Link
-        to={paths.newEntry(vid, 'service', { lembrete: r.id })}
-        className={`mt-3 inline-flex min-h-11 items-center rounded-xl px-4 font-semibold ${tone.button}`}
-      >
-        Registrar serviço
-      </Link>
+      )}
     </section>
   );
 }
 
+/** Card de um lembrete, na cor do nível, com atalho para registrar o serviço já com ele selecionado. */
+function MaintenanceCard({ vid, item, className = '' }: { vid: string; item: DueReminder; className?: string }) {
+  const { r, s, due, estimated } = item;
+  const tone = TONE[s.level];
+  const when = [due ? `${estimated ? '≈ ' : ''}${date(due)}` : null, s.nextKm != null ? km(s.nextKm) : null].filter(Boolean).join(' · ');
+  const ServiceIcon = KIND_ICON.service;
+
+  return (
+    <article className={`flex flex-col rounded-2xl border p-3.5 ${tone.box} ${className}`}>
+      <div className="flex items-start gap-3">
+        <span className={`${iconCircle} bg-surface ${tone.text}`}>
+          <ServiceIcon className="size-5" aria-hidden />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
+          <span className={`${badge} ${tone.badge}`}>{LEVEL_LABEL[s.level]}</span>
+          <h3 className="text-lg font-bold break-words">
+            <Link to={paths.reminder(vid, r.id)}>{r.title}</Link>
+          </h3>
+          <p className={`text-sm font-semibold ${tone.text}`}>{dueText(s)}</p>
+          {when && <p className="text-sm text-muted">vence {when}</p>}
+        </div>
+      </div>
+      {/* mt-auto: no carrossel os botões ficam alinhados embaixo mesmo com textos de tamanhos diferentes */}
+      <div className="mt-auto pt-3">
+        <Link
+          to={paths.newEntry(vid, 'service', { lembrete: r.id })}
+          className={`inline-flex min-h-11 items-center rounded-xl px-4 font-semibold ${tone.button}`}
+        >
+          Registrar serviço
+        </Link>
+      </div>
+    </article>
+  );
+}
+
 /** Item de "A vencer": parcela/conta em aberto ou lembrete. */
-function UpcomingRow({ vid, item, soonUntil }: { vid: string; item: AVencerItem; soonUntil: string }) {
+function UpcomingRow({ vid, item, urgentDays }: { vid: string; item: AVencerItem; urgentDays: number }) {
   if (item.type === 'bill') {
     const e = item.entry;
     const days = diffDays(today(), e.date);
-    const level: ReminderLevel = days < 0 ? 'overdue' : e.date <= soonUntil ? 'soon' : 'ok';
+    const level: ReminderLevel = days < 0 ? 'overdue' : days <= urgentDays ? 'soon' : 'ok';
     const ExpenseIcon = KIND_ICON.expense;
     return (
       <li>

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { aVencer, gastoPagoNoAno, gastoPrevistoNoAno, isPaid, proximaAcao, resumoDaSerie, seriesDe, variacaoConsumo } from '../src/lib/summary.ts';
+import { aVencer, gastoPagoNoAno, manutencoesNoAviso, gastoPrevistoNoAno, isPaid, proximaAcao, resumoDaSerie, seriesDe, variacaoConsumo } from '../src/lib/summary.ts';
 import { buildSchedule, remindersByDue } from '../src/lib/calc.ts';
 import type { Entry, Reminder } from '../src/types.ts';
 
@@ -49,6 +49,19 @@ test('próxima ação: vencido por data antes de vencido por km', () => {
   assert.equal(proximaAcao([porKm, emBreve], 194500, ref)?.r.title, 'Óleo');
   assert.equal(proximaAcao([emBreve], 194500, ref)?.r.title, 'Revisão');
   assert.equal(proximaAcao([], 194500, ref), null);
+});
+
+test('cards da tela inicial: só dentro do aviso, com a cor de cada janela', () => {
+  const vencido = rem({ title: 'Óleo', intervalKm: 10000, lastKm: 180000 }); // venceu em 190.000
+  const urgente = rem({ title: 'Pneus', intervalKm: 20000, lastKm: 174600 }); // faltam 100 km
+  const aviso = rem({ title: 'Revisão', intervalKm: 20000, lastKm: 175000 }); // faltam 500 km
+  const longe = rem({ title: 'Correia', intervalKm: 50000, lastKm: 160000 }); // faltam 15.500 km
+  const due = remindersByDue([longe, aviso, urgente, vencido], 194500, null, ref);
+  const cards = manutencoesNoAviso(due);
+  assert.deepEqual(cards.map((d) => d.r.title), ['Óleo', 'Pneus', 'Revisão']);
+  assert.deepEqual(cards.map((d) => d.s.level), ['overdue', 'soon', 'ok']); // vermelho, laranja, verde
+  const largo = remindersByDue([longe], 194500, null, ref, { km: 20000, months: 1, urgentKm: 200, urgentDays: 7 });
+  assert.equal(manutencoesNoAviso(largo).length, 1); // aviso de 20.000 km: a correia entra
 });
 
 test('a vencer: contas e lembretes pela data mais próxima, até 3', () => {

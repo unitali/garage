@@ -18,7 +18,7 @@ export default function RemindersPage() {
   const { uid, vehicles, vehicle, reminders, current, rate, alert, due, bills, loading } = useGarage();
   if (loading) return <div className={splash}>Carregando…</div>;
 
-  // o mais urgente (o mesmo do card "Próxima manutenção") primeiro; depois vencido > em breve > o resto
+  // o mais urgente (o mesmo do card "Próxima manutenção") primeiro; depois vencido > próximo > o resto
   const top = proximaAcao(reminders, current, today(), rate, alert);
   const rest = due.filter((d) => d.r.id !== top?.r.id).sort((a, b) => rank(a.s.level) - rank(b.s.level));
   const ordered = top ? [top, ...rest] : rest;

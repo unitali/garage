@@ -71,5 +71,7 @@ export function useAlertWindow(uid: string): AlertWindow {
   return {
     km: data?.alertKm ?? DEFAULT_ALERT.km,
     months: data?.alertMonths ?? DEFAULT_ALERT.months,
+    urgentKm: data?.urgentKm ?? DEFAULT_ALERT.urgentKm,
+    urgentDays: data?.urgentDays ?? DEFAULT_ALERT.urgentDays,
   };
 }

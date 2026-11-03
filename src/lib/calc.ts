@@ -105,21 +105,27 @@ export interface ReminderStatus {
   nextDate: string | null;
   kmLeft: number | null;
   daysLeft: number | null;
-  /** vencido (vermelho), em breve (âmbar) ou em dia (neutro) */
+  /** cor: vencido (vermelho), urgente (laranja) ou em dia (verde) */
   level: ReminderLevel;
-  /** vencido ou em breve: entra em "A vencer" e conta como aviso */
+  /** dentro da antecedência de aviso (ou urgente/vencido): aparece em cards na tela inicial */
   near: boolean;
 }
 
-/** "Em breve" (âmbar): faltando até `km` ou até `months` meses (Configurações → Lembretes). */
+/**
+ * Janelas dos lembretes (Configurações → Lembretes):
+ * - aviso: faltando até `km` ou `months` meses → aparece em card na tela inicial
+ * - urgente: faltando até `urgentKm` ou `urgentDays` dias → laranja
+ */
 export interface AlertWindow {
   km: number;
   months: number;
+  urgentKm: number;
+  urgentDays: number;
 }
 
-export const DEFAULT_ALERT: AlertWindow = { km: 1000, months: 1 };
+export const DEFAULT_ALERT: AlertWindow = { km: 1000, months: 1, urgentKm: 200, urgentDays: 7 };
 
-/** Vencido: passou do km ou da data. Em breve: dentro da janela de aviso. Em dia: o resto. */
+/** Vencido: passou do km ou da data. Urgente: dentro da janela urgente. Em dia: o resto. */
 export function reminderStatus(r: Reminder, current: number, ref = today(), alert = DEFAULT_ALERT): ReminderStatus {
   const nextKm = r.intervalKm && r.lastKm != null ? r.lastKm + r.intervalKm : null;
   const nextDate = r.intervalMonths && r.lastDate ? addMonths(r.lastDate, r.intervalMonths) : null;
@@ -128,9 +134,12 @@ export function reminderStatus(r: Reminder, current: number, ref = today(), aler
 
   let level: ReminderLevel = 'ok';
   if ((kmLeft != null && kmLeft <= 0) || (daysLeft != null && daysLeft <= 0)) level = 'overdue';
-  else if ((kmLeft != null && kmLeft <= alert.km) || (nextDate != null && nextDate <= addMonths(ref, alert.months))) level = 'soon';
+  else if ((kmLeft != null && kmLeft <= alert.urgentKm) || (daysLeft != null && daysLeft <= alert.urgentDays)) level = 'soon';
 
-  const near = level !== 'ok';
+  const near =
+    level !== 'ok' ||
+    (kmLeft != null && kmLeft <= alert.km) ||
+    (nextDate != null && nextDate <= addMonths(ref, alert.months));
 
   return { nextKm, nextDate, kmLeft, daysLeft, level, near };
 }
@@ -258,7 +267,7 @@ export function billsDue(entries: Entry[], ref = today(), alert = DEFAULT_ALERT)
     .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)
     .map((e) => {
       const daysLeft = diffDays(ref, e.date);
-      const level: ReminderLevel = daysLeft < 0 ? 'overdue' : e.date <= addMonths(ref, alert.months) ? 'soon' : 'ok';
+      const level: ReminderLevel = daysLeft < 0 ? 'overdue' : daysLeft <= alert.urgentDays ? 'soon' : 'ok';
       return { e, s: { nextKm: null, nextDate: e.date, kmLeft: null, daysLeft, level, near: true } };
     });
 }

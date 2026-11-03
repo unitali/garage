@@ -51,7 +51,7 @@ export default function Settings() {
           <SettingsLink
             to={paths.reminderSettings()}
             icon={BellRing}
-            label="Avisar com antecedência"
+            label="Avisos e cores"
             detail={`${km(alert.km)} · ${monthsLabel(alert.months)}`}
           />
         </SettingsGroup>

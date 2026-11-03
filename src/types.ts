@@ -73,6 +73,9 @@ export interface UserPrefs {
   /** aviso de lembrete: faltando até X km ou Y meses (padrão em calc.ts DEFAULT_ALERT) */
   alertKm?: number;
   alertMonths?: number;
+  /** urgente (laranja): faltando até X km ou Y dias */
+  urgentKm?: number;
+  urgentDays?: number;
 }
 
 export interface EntrySeries {

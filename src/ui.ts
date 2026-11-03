@@ -63,10 +63,10 @@ export const REMINDER_ICON = Bell;
 export const REMINDER_SOFT = 'bg-reminder-bg text-reminder';
 export const iconCircle = 'grid size-10 shrink-0 place-items-center rounded-full';
 
-// ---------- status: vermelho só para vencido, âmbar para "em breve", o resto neutro ----------
+// ---------- status: vermelho vencido, laranja próximo (janela urgente), verde/neutro em dia ----------
 
 export const LEVEL_TEXT: Record<ReminderLevel, string> = { ok: 'text-muted', soon: 'text-warn', overdue: 'text-danger' };
-export const LEVEL_LABEL: Record<ReminderLevel, string> = { ok: 'Em dia', soon: 'Em breve', overdue: 'Vencido' };
+export const LEVEL_LABEL: Record<ReminderLevel, string> = { ok: 'Em dia', soon: 'Próximo', overdue: 'Vencido' };
 export const LEVEL_BADGE: Record<ReminderLevel, string> = {
   ok: 'bg-bg text-muted',
   soon: 'bg-warn-bg text-warn',

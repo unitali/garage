@@ -53,9 +53,22 @@ export function seriesDe(entries: Entry[]): Entry[][] {
 }
 
 /**
- * Lembrete mais urgente: vencido > em breve > o resto. Entre vencidos, por data antes de só por km
+ * Do mais urgente para o menos: vencido > urgente > em dia. Entre vencidos, por data antes de só por km
  * (prazo legal costuma pesar mais); depois o que venceu há mais tempo / vence antes.
  */
+export function porUrgencia(due: DueReminder[]): DueReminder[] {
+  const rank = (x: DueReminder) => (x.s.level === 'overdue' ? 0 : x.s.level === 'soon' ? 1 : 2);
+  const byDate = (x: DueReminder) => (x.s.daysLeft != null && x.s.daysLeft <= 0 ? 0 : 1);
+  return [...due].sort(
+    (a, b) =>
+      rank(a) - rank(b) ||
+      (rank(a) === 0 ? byDate(a) - byDate(b) : 0) ||
+      (a.due && b.due ? a.due.localeCompare(b.due) : a.due ? -1 : b.due ? 1 : 0) ||
+      (a.s.kmLeft ?? Infinity) - (b.s.kmLeft ?? Infinity),
+  );
+}
+
+/** Lembrete mais urgente (mesmo fora da janela de aviso). */
 export function proximaAcao(
   reminders: Reminder[],
   kmAtual: number,
@@ -63,26 +76,22 @@ export function proximaAcao(
   rate: number | null = null,
   alert: AlertWindow = DEFAULT_ALERT,
 ): DueReminder | null {
-  const rank = (x: DueReminder) => (x.s.level === 'overdue' ? 0 : x.s.level === 'soon' ? 1 : 2);
-  const byDate = (x: DueReminder) => (x.s.daysLeft != null && x.s.daysLeft <= 0 ? 0 : 1);
-  const sorted = remindersByDue(reminders, kmAtual, rate, ref, alert).sort(
-    (a, b) =>
-      rank(a) - rank(b) ||
-      (rank(a) === 0 ? byDate(a) - byDate(b) : 0) ||
-      (a.due && b.due ? a.due.localeCompare(b.due) : a.due ? -1 : b.due ? 1 : 0) ||
-      (a.s.kmLeft ?? Infinity) - (b.s.kmLeft ?? Infinity),
-  );
-  return sorted[0] ?? null;
+  return porUrgencia(remindersByDue(reminders, kmAtual, rate, ref, alert))[0] ?? null;
+}
+
+/** Cards da tela inicial: os lembretes dentro da antecedência de aviso (Configurações → Lembretes), do mais urgente. */
+export function manutencoesNoAviso(due: DueReminder[]): DueReminder[] {
+  return porUrgencia(due.filter((d) => d.s.near));
 }
 
 export type AVencerItem = { type: 'bill'; entry: Entry; date: string } | { type: 'reminder'; due: DueReminder; date: string | null };
 
 /** "A vencer": contas em aberto e lembretes, pela data mais próxima (sem data por último). */
-export function aVencer(entries: Entry[], due: DueReminder[], ref = today(), limit = 3, exceptReminderId?: string): AVencerItem[] {
+export function aVencer(entries: Entry[], due: DueReminder[], ref = today(), limit = 3, exceptReminderIds: string[] = []): AVencerItem[] {
   const bills: AVencerItem[] = entries
     .filter((e) => e.kind === 'expense' && !isPaid(e, ref))
     .map((entry) => ({ type: 'bill', entry, date: entry.date }));
-  const reminders: AVencerItem[] = due.filter((d) => d.r.id !== exceptReminderId).map((d) => ({ type: 'reminder', due: d, date: d.due }));
+  const reminders: AVencerItem[] = due.filter((d) => !exceptReminderIds.includes(d.r.id)).map((d) => ({ type: 'reminder', due: d, date: d.due }));
   return [...bills, ...reminders]
     .sort((a, b) => (a.date && b.date ? a.date.localeCompare(b.date) : a.date ? -1 : b.date ? 1 : 0))
     .slice(0, limit);
