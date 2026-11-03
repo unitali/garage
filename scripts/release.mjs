@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Monta o release a partir dos commits da develop que ainda não estão na main.
-// Usado pelas GitHub Actions em .github/workflows/release.yml — sem dependências.
+// Usado pelas GitHub Actions (release-pr.yml e publish.yml) — sem dependências.
 //
 //   node scripts/release.mjs prepare        → calcula a versão, atualiza package.json, package-lock.json
 //                                             e CHANGELOG.md, grava RELEASE_NOTES.md; imprime a versão

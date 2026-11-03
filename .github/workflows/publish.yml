@@ -1,0 +1,59 @@
+# Publicação: merge do PR de release na main
+#
+#   push na main ─▶ tag vX.Y.Z + Release no GitHub ─▶ develop sincronizada com a main
+#                ─▶ dispara o release-pr.yml (a develop pode já ter commits para o próximo release)
+
+name: Publish
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  actions: write # disparar o release-pr.yml
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publicar versão (tag + Release)
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Configurar git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Tag, Release e sincronizar develop
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "v$version já publicada"
+            exit 0
+          fi
+
+          git tag -a "v$version" -m "v$version"
+          git push origin "v$version"
+          node scripts/release.mjs notes "$version" > notes.md
+          gh release create "v$version" --title "v$version" --notes-file notes.md --verify-tag
+
+          git fetch origin develop
+          git switch develop
+          git merge --no-ff origin/main -m "chore(release): sincroniza v$version na develop"
+          git push origin develop
+
+          # push feito pelo GITHUB_TOKEN não dispara workflows: chama o release-pr explicitamente
+          gh workflow run release-pr.yml --ref develop
