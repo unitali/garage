@@ -1,7 +1,7 @@
 {
   "name": "unitali-garage",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -25,5 +25,16 @@
     "typescript": "~5.6.3",
     "vite": "^6.0.0",
     "vite-plugin-pwa": "^0.21.1"
+  },
+  "allowScripts": {
+    "esbuild": true,
+    "@firebase/util": false,
+    "protobufjs": false,
+    "fsevents": false
+  },
+  "overrides": {
+    "workbox-build": {
+      "glob": "^13.0.6"
+    }
   }
 }

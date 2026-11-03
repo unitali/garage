@@ -1,0 +1,24 @@
+# Testes e build em todo PR e push na develop.
+# Obs.: o PR de release é aberto pelo próprio GitHub Actions, e o GitHub não dispara outros
+# workflows para ele — por isso este check não é obrigatório na main (o código já passou aqui na develop).
+
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
