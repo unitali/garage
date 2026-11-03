@@ -2,6 +2,69 @@
 
 Todas as versões do Unitali Garage, geradas a partir dos commits.
 
+## [0.5.0](https://github.com/unitali/garage/compare/v0.4.0...v0.5.0) (2026-11-03)
+
+### ✨ Novidades
+
+- **inicio:** "Últimos registros" mostra os últimos 30 dias ([b3ebdf9](https://github.com/unitali/garage/commit/b3ebdf909ceac6df5e9f4cde0e0f32ce808cecd8))
+- **conta:** "Excluir conta" com confirmação; cópia guardada para restaurar ([ebea5b9](https://github.com/unitali/garage/commit/ebea5b91b566a89ea9ed8b6c97526a4c31be5c1c))
+- **mais:** menu único — Veículos, Lembretes, Serviços, Despesas e Sair ([d03cf56](https://github.com/unitali/garage/commit/d03cf563bfe6a659a7ebcb4eb6e7a59268eaf4b0))
+- **mais:** configurações direto no Mais; sai a calculadora ([574fe61](https://github.com/unitali/garage/commit/574fe61b8df399a79ca5142cf123bf160cf8ffb3))
+- **abastecer:** calculadora etanol x gasolina no formulário, com "Usar" ([670c973](https://github.com/unitali/garage/commit/670c973bf4b79fe0666f54b20b84b9ec2386c082))
+- **adicionar:** Abastecer na grade no lugar de "Atualizar km"; sai o botão azul ([2a6f25c](https://github.com/unitali/garage/commit/2a6f25c41ddd865506578c0252c7ad16b2dc82c6))
+- **historico:** só o que já aconteceu; parcelados e recorrentes vão para Lembretes ([1493b28](https://github.com/unitali/garage/commit/1493b2882b1deb5cf8b5a07c826f2b3b9195e75f))
+- **ui:** cabeçalho único em todas as telas, com nome da tela e veículo grande ([4c20c07](https://github.com/unitali/garage/commit/4c20c07474fa37d49422353e60ecfe1e19678415))
+- **inicio:** cabeçalho só com logo e veículo (sem hodômetro e "Atualizar km") ([1865d15](https://github.com/unitali/garage/commit/1865d1533e43f0bf0a9ecc7ede16f37e42212f3e))
+- **inicio:** carrossel dos lembretes com arraste e indicador de posição ([537bb3e](https://github.com/unitali/garage/commit/537bb3e46d9f04923f77579de9edc2811ec7acc0))
+- **inicio:** contas entram nos cards de lembrete; remove "A vencer" ([fa80d91](https://github.com/unitali/garage/commit/fa80d916936b53f8a972405d706a230ea570e42c))
+- **lembretes:** cards de manutenção na tela inicial com verde, laranja e vermelho ([c215fe7](https://github.com/unitali/garage/commit/c215fe7575962a3986df9aa063f287270c0aa7a6))
+- **ui:** redesign — barra inferior, painel Adicionar, Início, Histórico e Lembretes ([c20dcdb](https://github.com/unitali/garage/commit/c20dcdbeb936ffd519bd12cbbedcce6c31e1e75e))
+- **calc:** resumo da tela inicial e do histórico (src/lib/summary.ts) ([7a7d0b3](https://github.com/unitali/garage/commit/7a7d0b3c4cb7690792de149879de49d3e44d8406))
+- **app:** atalhos Despesa e Calculadora (etanol x gasolina) ([b22f04c](https://github.com/unitali/garage/commit/b22f04ccc11230a97e54d4091af3c693f6866cc8))
+- **despesas:** "Pago" em toda despesa; verde só quando paga ([ebd8afb](https://github.com/unitali/garage/commit/ebd8afb369aa1e8b48147ac6358119b365159800))
+- **historico:** conta paga com borda verde e marca "pago" ([8ad11d4](https://github.com/unitali/garage/commit/8ad11d4a9bb33309f3989b9499f70dfcaeae35a9))
+- **config:** salvar nas configurações volta para a tela inicial ([52252ab](https://github.com/unitali/garage/commit/52252ab8a1a0bc0b4fac9745d8c29070570f1174))
+- **despesas:** contas do mês como lembrete, com botão Pago ([d578ab4](https://github.com/unitali/garage/commit/d578ab40d34348be0a7bcad29b541d5089c3c864))
+- **despesas:** cota única, parcelado e recorrente com vencimentos editáveis ([90a260d](https://github.com/unitali/garage/commit/90a260d54278b01ad56245728f5d8932118b6f51))
+- **config:** lembretes só gravam no botão Salvar ([c656734](https://github.com/unitali/garage/commit/c656734c0187eb585f0aec344aeef6a963316015))
+- **lembretes:** cores verde/laranja/vermelho configuráveis ([d959eac](https://github.com/unitali/garage/commit/d959eac9b1537a569fee9beec6365f22ed9aef67))
+- **lembretes:** no topo do histórico só os perto de vencer, com antecedência configurável ([8949565](https://github.com/unitali/garage/commit/89495650d4aa57537279cde9caae7c02ed101e7c))
+- **servico:** lembretes também ao editar; só Observações (sem Descrição) ([c4f8880](https://github.com/unitali/garage/commit/c4f8880ec282e24dbd6fedd221f9b6ae6bfcb3c2))
+- **servico:** título no serviço e itens listados no card ([10c449f](https://github.com/unitali/garage/commit/10c449f5e3506ddaafa855e0ba0ee4997616380d))
+- **servico:** item e valor na mesma linha ([b91bcea](https://github.com/unitali/garage/commit/b91bcea456b3c0fcaed7c736eed6fe92923d8208))
+- **servico:** lembrete opcional da próxima troca em cada item ([dabe953](https://github.com/unitali/garage/commit/dabe95330326623500535f5bd0b9311d88a5ffc8))
+- **servico:** troca de óleo com intervalo obrigatório e lembrete automático ([b85df53](https://github.com/unitali/garage/commit/b85df53bbb9b5a693688b848176dd2dded2cfe16))
+- **servico:** vários itens no mesmo serviço, com total somado ([909b8fb](https://github.com/unitali/garage/commit/909b8fb7bb66c400aabc738880866d1c7967f8e4))
+- **historico:** categoria como título do card e descrição embaixo ([7f00bb2](https://github.com/unitali/garage/commit/7f00bb2efe9be0b7f2027aceb56b616f5d049a32))
+- **categorias:** serviços e despesas personalizados por conta ([d597373](https://github.com/unitali/garage/commit/d59737328652643477943fc1d2b667cce6664478))
+- **forms:** máscaras de km e de valores ([c80787c](https://github.com/unitali/garage/commit/c80787cfebe83761ee5f8aa35dab191e55a421c1))
+
+### 🐛 Correções
+
+- update ([50ea2d6](https://github.com/unitali/garage/commit/50ea2d6ec08f1756423ddc785ff6f9e01b205989))
+- **seguranca:** regras do Firestore validam caminho e formato; testes das regras ([878496f](https://github.com/unitali/garage/commit/878496fd1c1b6026a975a5cf1a7102e5bf402254))
+- **config:** avisa quando o tipo já existe; meta mobile-web-app-capable ([ce797c1](https://github.com/unitali/garage/commit/ce797c1801aaf36246edeb167a45c36ca853faad))
+- **pwa:** nome do app instalado só "Unitali Garage" ([d3f6e97](https://github.com/unitali/garage/commit/d3f6e97bc3d2d57055d698180c897fb0776569cd))
+- **deps:** minimatch 11 (GHSA-g3hv-75wg-m249) ([f053b79](https://github.com/unitali/garage/commit/f053b79e14a1bb4341a14a281c4bc21f36aacb15))
+
+### ⚡ Desempenho
+
+- **dados:** assinaturas compartilhadas em memória e gravação só do que mudou ([df7cd46](https://github.com/unitali/garage/commit/df7cd46187c44fe36473326a59703f3eb182e62c))
+- **dados:** carrega uma vez e mantém em memória; não grava o que não mudou ([b042153](https://github.com/unitali/garage/commit/b042153be2d8ffc16d7dba37dc940d656d2d2933))
+
+### 🔧 Manutenção
+
+- code review — correções, código morto e organização ([fc47be1](https://github.com/unitali/garage/commit/fc47be1df3025ea7c59e14b8aa173ba5b5ed314b))
+- **estilos:** cores do Tailwind direto no código; tokens só para a marca ([5f63656](https://github.com/unitali/garage/commit/5f63656bb7abc4123d13525546d4af4f72c09647))
+- **tokens:** cores da paleta do Tailwind (hex só na marca e na faixa) ([9998e3e](https://github.com/unitali/garage/commit/9998e3e9dc92328091beefd9e7752c3ca32d35f5))
+- **mais:** opções num só bloco, sem títulos; sem o "Perfil" repetido ([c353d4a](https://github.com/unitali/garage/commit/c353d4ae58b1937bb4314a6b1c741ecb8e8ef5cd))
+- **abastecimento:** gasolina vermelha e etanol verde nos cards ([a6d5bca](https://github.com/unitali/garage/commit/a6d5bca8bedfc95a2af6cf4e139a7b9f4d8e2cad))
+- **parcelas:** rótulo "parcela X de N" num lugar só (summary.ts) ([f33b159](https://github.com/unitali/garage/commit/f33b15968d68a51913764ebc5a7ec20c1e29dc04))
+- **historico:** filtros com ícone em cima (cores do tipo) e nome embaixo, com rolagem lateral ([1e87e81](https://github.com/unitali/garage/commit/1e87e817a331356f9723fd169bb211a7063e4329))
+- **historico:** filtros menores, todos numa linha ([3a6db26](https://github.com/unitali/garage/commit/3a6db26f78338aeccf977cfbb3959528a4e47a67))
+- ignora *.tsbuildinfo ([9465ded](https://github.com/unitali/garage/commit/9465dedac12256524262eecc265e98b794987730))
+- tokens de design (src/styles/tokens.css) e fonte Inter ([0fb20b9](https://github.com/unitali/garage/commit/0fb20b9b31afd9791114c349846a102aed8ff619))
+
 ## [0.4.0](https://github.com/unitali/garage/compare/v0.3.0...v0.4.0) (2026-11-03)
 
 ### ✨ Novidades
