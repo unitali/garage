@@ -48,7 +48,7 @@ export default function Header({ title, back, right, vehicle, odometer, children
           )}
           {/* fundo branco: o U azul-marinho sumiria na barra da mesma cor */}
           <img src={logoUrl} alt="" className="size-9 shrink-0 rounded-xl bg-white object-contain p-1" />
-          <h1 className="min-w-0 flex-1 text-xl font-bold break-words">{title}</h1>
+          <h1 className="min-w-0 flex-1 text-xl font-bold wrap-break-words">{title}</h1>
           {right}
         </div>
         {shown && (
