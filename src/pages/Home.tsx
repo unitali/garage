@@ -7,7 +7,7 @@ import VehicleSwitcher from '../components/VehicleSwitcher';
 import { Expenses, History, Reminders, Summary } from './VehicleTabs';
 import { useUid } from '../auth';
 import { syncVehicleOdometer } from '../db';
-import { useEntries, useReminders, useVehicles } from '../hooks';
+import { useAlertWindow, useEntries, useReminders, useVehicles } from '../hooks';
 import { currentOdometer, kmPerDay, remindersByDue } from '../lib/calc';
 import { paths, type VehicleTab } from '../routes/paths';
 import { useSelectedVehicle } from '../selection';
@@ -63,7 +63,11 @@ function VehicleHome({ uid, v, vehicles }: { uid: string; v: Vehicle; vehicles: 
 
   const current = useMemo(() => currentOdometer(v, entries.data), [v, entries.data]);
   const rate = useMemo(() => kmPerDay(v, entries.data), [v, entries.data]);
-  const due = useMemo(() => remindersByDue(reminders.data, current, rate), [reminders.data, current, rate]);
+  const alert = useAlertWindow(uid);
+  const due = useMemo(
+    () => remindersByDue(reminders.data, current, rate, undefined, alert),
+    [reminders.data, current, rate, alert.km, alert.months], // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   // mantém o km do veículo em dia (inclusive após editar/excluir registros)
   useEffect(() => {

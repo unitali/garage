@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
-import { Car, ChevronRight, Info, LogOut, Tags, UserRound } from 'lucide-react';
+import { BellRing, Car, ChevronRight, Info, LogOut, Tags, UserRound } from 'lucide-react';
 import Header from '../components/Header';
 import InstallCard from '../components/InstallCard';
 import UserAvatar from '../components/UserAvatar';
 import { SettingsGroup, SettingsInfo, SettingsLink } from '../components/SettingsGroup';
 import { logout, useAuth } from '../auth';
-import { useUserPrefs, useVehicles } from '../hooks';
+import { useAlertWindow, useUserPrefs, useVehicles } from '../hooks';
+import { km } from '../lib/format';
+import { monthsLabel } from './ReminderSettings';
 import { paths } from '../routes/paths';
 import { btn, card, main } from '../ui';
 
@@ -14,6 +16,7 @@ export default function Settings() {
   const { user } = useAuth();
   const { data: vehicles } = useVehicles(user!.uid);
   const { data: prefs } = useUserPrefs(user!.uid);
+  const alert = useAlertWindow(user!.uid);
   const customCount = (prefs?.serviceCategories?.length ?? 0) + (prefs?.expenseCategories?.length ?? 0);
   if (!user) return null;
   const name = user.displayName || user.email || 'Você';
@@ -41,6 +44,15 @@ export default function Settings() {
             icon={Car}
             label="Veículos"
             detail={vehicles.length === 1 ? '1 veículo' : `${vehicles.length} veículos`}
+          />
+        </SettingsGroup>
+
+        <SettingsGroup title="Lembretes">
+          <SettingsLink
+            to={paths.reminderSettings()}
+            icon={BellRing}
+            label="Avisar com antecedência"
+            detail={`${km(alert.km)} · ${monthsLabel(alert.months)}`}
           />
         </SettingsGroup>
 

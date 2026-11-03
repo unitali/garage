@@ -14,6 +14,7 @@ export const PATTERNS = {
   profile: '/config/perfil',
   vehicles: '/config/veiculos',
   categories: '/config/categorias',
+  reminderSettings: '/config/lembretes',
   newVehicle: '/v/new',
   vehicle: '/v/:vid',
   editVehicle: '/v/:vid/edit',
@@ -35,6 +36,7 @@ export const paths = {
   profile: () => PATTERNS.profile,
   vehicles: () => PATTERNS.vehicles,
   categories: () => PATTERNS.categories,
+  reminderSettings: () => PATTERNS.reminderSettings,
   newVehicle: () => PATTERNS.newVehicle,
   /** seleciona o veículo e abre a tela inicial na aba */
   vehicle: (vid: string, tab?: VehicleTab) => withQuery(generatePath(PATTERNS.vehicle, { vid }), { tab }),

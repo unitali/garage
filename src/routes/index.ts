@@ -5,6 +5,7 @@ import Profile from '../pages/Profile';
 import Settings from '../pages/Settings';
 import Vehicles from '../pages/Vehicles';
 import Categories from '../pages/Categories';
+import ReminderSettings from '../pages/ReminderSettings';
 import VehicleForm from '../pages/VehicleForm';
 import OpenVehicle from '../pages/OpenVehicle';
 import EntryForm from '../pages/EntryForm';
@@ -27,6 +28,7 @@ export const routes: RouteObject[] = [
   { path: PATTERNS.profile, Component: Profile, handle: tabBar },
   { path: PATTERNS.vehicles, Component: Vehicles, handle: tabBar },
   { path: PATTERNS.categories, Component: Categories, handle: tabBar },
+  { path: PATTERNS.reminderSettings, Component: ReminderSettings, handle: tabBar },
   { path: PATTERNS.newVehicle, Component: VehicleForm },
   { path: PATTERNS.vehicle, Component: OpenVehicle },
   { path: PATTERNS.editVehicle, Component: VehicleForm },

@@ -64,4 +64,7 @@ export type CategoryKind = Extract<EntryKind, 'service' | 'expense'>;
 export interface UserPrefs {
   serviceCategories?: string[];
   expenseCategories?: string[];
+  /** aviso de lembrete: faltando até X km ou Y meses (padrão em calc.ts DEFAULT_ALERT) */
+  alertKm?: number;
+  alertMonths?: number;
 }

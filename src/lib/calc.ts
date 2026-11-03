@@ -103,8 +103,17 @@ export interface ReminderStatus {
   level: ReminderLevel;
 }
 
-/** "Em breve" = faltando 10% do intervalo de km (mín. 300 km) ou até 30 dias. */
-export function reminderStatus(r: Reminder, current: number, ref = today()): ReminderStatus {
+/** Antecedência do aviso: lembrete fica "em breve" faltando até `km` ou até `months` meses. */
+export interface AlertWindow {
+  km: number;
+  months: number;
+}
+
+/** Padrão (configurável em Configurações → Lembretes). */
+export const DEFAULT_ALERT: AlertWindow = { km: 1000, months: 1 };
+
+/** Vencido: passou do km ou da data. Em breve: dentro da janela de aviso (`alert`). */
+export function reminderStatus(r: Reminder, current: number, ref = today(), alert = DEFAULT_ALERT): ReminderStatus {
   const nextKm = r.intervalKm && r.lastKm != null ? r.lastKm + r.intervalKm : null;
   const nextDate = r.intervalMonths && r.lastDate ? addMonths(r.lastDate, r.intervalMonths) : null;
   const kmLeft = nextKm != null ? nextKm - current : null;
@@ -112,10 +121,7 @@ export function reminderStatus(r: Reminder, current: number, ref = today()): Rem
 
   let level: ReminderLevel = 'ok';
   if ((kmLeft != null && kmLeft <= 0) || (daysLeft != null && daysLeft <= 0)) level = 'overdue';
-  else if (
-    (kmLeft != null && kmLeft <= Math.max(300, (r.intervalKm ?? 0) * 0.1)) ||
-    (daysLeft != null && daysLeft <= 30)
-  )
+  else if ((kmLeft != null && kmLeft <= alert.km) || (nextDate != null && nextDate <= addMonths(ref, alert.months)))
     level = 'soon';
 
   return { nextKm, nextDate, kmLeft, daysLeft, level };
@@ -155,10 +161,16 @@ export function reminderDue(s: ReminderStatus, rate: number | null, ref = today(
 }
 
 /** Do que vence antes para o que vence depois; sem data (só km e sem histórico) vão por último, por urgência. */
-export function remindersByDue(list: Reminder[], current: number, rate: number | null, ref = today()): DueReminder[] {
+export function remindersByDue(
+  list: Reminder[],
+  current: number,
+  rate: number | null,
+  ref = today(),
+  alert = DEFAULT_ALERT,
+): DueReminder[] {
   return list
     .map((r) => {
-      const s = reminderStatus(r, current, ref);
+      const s = reminderStatus(r, current, ref, alert);
       return { r, s, ...reminderDue(s, rate, ref) };
     })
     .sort(

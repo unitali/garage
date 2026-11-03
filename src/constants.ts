@@ -93,3 +93,7 @@ export function categoryOptions(defaults: string[], custom: string[] = [], curre
 export const OIL_CHANGE = 'Troca de óleo';
 export const OIL_KM_OPTIONS = [5000, 10000, 15000];
 export const OIL_MONTH_OPTIONS = [6, 12, 18];
+
+/** Antecedência do aviso de lembrete (Configurações → Lembretes). */
+export const ALERT_KM_OPTIONS = [500, 1000, 2000, 5000];
+export const ALERT_MONTH_OPTIONS = [1, 2, 3];

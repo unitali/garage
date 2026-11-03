@@ -1,7 +1,7 @@
 import { arrayRemove, arrayUnion, collection, deleteDoc, doc, getDocs, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 import { trackWrite } from './sync';
-import type { CategoryKind, Data, Entry, Reminder, Vehicle } from './types';
+import type { CategoryKind, Data, Entry, Reminder, UserPrefs, Vehicle } from './types';
 
 // Estrutura:
 //   users/{uid}/vehicles/{vid}
@@ -85,4 +85,9 @@ export function addCategory(uid: string, kind: CategoryKind, name: string) {
 /** Remove da lista; registros que já usam o tipo continuam com ele. */
 export function removeCategory(uid: string, kind: CategoryKind, name: string) {
   fire(setDoc(userDoc(uid), { [CATEGORY_FIELD[kind]]: arrayRemove(name) }, { merge: true }));
+}
+
+/** Preferências da conta (users/{uid}), mescladas com as que já existem. */
+export function savePrefs(uid: string, patch: Partial<UserPrefs>) {
+  fire(setDoc(userDoc(uid), patch, { merge: true }));
 }

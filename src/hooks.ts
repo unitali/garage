@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { onSnapshot, orderBy, query, type DocumentReference, type Query } from 'firebase/firestore';
 import { entriesCol, remindersCol, userDoc, vehicleDoc, vehiclesCol } from './db';
 import type { Entry, Reminder, UserPrefs, Vehicle } from './types';
+import { DEFAULT_ALERT, type AlertWindow } from './lib/calc';
 
 interface Live<T> {
   data: T;
@@ -63,3 +64,9 @@ export const useReminders = (uid: string, vid?: string) =>
 
 /** Preferências da conta (users/{uid}), como os tipos de serviço/despesa personalizados. */
 export const useUserPrefs = (uid: string) => useLiveDoc<UserPrefs>(() => userDoc(uid), `prefs/${uid}`);
+
+/** Antecedência do aviso de lembrete da conta, com o padrão quando não configurada. */
+export function useAlertWindow(uid: string): AlertWindow {
+  const { data } = useUserPrefs(uid);
+  return { km: data?.alertKm ?? DEFAULT_ALERT.km, months: data?.alertMonths ?? DEFAULT_ALERT.months };
+}

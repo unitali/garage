@@ -56,6 +56,17 @@ test('lembrete: ok, em breve por km, vencido por data', () => {
   assert.equal(late.daysLeft, -5);
 });
 
+test('janela de aviso configurável', () => {
+  const r = rem({ intervalKm: 50000, intervalMonths: null, lastKm: 10000 }); // vence em 60.000 km
+  assert.equal(reminderStatus(r, 58500, '2026-06-01').level, 'ok'); // faltam 1.500 > 1.000 (padrão)
+  assert.equal(reminderStatus(r, 59100, '2026-06-01').level, 'soon'); // faltam 900
+  assert.equal(reminderStatus(r, 58500, '2026-06-01', { km: 2000, months: 1 }).level, 'soon');
+  const d = rem({ intervalKm: null, intervalMonths: 12, lastDate: '2026-01-15' }); // vence 15/01/2027
+  assert.equal(reminderStatus(d, 0, '2026-11-10').level, 'ok'); // 2 meses antes
+  assert.equal(reminderStatus(d, 0, '2026-12-20').level, 'soon'); // menos de 1 mês
+  assert.equal(reminderStatus(d, 0, '2026-11-10', { km: 1000, months: 3 }).level, 'soon');
+});
+
 test('lembrete só por tempo', () => {
   const s = reminderStatus(rem({ intervalKm: null, intervalMonths: 24 }), 999999, '2027-12-20');
   assert.equal(s.nextKm, null);

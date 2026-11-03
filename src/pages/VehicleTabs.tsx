@@ -41,12 +41,22 @@ export function History({ v, entries, due }: { v: Vehicle; entries: Entry[]; due
     [entries, v.initialOdometer, filter],
   );
 
+  // só os que estão perto de vencer (janela de Configurações → Lembretes) ou vencidos
+  const near = due.filter((x) => x.s.level !== 'ok');
+
   return (
     <div className="flex flex-col gap-4">
-      <section>
-        <h2 className={sectionTitle}>Próximos lembretes</h2>
-        <ReminderCarousel vid={v.id} items={due} />
-      </section>
+      {near.length > 0 && (
+        <section>
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className={sectionTitle}>Lembretes próximos</h2>
+            <Link className="text-sm font-semibold text-brand" to={paths.home('lembretes')}>
+              Ver todos
+            </Link>
+          </div>
+          <ReminderCarousel vid={v.id} items={near} />
+        </section>
+      )}
 
       <div className={chips}>
         <button className={chip(filter === 'all')} onClick={() => setFilter('all')}>
