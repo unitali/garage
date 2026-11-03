@@ -40,7 +40,7 @@ export function diffDays(a: string, b: string): number {
 }
 
 /** 'YYYY-MM-01' do mês de `s` */
-export const startOfMonth = (s: string) => `${s.slice(0, 7)}-01`;
+const startOfMonth = (s: string) => `${s.slice(0, 7)}-01`;
 
 /** último dia do mês de `s` */
 export const endOfMonth = (s: string) => addDays(addMonths(startOfMonth(s), 1), -1);

@@ -118,7 +118,7 @@ export function cardsDoInicio(due: DueReminder[], bills: DueBill[]): CardItem[] 
 }
 
 /** km/l por mês de fechamento do trecho (método do tanque cheio), para comparar meses. */
-export function consumoPorMes(entries: Entry[]): Map<string, number> {
+function consumoPorMes(entries: Entry[]): Map<string, number> {
   const fills = entries
     .filter((e) => e.kind === 'fuel' && e.odometer != null && (e.liters ?? 0) > 0)
     .sort((a, b) => a.odometer! - b.odometer! || a.date.localeCompare(b.date));

@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import BillRow from '../components/BillRow';
 import SeriesCard from '../components/SeriesCard';
 import { markReminderDone } from '../db';
-import { useGarage } from '../garage';
+import { useGarage } from '../hooks/useGarage';
 import { today } from '../lib/dates';
 import { date, dueText, km } from '../lib/format';
 import { isPaid, proximaAcao, seriesDe } from '../lib/summary';

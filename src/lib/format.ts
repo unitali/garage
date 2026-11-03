@@ -7,6 +7,8 @@ export const num = (n: number, decimals = 0) =>
   n.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
 export const km = (n: number) => `${num(n)} km`;
+export const monthsLabel = (m: number) => `${m} ${m === 1 ? 'mês' : 'meses'}`;
+export const daysLabel = (d: number) => `${d} ${d === 1 ? 'dia' : 'dias'}`;
 
 export function date(s: string): string {
   const [y, m, d] = s.split('-');

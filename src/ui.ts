@@ -61,7 +61,6 @@ export const KIND_SOFT: Record<EntryKind, string> = {
   service: 'bg-orange-50 dark:bg-orange-950 text-orange-700 dark:text-orange-300',
   expense: 'bg-blue-50 dark:bg-blue-950 text-blue-800 dark:text-blue-300',
 };
-export const KIND_TEXT: Record<EntryKind, string> = { fuel: 'text-emerald-700 dark:text-emerald-400', service: 'text-orange-700 dark:text-orange-300', expense: 'text-blue-800 dark:text-blue-300' };
 
 /** abastecimento pela cor do combustível: gasolina vermelha, etanol verde; os outros na cor do tipo */
 export const FUEL_SOFT: Record<string, string> = { Gasolina: 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400', Etanol: 'bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400' };

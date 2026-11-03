@@ -7,10 +7,8 @@ export interface Vehicle {
   plate: string;
   /** km no momento do cadastro */
   initialOdometer: number;
-  /** maior km registrado (desnormalizado); com `odometerUpdatedAt`, também a leitura do "Atualizar km" */
+  /** maior km registrado (desnormalizado para a lista de veículos) */
   odometer: number;
-  /** quando o km foi atualizado à mão ("Atualizar km"), em ms */
-  odometerUpdatedAt?: number;
   createdAt: number;
 }
 

@@ -4,9 +4,10 @@ import { LayoutList } from 'lucide-react';
 import Header from '../components/Header';
 import EntryRow from '../components/EntryRow';
 import { ENTRY_KINDS } from '../constants';
-import { useGarage } from '../garage';
+import { useGarage } from '../hooks/useGarage';
 import { fuelStats, sortEntriesByKm } from '../lib/calc';
 import { today } from '../lib/dates';
+import { isKeyOf } from '../lib/keys';
 import { brl } from '../lib/format';
 import { isPaid } from '../lib/summary';
 import { FILTER_KIND, type HistoryFilter } from '../routes/paths';
@@ -34,8 +35,9 @@ const sum = (list: Entry[]) => list.reduce((c, e) => c + Math.round(e.amount * 1
 export default function History() {
   const { vehicle, entries, current, loading } = useGarage();
   const [params, setParams] = useSearchParams();
-  const tipo = params.get('tipo') as HistoryFilter | null;
-  const kind = tipo && FILTER_KIND[tipo] ? FILTER_KIND[tipo] : null;
+  const raw = params.get('tipo');
+  const tipo: HistoryFilter | null = raw && isKeyOf(FILTER_KIND, raw) ? raw : null;
+  const kind = tipo ? FILTER_KIND[tipo] : null;
   const ref = today();
 
   const consumption = useMemo(() => fuelStats(entries).byEntry, [entries]);

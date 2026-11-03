@@ -22,7 +22,7 @@ const MODES: { id: PayMode; label: string }[] = [
 export const DEFAULT_COUNT: Record<ScheduleMode, number> = { installments: 2, recurring: 12 };
 const COUNTS = Array.from({ length: 23 }, (_, i) => i + 2); // 2 … 24
 
-export const rowsTotal = (rows: ScheduleRow[]) => sumItems(rows.map((r) => ({ amount: parseDecimal(r.amount) ?? 0 })));
+const rowsTotal = (rows: ScheduleRow[]) => sumItems(rows.map((r) => ({ amount: parseDecimal(r.amount) ?? 0 })));
 
 let nextKey = 0;
 

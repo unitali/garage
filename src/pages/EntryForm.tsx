@@ -14,6 +14,7 @@ import { deleteEntries, deleteEntry, markReminderDone, saveEntry, saveEntrySerie
 import { ENTRY_KINDS, EXPENSE_CATEGORIES, FUEL_TYPES, normalizeCategory, OIL_CHANGE, OIL_KM_OPTIONS, OIL_MONTH_OPTIONS, SERVICE_CATEGORIES } from '../constants';
 import { currentOdometer, isOpenBill, serviceItems, sumItems } from '../lib/calc';
 import { today } from '../lib/dates';
+import { isKeyOf } from '../lib/keys';
 import { km, MAX_KM_DIGITS, maskKm, maskMoney, parseDecimal, parseInteger, toInput } from '../lib/format';
 import type { Entry, EntryKind, Reminder, Vehicle } from '../types';
 import { btn, checkbox, checkField, error as errorText, field, form, grid2, hint, input, main, opt, splash } from '../ui';
@@ -26,6 +27,8 @@ export default function EntryFormPage() {
   const vehicle = useVehicle(uid, vid);
   const entries = useEntries(uid, vid);
   const reminders = useReminders(uid, vid);
+  // estável entre renders: o km atual (useMemo no formulário) não é recalculado a cada tecla
+  const others = useMemo(() => entries.data.filter((e) => e.id !== eid), [entries.data, eid]);
 
   if (vehicle.loading || entries.loading || reminders.loading) return <div className={splash}>Carregando…</div>;
   if (!vehicle.data || !vid) return <div className={splash}>Veículo não encontrado.</div>;
@@ -33,8 +36,8 @@ export default function EntryFormPage() {
   const entry = eid ? entries.data.find((e) => e.id === eid) ?? null : null;
   if (eid && !entry) return <div className={splash}>Registro não encontrado.</div>;
 
-  const kindParam = params.get('kind') as EntryKind | null;
-  const kind: EntryKind = entry?.kind ?? (kindParam && kindParam in ENTRY_KINDS ? kindParam : 'fuel');
+  const kindParam = params.get('kind');
+  const kind: EntryKind = entry?.kind ?? (kindParam && isKeyOf(ENTRY_KINDS, kindParam) ? kindParam : 'fuel');
 
   return (
     <EntryForm
@@ -44,7 +47,7 @@ export default function EntryFormPage() {
       vehicle={vehicle.data}
       kind={kind}
       entry={entry}
-      others={entries.data.filter((e) => e.id !== eid)}
+      others={others}
       reminders={reminders.data}
       // "Registrar serviço" do card Próxima manutenção: já com o lembrete selecionado
       preset={kind === 'service' && !entry ? reminders.data.find((r) => r.id === params.get('lembrete')) : undefined}
@@ -453,7 +456,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
 
           <label className={field}>
             Observações <span className={opt}>(opcional)</span>
-            <textarea className={input} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder={kind === 'fuel' ? 'Posto, etc.' : kind === 'service' ? 'Oficina, garantia, peças…' : 'Ex: IPVA 2027 — cota única'} />
+            <textarea className={input} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} maxLength={2000} placeholder={kind === 'fuel' ? 'Posto, etc.' : kind === 'service' ? 'Oficina, garantia, peças…' : 'Ex: IPVA 2027 — cota única'} />
           </label>
 
           {error && <p className={errorText}>{error}</p>}

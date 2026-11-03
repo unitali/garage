@@ -1,14 +1,9 @@
 import type { Entry, Reminder, ServiceItem, Vehicle } from '../types';
 import { addDays, addMonths, diffDays, fromTimestamp, today } from './dates.ts';
 
-/** km atual = maior km entre o cadastro, o "Atualizar km" (manual) e os registros */
-export function currentOdometer(
-  v: (Pick<Vehicle, 'initialOdometer'> & Partial<Pick<Vehicle, 'odometer' | 'odometerUpdatedAt'>>) | null,
-  entries: Entry[],
-): number {
+/** km atual = maior km entre o cadastro e os registros */
+export function currentOdometer(v: Pick<Vehicle, 'initialOdometer'> | null, entries: Entry[]): number {
   let max = v?.initialOdometer ?? 0;
-  // `odometer` só conta como leitura quando veio do "Atualizar km" (senão é o cache do máximo)
-  if (v?.odometerUpdatedAt && v.odometer != null && v.odometer > max) max = v.odometer;
   for (const e of entries) if (e.odometer != null && e.odometer > max) max = e.odometer;
   return max;
 }
@@ -171,7 +166,7 @@ export interface DueReminder {
   estimated: boolean;
 }
 
-export function reminderDue(s: ReminderStatus, rate: number | null, ref = today()): Pick<DueReminder, 'due' | 'estimated'> {
+function reminderDue(s: ReminderStatus, rate: number | null, ref = today()): Pick<DueReminder, 'due' | 'estimated'> {
   const byKm = s.kmLeft != null && rate ? addDays(ref, Math.max(0, Math.ceil(s.kmLeft / rate))) : null;
   if (byKm && (!s.nextDate || byKm < s.nextDate)) return { due: byKm, estimated: true };
   return { due: s.nextDate, estimated: false };

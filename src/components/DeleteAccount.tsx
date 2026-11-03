@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useRef, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { logout, useAuth } from '../auth';
 import { deleteAccount } from '../db';
+import { useModal } from '../hooks/useModal';
+import { clearSelectedVehicle } from '../selection';
 import { btn } from '../ui';
 
 /** Botão "Excluir conta" + confirmação. Cancelar não faz nada; confirmar guarda uma cópia, apaga tudo e sai. */
@@ -24,16 +26,9 @@ function ConfirmDialog({ onClose }: { onClose: () => void }) {
   const panel = useRef<HTMLDivElement>(null);
   const cancel = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    cancel.current?.focus(); // o foco começa no lado seguro
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = overflow;
-    };
-  }, []);
-
   const close = () => !running && onClose();
+  // o foco começa no lado seguro (Cancelar)
+  const onKeyDown = useModal(panel, close, cancel);
 
   async function confirm() {
     if (!user) return;
@@ -41,27 +36,13 @@ function ConfirmDialog({ onClose }: { onClose: () => void }) {
     setError('');
     try {
       await deleteAccount(user.uid, { email: user.email, name: user.displayName });
-      try {
-        localStorage.removeItem('selected-vehicle');
-      } catch {
-        // sem storage: nada a limpar
-      }
+      clearSelectedVehicle();
       await logout();
     } catch (err) {
       console.error(err);
       setRunning(false);
       setError('Não foi possível excluir agora. Verifique a internet e tente de novo — seus dados não foram perdidos.');
     }
-  }
-
-  function onKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape') return close();
-    if (e.key !== 'Tab') return;
-    // foco preso entre os botões do aviso
-    const items = [...(panel.current?.querySelectorAll<HTMLElement>('button:not([disabled])') ?? [])];
-    const i = items.indexOf(document.activeElement as HTMLElement);
-    e.preventDefault();
-    items[(i + (e.shiftKey ? items.length - 1 : 1)) % items.length]?.focus();
   }
 
   return (

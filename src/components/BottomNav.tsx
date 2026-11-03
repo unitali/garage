@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Bell, Ellipsis, House, List, Plus, type LucideIcon } from 'lucide-react';
 import AddSheet from './AddSheet';
-import { useGarage } from '../garage';
+import { useGarage } from '../hooks/useGarage';
 import { PATTERNS, paths } from '../routes/paths';
 
 /**

@@ -11,7 +11,7 @@ test('salvar sem mudar nada não grava (ignora id, ordem das chaves e undefined)
 });
 
 test('merge: só os campos enviados contam', () => {
-  const vehicle = { id: 'v1', name: 'Palio', odometer: 1000, odometerUpdatedAt: 5 };
+  const vehicle = { id: 'v1', name: 'Palio', odometer: 1000, plate: 'ABC1D23' };
   assert.equal(sameDoc(vehicle, { name: 'Palio', odometer: 1000 }, true), true);
   assert.equal(sameDoc(vehicle, { name: 'Palio 2011', odometer: 1000 }, true), false);
 });

@@ -1,58 +1,27 @@
-import { useEffect, useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useId, useRef, type ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { useModal } from '../hooks/useModal';
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-/**
- * Painel que sobe de baixo (ex: "Adicionar", calculadora no abastecimento).
- * Fecha com Esc, com o X ou tocando fora; o foco fica preso dentro e a página de trás não rola.
- */
-export default function Sheet({
-  open,
-  onClose,
-  title,
-  subtitle,
-  children,
-}: {
+interface Props {
   open: boolean;
   onClose: () => void;
   title: string;
   subtitle?: ReactNode;
   children: ReactNode;
-}) {
+}
+
+/**
+ * Painel que sobe de baixo (ex: "Adicionar", calculadora no abastecimento).
+ * Fecha com Esc, com o X ou tocando fora; o foco fica preso dentro e a página de trás não rola.
+ */
+export default function Sheet({ open, ...props }: Props) {
+  return open ? <Panel {...props} /> : null;
+}
+
+function Panel({ onClose, title, subtitle, children }: Omit<Props, 'open'>) {
   const sheet = useRef<HTMLDivElement>(null);
   const titleId = useId();
-
-  useEffect(() => {
-    if (!open) return;
-    sheet.current?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = overflow;
-    };
-  }, [open]);
-
-  if (!open) return null;
-
-  function onKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape') {
-      e.stopPropagation();
-      return onClose();
-    }
-    if (e.key !== 'Tab') return;
-    // foco preso: Tab no último volta ao primeiro (e Shift+Tab ao contrário)
-    const items = [...(sheet.current?.querySelectorAll<HTMLElement>(FOCUSABLE) ?? [])];
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (e.shiftKey && document.activeElement === first) {
-      e.preventDefault();
-      last?.focus();
-    } else if (!e.shiftKey && document.activeElement === last) {
-      e.preventDefault();
-      first?.focus();
-    }
-  }
+  const onKeyDown = useModal(sheet, onClose);
 
   return (
     <div

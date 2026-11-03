@@ -4,7 +4,6 @@ import Home from '../pages/Home';
 import History from '../pages/History';
 import RemindersPage from '../pages/RemindersPage';
 import More from '../pages/More';
-import OdometerForm from '../pages/OdometerForm';
 import Profile from '../pages/Profile';
 import Vehicles from '../pages/Vehicles';
 import Categories from '../pages/Categories';
@@ -42,7 +41,6 @@ export const routes: RouteObject[] = [
   { path: PATTERNS.newVehicle, Component: VehicleForm },
   { path: PATTERNS.vehicle, Component: OpenVehicle },
   { path: PATTERNS.editVehicle, Component: VehicleForm },
-  { path: PATTERNS.odometer, Component: OdometerForm },
   { path: PATTERNS.newEntry, Component: EntryForm },
   { path: PATTERNS.entry, Component: EntryForm },
   { path: PATTERNS.newReminder, Component: ReminderForm },

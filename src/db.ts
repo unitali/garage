@@ -5,7 +5,6 @@ import {
   deleteDoc,
   doc,
   getDocFromServer,
-  getDocs,
   getDocsFromServer,
   setDoc,
   updateDoc,
@@ -50,25 +49,19 @@ export function saveVehicle(uid: string, vid: string | undefined, data: Data<Veh
   return ref.id;
 }
 
-/** "Atualizar km": leitura manual do hodômetro, com a data (o "atualizado há X dias" da tela inicial). */
-export function updateOdometer(uid: string, vid: string, odometer: number) {
-  fire(updateDoc(vehicleDoc(uid, vid), { odometer, odometerUpdatedAt: Date.now() }));
-}
-
 export function syncVehicleOdometer(uid: string, vid: string, odometer: number) {
   fire(updateDoc(vehicleDoc(uid, vid), { odometer }));
 }
 
+/**
+ * Exclui o veículo e tudo dele. O Firestore não apaga subcoleções sozinho: lê do servidor (sem rede,
+ * falha antes de apagar — o cache do aparelho pode não ter tudo e sobrariam registros órfãos) e
+ * apaga em lotes, o veículo por último.
+ */
 export async function deleteVehicle(uid: string, vid: string) {
-  const [entries, reminders] = await Promise.all([getDocs(entriesCol(uid, vid)), getDocs(remindersCol(uid, vid))]);
+  const [entries, reminders] = await Promise.all([getDocsFromServer(entriesCol(uid, vid)), getDocsFromServer(remindersCol(uid, vid))]);
   const refs = [...entries.docs, ...reminders.docs].map((d) => d.ref);
-  // Firestore não apaga subcoleções sozinho; lotes de até 500 operações
-  for (let i = 0; i < refs.length; i += 450) {
-    const batch = writeBatch(db);
-    refs.slice(i, i + 450).forEach((r) => batch.delete(r));
-    fire(batch.commit());
-  }
-  fire(deleteDoc(vehicleDoc(uid, vid)));
+  await inBatches([...refs, vehicleDoc(uid, vid)], (batch, ref) => batch.delete(ref));
 }
 
 export function saveEntry(uid: string, vid: string, id: string | undefined, data: Data<Entry>, prev?: Entry | null) {

@@ -27,7 +27,7 @@ export const newItem = (category = '', amount = ''): ItemDraft => ({
   remindMonths: '',
 });
 
-export const draftsTotal = (items: ItemDraft[]) => sumItems(items.map((i) => ({ amount: parseDecimal(i.amount) ?? 0 })));
+const draftsTotal = (items: ItemDraft[]) => sumItems(items.map((i) => ({ amount: parseDecimal(i.amount) ?? 0 })));
 
 export const isOilChange = (category: string) => normalizeCategory(category) === normalizeCategory(OIL_CHANGE);
 

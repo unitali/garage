@@ -8,7 +8,7 @@ import { btn, card, checkbox, checkField, field, FUEL_SOFT, FUEL_TEXT, grid2, hi
 export type FuelOption = 'Etanol' | 'Gasolina';
 
 /** Último preço por litro registrado para o combustível (abastecimentos do veículo). */
-export function lastPrice(entries: Entry[], fuelType: string): string {
+function lastPrice(entries: Entry[], fuelType: string): string {
   const last = entries
     .filter((e) => e.kind === 'fuel' && e.fuelType === fuelType && e.pricePerLiter)
     .sort((a, b) => b.date.localeCompare(a.date))[0];

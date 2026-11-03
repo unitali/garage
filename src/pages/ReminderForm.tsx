@@ -111,7 +111,7 @@ function ReminderForm({ uid, vid, vehicle, current, reminder }: Props) {
 
           <label className={field}>
             Nome
-            <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Troca de óleo" />
+            <input className={input} value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Troca de óleo" maxLength={60} />
           </label>
 
           <fieldset className={fieldset}>

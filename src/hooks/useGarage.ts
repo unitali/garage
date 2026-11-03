@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useUid } from './auth';
-import { useAlertWindow, useEntries, useReminders, useVehicles } from './hooks';
-import { billsDue, currentOdometer, kmPerDay, remindersByDue } from './lib/calc';
-import { useSelectedVehicle } from './selection';
+import { useUid } from '../auth';
+import { useAlertWindow, useEntries, useReminders, useVehicles } from './index';
+import { billsDue, currentOdometer, kmPerDay, remindersByDue } from '../lib/calc';
+import { useSelectedVehicle } from '../selection';
 
 /**
  * Dados do veículo selecionado usados por Início, Histórico, Lembretes, barra de baixo e "Adicionar".

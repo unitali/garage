@@ -28,12 +28,6 @@ test('sem dois tanques cheios não há média', () => {
   assert.equal(fuelStats([fuel(1000, 40, false), fuel(1300, 30)]).avg, null);
 });
 
-test('km atual considera o "Atualizar km" só quando foi manual', () => {
-  const list = [fuel(1500, 40)];
-  assert.equal(currentOdometer({ initialOdometer: 1000, odometer: 2000 }, list), 1500); // cache, sem data
-  assert.equal(currentOdometer({ initialOdometer: 1000, odometer: 2000, odometerUpdatedAt: 1 }, list), 2000);
-});
-
 test('km atual e custo por km', () => {
   const v = { initialOdometer: 1000 };
   const list = [fuel(1500, 40, true, '2026-11-02', 240), { ...fuel(1600, 1), kind: 'service' as const, amount: 360, date: '2026-01-10' }];

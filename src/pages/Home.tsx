@@ -6,10 +6,10 @@ import Carousel from '../components/Carousel';
 import EntryRow from '../components/EntryRow';
 import InstallCard from '../components/InstallCard';
 import { markPaid, syncVehicleOdometer } from '../db';
-import { useGarage } from '../garage';
+import { useGarage } from '../hooks/useGarage';
 import { fuelStats, type AlertWindow, type DueBill, type DueReminder, type ReminderLevel } from '../lib/calc';
 import { today } from '../lib/dates';
-import { brl, date, dueIn, dueText, km, num } from '../lib/format';
+import { brl, date, dueIn, dueText, km, monthsLabel, num } from '../lib/format';
 import {
   cardsDoInicio,
   gastoPagoNoAno,
@@ -20,7 +20,6 @@ import {
   variacaoConsumo,
   type CardItem,
 } from '../lib/summary';
-import { monthsLabel } from './ReminderSettings';
 import { paths } from '../routes/paths';
 import type { Vehicle } from '../types';
 import {

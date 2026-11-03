@@ -6,13 +6,11 @@ import { savePrefs } from '../db';
 import { useAlertWindow } from '../hooks';
 import { ALERT_KM_OPTIONS, ALERT_MONTH_OPTIONS, URGENT_DAY_OPTIONS, URGENT_KM_OPTIONS } from '../constants';
 import type { AlertWindow } from '../lib/calc';
-import { km } from '../lib/format';
+import { daysLabel, km, monthsLabel } from '../lib/format';
 import { paths } from '../routes/paths';
 import type { UserPrefs } from '../types';
 import { btn, card, chip, main, sectionTitle } from '../ui';
 
-export const monthsLabel = (m: number) => `${m} ${m === 1 ? 'mês' : 'meses'}`;
-export const daysLabel = (d: number) => `${d} ${d === 1 ? 'dia' : 'dias'}`;
 
 const FIELD: Record<keyof AlertWindow, keyof UserPrefs> = {
   km: 'alertKm',

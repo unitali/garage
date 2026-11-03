@@ -31,7 +31,6 @@ export const PATTERNS = {
   newVehicle: '/v/new',
   vehicle: '/v/:vid',
   editVehicle: '/v/:vid/edit',
-  odometer: '/v/:vid/km',
   newEntry: '/v/:vid/entry/new',
   entry: '/v/:vid/entry/:eid',
   newReminder: '/v/:vid/reminder/new',
@@ -57,7 +56,6 @@ export const paths = {
   /** seleciona o veículo e abre a tela correspondente (histórico, lembretes…) */
   vehicle: (vid: string, tab?: VehicleTab) => withQuery(generatePath(PATTERNS.vehicle, { vid }), { tab }),
   editVehicle: (vid: string) => generatePath(PATTERNS.editVehicle, { vid }),
-  odometer: (vid: string) => generatePath(PATTERNS.odometer, { vid }),
   /** `lembrete`: serviço já com o lembrete selecionado (card "Próxima manutenção") */
   newEntry: (vid: string, kind?: EntryKind, opts: { lembrete?: string } = {}) =>
     withQuery(generatePath(PATTERNS.newEntry, { vid }), { kind, lembrete: opts.lembrete }),
