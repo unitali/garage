@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { LayoutList } from 'lucide-react';
 import Header from '../components/Header';
 import EntryRow from '../components/EntryRow';
 import { ENTRY_KINDS } from '../constants';
@@ -10,19 +11,19 @@ import { brl } from '../lib/format';
 import { isPaid } from '../lib/summary';
 import { FILTER_KIND, type HistoryFilter } from '../routes/paths';
 import type { Entry } from '../types';
-import { card, emptyText, main, sectionTitle, splash } from '../ui';
+import { card, emptyText, KIND_ICON, KIND_SOFT, main, sectionTitle, splash } from '../ui';
 
 const FILTERS: { id: HistoryFilter | null; label: string }[] = [
   { id: null, label: 'Tudo' },
-  { id: 'abastecimento', label: 'Combustível' }, // "Abastecimentos" não cabe com os outros numa linha de 360px
+  { id: 'abastecimento', label: ENTRY_KINDS.fuel.plural },
   { id: 'servico', label: ENTRY_KINDS.service.plural },
   { id: 'despesa', label: ENTRY_KINDS.expense.plural },
 ];
 
-/** filtro compacto: os quatro numa linha só, dividindo a largura */
-const filterChip = (active: boolean) =>
-  `inline-flex h-9 flex-auto items-center justify-center whitespace-nowrap rounded-full border px-1.5 text-xs font-semibold min-[360px]:px-2.5 ${
-    active ? 'border-brand bg-brand text-brand-contrast' : 'border-line bg-surface text-ink'
+/** filtro: ícone em cima (nas cores do tipo, como nos registros) e o nome embaixo; rola de lado quando não cabem */
+const filterTile = (active: boolean) =>
+  `flex min-w-18 flex-auto shrink-0 snap-start flex-col items-center gap-1 rounded-2xl border-2 px-2.5 py-2 ${
+    active ? 'border-brand bg-surface text-brand' : 'border-line bg-surface text-muted'
   }`;
 
 const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -54,23 +55,44 @@ export default function History() {
     return [...map].sort((a, b) => b[1] - a[1]);
   }, [done, kind]);
 
+  // filtro vindo pela URL (ex: Despesas) fica visível na rolagem lateral; só mexe nela, nunca na página
+  const filtersRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = filtersRef.current;
+    const btn = el?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (!el || !btn) return;
+    const pad = 16;
+    if (btn.offsetLeft + btn.offsetWidth > el.scrollLeft + el.clientWidth - pad) el.scrollLeft = btn.offsetLeft + btn.offsetWidth - el.clientWidth + pad;
+    else if (btn.offsetLeft < el.scrollLeft + pad) el.scrollLeft = btn.offsetLeft - pad;
+  }, [tipo, loading]);
+
   if (loading) return <div className={splash}>Carregando…</div>;
 
   return (
     <>
       <Header title="Histórico" odometer={current} />
       <main className={`${main} flex flex-col gap-4`}>
-        <div className="flex gap-1 min-[360px]:gap-1.5" role="group" aria-label="Filtrar por tipo">
+        {/* -mx-4/px-4: os filtros rolam até a borda da tela (o cortado na borda mostra que tem mais) */}
+        <div
+          ref={filtersRef}
+          className="relative -mx-4 flex snap-x scroll-px-4 gap-2 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="group"
+          aria-label="Filtrar por tipo"
+        >
           {FILTERS.map((f) => {
             const active = (tipo ?? null) === f.id;
+            const Icon = f.id ? KIND_ICON[FILTER_KIND[f.id]] : LayoutList;
             return (
               <button
                 key={f.label}
                 aria-pressed={active}
-                className={filterChip(active)}
+                className={filterTile(active)}
                 onClick={() => setParams(f.id ? { tipo: f.id } : {}, { replace: true })}
               >
-                {f.label}
+                <span className={`grid size-10 place-items-center rounded-full ${f.id ? KIND_SOFT[FILTER_KIND[f.id]] : 'bg-brand-soft text-brand'}`}>
+                  <Icon className="size-5" aria-hidden />
+                </span>
+                <span className={`text-[11px] leading-tight whitespace-nowrap ${active ? 'font-bold' : 'font-semibold'}`}>{f.label}</span>
               </button>
             );
           })}
