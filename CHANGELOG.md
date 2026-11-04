@@ -2,6 +2,19 @@
 
 Todas as versões do Unitali Garage, geradas a partir dos commits.
 
+## [0.6.1](https://github.com/unitali/garage/compare/v0.6.0...v0.6.1) (2026-11-04)
+
+### 🐛 Correções
+
+- **seguranca:** CSP e HSTS; proxy /__/auth só com os arquivos do login ([cdc906d](https://github.com/unitali/garage/commit/cdc906d03e17d25ec82c4d25b887a349ebd801a9))
+- **seguranca:** cache do aparelho apagado ao sair; conta confirmada antes de excluir; excluir conta remove o login ([7ad38bf](https://github.com/unitali/garage/commit/7ad38bfa1072f6d385606bb61fd32affa7e88bb8))
+- **seguranca:** cópia da conta com limites, expiração e caminho validado; datas e createdAt nas regras ([af5ecef](https://github.com/unitali/garage/commit/af5ecefb55064884fa7bdfd1f0bba0365870b59a))
+- **pwa:** botão Instalar nunca fica sem resposta ([8a29902](https://github.com/unitali/garage/commit/8a29902a3d9c4402493280ce4bbde1ff6aa47285))
+
+### 🔧 Manutenção
+
+- actions fixadas por SHA, permissões mínimas, PR guard valida o branch; scripts de instalação bloqueados ([901fae6](https://github.com/unitali/garage/commit/901fae6a7811b02d17ac76c931f9442e5a1a0150))
+
 ## [0.6.0](https://github.com/unitali/garage/compare/v0.5.0...v0.6.0) (2026-11-04)
 
 ### ✨ Novidades

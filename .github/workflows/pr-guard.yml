@@ -13,23 +13,34 @@ on:
     types: [opened, reopened]
     branches: [main]
 
-permissions:
-  pull-requests: write
-  actions: write # disparar o release-pr.yml
+# nada no nível do workflow; o job pede só o que usa
+permissions: {}
 
 jobs:
   guard:
     name: Encaminhar PR (só o release entra na main)
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      actions: write # disparar o release-pr.yml
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       GH_REPO: ${{ github.repository }}
       PR: ${{ github.event.pull_request.number }}
       HEAD: ${{ github.head_ref }}
+      HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
     steps:
       - name: Encaminhar
         run: |
-          case "$HEAD" in
+          # o nome do branch vem de quem abriu o PR: só segue se tiver o formato de um nome de branch comum
+          if ! printf '%s' "$HEAD" | grep -Eq '^[A-Za-z0-9._/-]{1,200}$'; then
+            echo "::error::Nome de branch inesperado; nada foi feito."
+            exit 1
+          fi
+          # "release"/"develop" só valem se o branch for deste repositório (num fork é só um nome qualquer)
+          branch="$HEAD"
+          [ "$HEAD_REPO" = "$GH_REPO" ] || branch="fork:$HEAD"
+          case "$branch" in
             release)
               echo "PR de release: nada a fazer"
               ;;

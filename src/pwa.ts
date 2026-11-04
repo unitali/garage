@@ -38,12 +38,23 @@ addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   installEvent.set(e as BeforeInstallPromptEvent);
 });
+// Já tocou em "Instalar": o evento só vale uma vez. Se a janela do navegador não abriu (acontece no
+// Android) ou foi fechada, sobra o caminho pelo menu do navegador — que passa a aparecer na tela.
+const promptUsed = createStore(false);
 // instalou agora, pelo navegador: o app abre pela tela inicial (não dá para trocar de janela daqui)
 const justInstalled = createStore(false);
 addEventListener('appinstalled', () => {
   installEvent.set(null);
+  promptUsed.set(false);
   justInstalled.set(true);
 });
+
+/** Abre a janela de instalação do navegador; os passos pelo menu já ficam na tela caso ela não apareça. */
+function promptInstall(event: BeforeInstallPromptEvent) {
+  installEvent.set(null);
+  promptUsed.set(true);
+  event.prompt().catch(() => {}); // falhou: os passos pelo menu já estão visíveis
+}
 
 export const useJustInstalled = () => useStore(justInstalled);
 
@@ -55,21 +66,19 @@ export const isStandalone =
 const ios =
   /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-export type Install = { kind: 'prompt'; install: () => Promise<void> } | { kind: 'ios' };
+/**
+ * - prompt: botão "Instalar" (Chrome/Edge/Android)
+ * - menu: o botão já foi usado; instalar pelo menu ⋮ do navegador
+ * - ios: não há botão; instalar pelo Compartilhar do Safari
+ */
+export type Install = { kind: 'prompt'; install: () => void } | { kind: 'menu' } | { kind: 'ios' };
 
 /** Como oferecer a instalação neste navegador, ou null se já instalado / não suportado. */
 export function useInstall(): Install | null {
   const event = useStore(installEvent);
+  const used = useStore(promptUsed);
   if (isStandalone) return null;
-  if (event)
-    return {
-      kind: 'prompt',
-      async install() {
-        await event.prompt();
-        await event.userChoice;
-        installEvent.set(null); // o evento só pode ser usado uma vez
-      },
-    };
-  // iOS não tem prompt: só pelo menu Compartilhar
+  if (event) return { kind: 'prompt', install: () => promptInstall(event) };
+  if (used) return { kind: 'menu' };
   return ios ? { kind: 'ios' } : null;
 }

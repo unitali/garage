@@ -1,6 +1,6 @@
 import { useId, useRef, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
-import { useDialog, type DialogOptions } from '../dialog';
+import { useDialog, UserFacingError, type DialogOptions } from '../dialog';
 import { useModal } from '../hooks/useModal';
 import { btn } from '../ui';
 
@@ -45,13 +45,13 @@ function Dialog({
     } catch (err) {
       console.error(err);
       setRunning(false);
-      setError(errorText);
+      setError(err instanceof UserFacingError ? err.message : errorText);
     }
   }
 
   return (
     <div
-      className="fixed inset-0 z-[60] grid place-items-center bg-[rgba(15,23,42,.5)] p-4"
+      className="fixed inset-0 z-60 grid place-items-center bg-[rgba(15,23,42,.5)] p-4"
       onClick={(e) => e.target === e.currentTarget && close()}
       onKeyDown={onKeyDown}
     >
@@ -70,7 +70,7 @@ function Dialog({
             <Icon className="size-6" aria-hidden />
           </span>
         )}
-        <h2 id={`${id}-title`} className="text-lg font-bold break-words">
+        <h2 id={`${id}-title`} className="text-lg font-bold  wrap-break-word">
           {title}
         </h2>
         {message && (

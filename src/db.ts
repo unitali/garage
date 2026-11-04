@@ -7,6 +7,7 @@ import {
   getDocFromServer,
   getDocsFromServer,
   setDoc,
+  Timestamp,
   updateDoc,
   writeBatch,
   type DocumentReference,
@@ -15,6 +16,7 @@ import {
 import { db } from './firebase';
 import { trackWrite } from './sync';
 import { sameDoc } from './lib/same';
+import { BACKUP_DAYS, BACKUPS_PER_DAY, backupData, backupId, MAX_BACKUP_DOCS } from './lib/backup';
 import type { CategoryKind, Data, Entry, EntrySeries, Reminder, UserPrefs, Vehicle } from './types';
 import { notify } from './dialog';
 
@@ -22,7 +24,8 @@ import { notify } from './dialog';
 //   users/{uid}/vehicles/{vid}
 //   users/{uid}/vehicles/{vid}/entries/{id}     ← abastecimentos, serviços e despesas
 //   users/{uid}/vehicles/{vid}/reminders/{id}
-//   trash/{uid}/backups/{bid}/docs/{id}       ← cópia ao excluir a conta (o app só cria; restaurar: scripts/restore-account.mjs)
+//   trash/{uid}/backups/{bid}/docs/{n}        ← cópia ao excluir a conta (o app só cria; expira em 90 dias;
+//                                               restaurar: scripts/restore-account.mjs)
 
 export const userDoc = (uid: string) => doc(db, 'users', uid);
 export const vehiclesCol = (uid: string) => collection(db, 'users', uid, 'vehicles');
@@ -144,8 +147,9 @@ async function inBatches<T>(items: T[], apply: (batch: ReturnType<typeof writeBa
 /**
  * Excluir conta: copia tudo de users/{uid} para trash/{uid}/backups/{bid} e só depois apaga.
  * Lê do servidor e espera cada gravação (sem rede, falha antes de apagar qualquer coisa). Se cair no
- * meio, nada se perde: a cópia vem primeiro e o documento do backup só é criado quando ela termina.
- * Cada cópia guarda o caminho relativo (`vehicles/x/entries/y`) e os dados, para restaurar igual.
+ * meio, nada se perde: a cópia vem primeiro, e a restauração confere se ela tem todos os documentos
+ * que a capa declara. Cada documento guarda o caminho relativo (`vehicles/x/entries/y`) e os dados.
+ * Limites e expiração da cópia: src/lib/backup.ts e firestore.rules.
  */
 export async function deleteAccount(uid: string, who: { email: string | null; name: string | null }) {
   const profile = await getDocFromServer(userDoc(uid));
@@ -156,17 +160,37 @@ export async function deleteAccount(uid: string, who: { email: string | null; na
   const leaves = children.flat().flatMap((s) => s.docs);
   // ordem de exclusão: filhos antes dos pais
   const all: DocumentSnapshot[] = [...leaves, ...vehicles.docs, ...(profile.exists() ? [profile] : [])];
+  if (all.length === 0) return; // nada a guardar (ex: segunda tentativa depois de os dados já terem saído)
+  if (all.length > MAX_BACKUP_DOCS) throw new Error(`Conta com ${all.length} documentos: acima do limite da cópia.`);
 
-  const backup = doc(collection(db, 'trash', uid, 'backups'));
+  // capa primeiro: as regras só aceitam documentos numerados abaixo do total que ela declara
+  const now = new Date();
+  const expireAt = Timestamp.fromMillis(now.getTime() + BACKUP_DAYS * 86_400_000);
+  const backup = await createBackupCover(uid, now, { uid, email: who.email, name: who.name, deletedAt: now.getTime(), docs: all.length, expireAt });
   const root = userDoc(uid).path;
-  await inBatches(all, (batch, d) =>
-    batch.set(doc(collection(backup, 'docs')), { path: d.ref.path.slice(root.length + 1) || '.', data: d.data() }),
+  await inBatches(
+    all.map((d, i) => ({ d, i })),
+    (batch, { d, i }) => {
+      const path = d.ref.path.slice(root.length + 1) || '.';
+      batch.set(doc(backup, 'docs', String(i)), { path, data: backupData(path, d.data() ?? {}), expireAt });
+    },
   );
-  // por último: marca a cópia como completa
-  await setDoc(backup, { uid, email: who.email, name: who.name, deletedAt: Date.now(), docs: all.length });
 
   await inBatches(
     all.map((d) => d.ref),
     (batch, ref: DocumentReference) => batch.delete(ref),
   );
+}
+
+/** Cria a capa com o primeiro id livre do dia ("AAAAMMDD-1", "-2", "-3"): as regras recusam id já usado. */
+async function createBackupCover(uid: string, now: Date, data: Record<string, unknown>) {
+  for (let n = 1; ; n++) {
+    const ref = doc(db, 'trash', uid, 'backups', backupId(now, n));
+    try {
+      await setDoc(ref, data);
+      return ref;
+    } catch (err) {
+      if ((err as { code?: string }).code !== 'permission-denied' || n === BACKUPS_PER_DAY) throw err;
+    }
+  }
 }
