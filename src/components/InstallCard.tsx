@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Smartphone } from 'lucide-react';
-import { useInstall } from '../pwa';
+import { touchDevice, useInstall } from '../pwa';
 import { avatarSmall, btn, cardRow, grow } from '../ui';
 
 const DISMISSED_KEY = 'install-dismissed';
@@ -13,9 +13,28 @@ function readDismissed() {
   }
 }
 
-export default function InstallCard({ className = '' }: { className?: string }) {
-  const install = useInstall();
-  const [dismissed, setDismissed] = useState(readDismissed);
+/** Onde fica o "Instalar" no menu do navegador (quando não há botão). */
+function MenuSteps() {
+  return touchDevice ? (
+    <>
+      Toque no menu <b>⋮</b> do navegador e escolha <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>).
+    </>
+  ) : (
+    <>
+      Clique no ícone de instalar, à direita da barra de endereço, ou no menu <b>⋮</b> → <b>Transmitir, salvar e compartilhar</b> →{' '}
+      <b>Instalar página como app</b>. Se já instalou, o menu mostra <b>Abrir no app</b>.
+    </>
+  );
+}
+
+/**
+ * Convite para instalar o app.
+ * - na tela inicial: só quando o navegador oferece; dá para dispensar (×) e não volta
+ * - `persistent` (tela Mais): sempre que estiver no navegador, sem dispensar — é o caminho garantido
+ */
+export default function InstallCard({ className = '', persistent = false }: { className?: string; persistent?: boolean }) {
+  const install = useInstall({ always: persistent });
+  const [dismissed, setDismissed] = useState(() => !persistent && readDismissed());
 
   if (!install || dismissed) return null;
 
@@ -41,9 +60,7 @@ export default function InstallCard({ className = '' }: { className?: string }) 
               No Safari, toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>.
             </>
           ) : install.kind === 'menu' ? (
-            <>
-              Se não abriu, toque no menu <b>⋮</b> do navegador e escolha <b>Instalar app</b>.
-            </>
+            <MenuSteps />
           ) : (
             'Abre direto da tela inicial e funciona sem internet.'
           )}
@@ -54,9 +71,11 @@ export default function InstallCard({ className = '' }: { className?: string }) 
           Instalar
         </button>
       )}
-      <button className="pb-0.5 pl-1 text-2xl leading-none text-slate-600 dark:text-slate-400" aria-label="Dispensar" onClick={dismiss}>
-        ×
-      </button>
+      {!persistent && (
+        <button className="pb-0.5 pl-1 text-2xl leading-none text-slate-600 dark:text-slate-400" aria-label="Dispensar" onClick={dismiss}>
+          ×
+        </button>
+      )}
     </div>
   );
 }
