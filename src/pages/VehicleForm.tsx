@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Select from '../components/Select';
-import { useUid } from '../auth';
+import { confirmIdentity, useResumeAfterReauth, useUid } from '../auth';
 import { useVehicle } from '../hooks';
 import { deleteVehicle, saveVehicle } from '../db';
 import { VEHICLE_TYPES } from '../constants';
@@ -67,14 +67,21 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
     navigate(paths.home(), { replace: true });
   }
 
+  const removeIntent = vid ? `delete-vehicle:${vid}` : null;
+  useResumeAfterReauth(removeIntent, remove);
+
   async function remove() {
-    if (!vid) return;
+    if (!vid || !removeIntent) return;
     const ok = await ask({
       title: `Excluir "${initial?.name}"?`,
       message: 'O veículo e todo o histórico dele (abastecimentos, serviços, despesas e lembretes) serão excluídos. Não dá para desfazer.',
       confirmLabel: 'Excluir veículo',
-      // exclui no servidor: o pop-up espera e, sem internet, avisa sem fechar
-      action: () => deleteVehicle(uid, vid),
+      // apaga muita coisa: pede a conta Google de novo (se o login não for recente) e exclui no servidor —
+      // o pop-up espera e, sem internet, avisa sem fechar
+      action: async () => {
+        await confirmIdentity(removeIntent);
+        await deleteVehicle(uid, vid);
+      },
       errorText: 'Não foi possível excluir agora. Verifique a internet e tente de novo.',
     });
     if (ok) navigate(paths.home(), { replace: true });

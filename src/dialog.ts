@@ -21,6 +21,9 @@ export interface DialogOptions {
   errorText?: string;
 }
 
+/** Erro com texto pronto para o usuário: se a `action` lançar um destes, o pop-up mostra a mensagem dele. */
+export class UserFacingError extends Error {}
+
 interface Open extends DialogOptions {
   id: number;
   resolve: (ok: boolean) => void;
