@@ -24,7 +24,7 @@ import { notify } from './dialog';
 //   users/{uid}/vehicles/{vid}
 //   users/{uid}/vehicles/{vid}/entries/{id}     ← abastecimentos, serviços e despesas
 //   users/{uid}/vehicles/{vid}/reminders/{id}
-//   trash/{uid}/backups/{bid}/docs/{n}        ← cópia ao excluir a conta (o app só cria; expira em 90 dias;
+//   trash/{uid}/backups/{bid}/docs/{n}        ← cópia ao excluir a conta (o app só cria; vale 90 dias — scripts/purge-backups.mjs;
 //                                               restaurar: scripts/restore-account.mjs)
 
 export const userDoc = (uid: string) => doc(db, 'users', uid);

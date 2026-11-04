@@ -5,7 +5,7 @@
 export const BACKUPS_PER_DAY = 3;
 /** documentos por cópia (perfil + veículos + registros + lembretes) */
 export const MAX_BACKUP_DOCS = 5000;
-/** a cópia é apagada sozinha depois disso (política de TTL do Firestore no campo expireAt) */
+/** validade da cópia (campo expireAt); scripts/purge-backups.mjs apaga as vencidas */
 export const BACKUP_DAYS = 90;
 
 /** Campos que o app conhece em cada tipo de documento (os mesmos que as regras aceitam). */
