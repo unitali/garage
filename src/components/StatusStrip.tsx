@@ -44,7 +44,7 @@ export default function StatusStrip() {
           </button>
         </div>
       )}
-      {sync && <div className={`${strip} bg-white dark:bg-slate-900 ${online ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}`}>{sync}</div>}
+      {sync && <div className={`${strip} bg-white dark:bg-slate-900 ${online ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`}>{sync}</div>}
     </>
   );
 }

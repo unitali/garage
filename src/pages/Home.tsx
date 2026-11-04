@@ -154,10 +154,11 @@ function SectionHead({ title, count, to, link }: { title: string; count?: number
   );
 }
 
-/** Cores dos cards: verde em dia, laranja próximo, vermelho vencido (Configurações → Lembretes). */
+/** Cores dos cards: verde em dia, amarelo próximo, vermelho vencido (Configurações → Lembretes). */
 const TONE: Record<ReminderLevel, { box: string; text: string; badge: string; button: string }> = {
   overdue: { box: 'border-red-700/30 dark:border-red-400/30 bg-red-50 dark:bg-red-950', text: 'text-red-700 dark:text-red-400', badge: 'bg-red-700 dark:bg-red-400 text-slate-100 dark:text-slate-950', button: 'bg-red-700 dark:bg-red-400 text-slate-100 dark:text-slate-950' },
-  soon: { box: 'border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950', text: 'text-orange-700 dark:text-orange-400', badge: 'bg-orange-700 dark:bg-orange-400 text-slate-100 dark:text-slate-950', button: 'bg-orange-700 dark:bg-orange-400 text-slate-100 dark:text-slate-950' },
+  // amarelo de verdade (amber-400) no selo e no botão, com texto escuro; texto solto em amber-700 para ler bem no fundo claro
+  soon: { box: 'border-amber-400/50 dark:border-amber-400/30 bg-amber-50 dark:bg-amber-950', text: 'text-amber-700 dark:text-amber-400', badge: 'bg-amber-400 text-slate-950', button: 'bg-amber-400 text-slate-950' },
   ok: { box: 'border-emerald-700/30 dark:border-emerald-400/30 bg-emerald-50 dark:bg-emerald-950', text: 'text-emerald-700 dark:text-emerald-400', badge: 'bg-emerald-700 dark:bg-emerald-400 text-slate-100 dark:text-slate-950', button: 'bg-emerald-700 dark:bg-emerald-400 text-slate-100 dark:text-slate-950' },
 };
 

@@ -132,7 +132,7 @@ export default function ExpensePaymentField({
               <strong>{brl(total)}</strong>
             </div>
             {mode === 'installments' && typedTotal > 0 && Math.abs(total - typedTotal) >= 0.01 && (
-              <small className="text-xs text-orange-700 dark:text-orange-400">A soma das parcelas difere do valor total informado ({brl(typedTotal)}).</small>
+              <small className="text-xs text-amber-700 dark:text-amber-400">A soma das parcelas difere do valor total informado ({brl(typedTotal)}).</small>
             )}
           </div>
         </>

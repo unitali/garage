@@ -119,7 +119,7 @@ function Group({
         </button>
       </li>
       {message && (
-        <li className={`px-4 pb-3 text-sm ${message.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}`} role="status">
+        <li className={`px-4 pb-3 text-sm ${message.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`} role="status">
           {message.text}
         </li>
       )}

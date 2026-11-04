@@ -334,7 +334,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
               <input className={input} value={odo} onChange={(e) => setOdo(maskKm(e.target.value))} inputMode="numeric" pattern="[0-9]*" maxLength={MAX_KM_DIGITS} placeholder={String(lastKm)} />
             </label>
           </div>
-          {odoBelow && <p className="text-sm text-orange-700 dark:text-orange-400">Atenção: menor que o último km registrado ({km(lastKm)}).</p>}
+          {odoBelow && <p className="text-sm text-amber-700 dark:text-amber-400">Atenção: menor que o último km registrado ({km(lastKm)}).</p>}
 
           {kind === 'fuel' && (
             <>

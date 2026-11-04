@@ -53,14 +53,14 @@ test('lembrete: em dia, perto, urgente por km, vencido por data', () => {
   assert.equal(near.level, 'ok');
   assert.equal(near.near, true);
   assert.equal(near.kmLeft, 800);
-  assert.equal(reminderStatus(rem({}), 59850, '2026-06-01').level, 'soon'); // faltam 150 ≤ 200: laranja
+  assert.equal(reminderStatus(rem({}), 59850, '2026-06-01').level, 'soon'); // faltam 150 ≤ 200: amarelo
   const late = reminderStatus(rem({}), 52000, '2027-01-20');
   assert.equal(late.level, 'overdue');
   assert.equal(late.nextDate, '2027-01-15');
   assert.equal(late.daysLeft, -5);
 });
 
-test('janelas configuráveis: aviso (aparece) e urgente (laranja)', () => {
+test('janelas configuráveis: aviso (aparece) e urgente (amarelo)', () => {
   const custom = { km: 2000, months: 3, urgentKm: 500, urgentDays: 15 };
   const r = rem({ intervalKm: 50000, intervalMonths: null, lastKm: 10000 }); // vence em 60.000 km
   assert.equal(reminderStatus(r, 58500, '2026-06-01').near, false); // faltam 1.500 > 1.000 (padrão)
@@ -71,7 +71,7 @@ test('janelas configuráveis: aviso (aparece) e urgente (laranja)', () => {
   assert.equal(reminderStatus(d, 0, '2026-11-10').near, false); // 2 meses antes
   assert.equal(reminderStatus(d, 0, '2026-12-20').near, true); // menos de 1 mês
   assert.equal(reminderStatus(d, 0, '2026-12-20').level, 'ok'); // 26 dias: ainda verde
-  assert.equal(reminderStatus(d, 0, '2027-01-10').level, 'soon'); // 5 dias ≤ 7: laranja
+  assert.equal(reminderStatus(d, 0, '2027-01-10').level, 'soon'); // 5 dias ≤ 7: amarelo
   assert.equal(reminderStatus(d, 0, '2027-01-02', custom).level, 'soon'); // 13 dias ≤ 15
   assert.equal(reminderStatus(d, 0, '2027-01-16').level, 'overdue');
 });

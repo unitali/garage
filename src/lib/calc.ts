@@ -100,7 +100,7 @@ export interface ReminderStatus {
   nextDate: string | null;
   kmLeft: number | null;
   daysLeft: number | null;
-  /** cor: vencido (vermelho), urgente (laranja) ou em dia (verde) */
+  /** cor: vencido (vermelho), urgente (amarelo) ou em dia (verde) */
   level: ReminderLevel;
   /** dentro da antecedência de aviso (ou urgente/vencido): aparece em cards na tela inicial */
   near: boolean;
@@ -109,7 +109,7 @@ export interface ReminderStatus {
 /**
  * Janelas dos lembretes (Configurações → Lembretes):
  * - aviso: faltando até `km` ou `months` meses → aparece em card na tela inicial
- * - urgente: faltando até `urgentKm` ou `urgentDays` dias → laranja
+ * - urgente: faltando até `urgentKm` ou `urgentDays` dias → amarelo
  */
 export interface AlertWindow {
   km: number;
@@ -256,7 +256,7 @@ export interface DueBill {
 
 /**
  * Contas em aberto dentro da antecedência de aviso (e as vencidas), por vencimento: aparecem como
- * lembrete até "Pago", com as mesmas cores (laranja na janela urgente, vermelho vencida).
+ * lembrete até "Pago", com as mesmas cores (amarelo na janela urgente, vermelho vencida).
  */
 export function billsDue(entries: Entry[], ref = today(), alert = DEFAULT_ALERT): DueBill[] {
   const until = addMonths(ref, alert.months);

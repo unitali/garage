@@ -19,7 +19,7 @@ const FIELD: Record<keyof AlertWindow, keyof UserPrefs> = {
   urgentDays: 'urgentDays',
 };
 
-/** Configurações → Lembretes: quando o card aparece na tela inicial (verde) e quando fica laranja. */
+/** Configurações → Lembretes: quando o card aparece na tela inicial (verde) e quando fica amarelo. */
 export default function ReminderSettings() {
   const uid = useUid();
   const saved = useAlertWindow(uid);
@@ -59,11 +59,11 @@ export default function ReminderSettings() {
           <h2 className={sectionTitle}>Cores do card</h2>
           <ul className="flex flex-col gap-1.5 text-sm">
             <Legend color="bg-emerald-700 dark:bg-emerald-400" label="Verde" text={`em dia: faltando até ${km(alert.km)} ou ${monthsLabel(alert.months)}`} />
-            <Legend color="bg-orange-700 dark:bg-orange-400" label="Laranja" text={`próximo: faltando até ${km(alert.urgentKm)} ou ${daysLabel(alert.urgentDays)}`} />
+            <Legend color="bg-amber-400" label="Amarelo" text={`próximo: faltando até ${km(alert.urgentKm)} ou ${daysLabel(alert.urgentDays)}`} />
             <Legend color="bg-red-700 dark:bg-red-400" label="Vermelho" text="vencido: passou do km ou da data" />
           </ul>
           <Chips
-            label="Laranja faltando até"
+            label="Amarelo faltando até"
             options={URGENT_KM_OPTIONS}
             value={alert.urgentKm}
             format={km}
