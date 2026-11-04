@@ -7,8 +7,8 @@
 //   opções: --backup <id>  escolhe o backup · --to <uid>  restaura em outro usuário (ex: conta Google nova)
 //
 // Acesso: GOOGLE_ACCESS_TOKEN ou o login do Firebase CLI (scripts/google-auth.mjs).
-// O backup não é apagado pelo script — dá para restaurar de novo —, mas expira sozinho (TTL no campo
-// expireAt, 90 dias depois da exclusão).
+// O backup não é apagado por este script — dá para restaurar de novo —, mas vale 90 dias (expireAt):
+// depois disso scripts/purge-backups.mjs o apaga.
 
 import { fileURLToPath } from 'node:url';
 import { accessToken, projectId } from './google-auth.mjs';

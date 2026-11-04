@@ -3,7 +3,7 @@ import { getRedirectResult } from 'firebase/auth';
 import { CircleCheck, Download, EllipsisVertical, Share, SquarePlus, Smartphone } from 'lucide-react';
 import { auth } from '../firebase';
 import { login } from '../auth';
-import { useInstall, useJustInstalled } from '../pwa';
+import { touchDevice, useInstall, useJustInstalled } from '../pwa';
 import { btn, card, error as errorText } from '../ui';
 import FlagStripe from '../components/FlagStripe';
 import logoUrl from '../assets/logo.png';
@@ -83,10 +83,18 @@ export default function Login() {
               {install?.kind === 'menu' && (
                 <ol className="flex flex-col gap-2 text-sm" aria-label="Se a instalação não abriu">
                   <Step n={1} icon={<EllipsisVertical className="size-4" />}>
-                    Toque no menu <b>⋮</b> do navegador
+                    {touchDevice ? 'Toque' : 'Clique'} no menu <b>⋮</b> do navegador
                   </Step>
                   <Step n={2} icon={<SquarePlus className="size-4" />}>
-                    Escolha <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>)
+                    {touchDevice ? (
+                      <>
+                        Escolha <b>Instalar app</b> (ou <b>Adicionar à tela inicial</b>)
+                      </>
+                    ) : (
+                      <>
+                        <b>Transmitir, salvar e compartilhar</b> → <b>Instalar página como app</b>
+                      </>
+                    )}
                   </Step>
                   <Step n={3} icon={<Smartphone className="size-4" />}>
                     Abra o app pelo ícone e entre com Google
