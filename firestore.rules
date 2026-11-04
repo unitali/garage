@@ -109,7 +109,8 @@ service cloud.firestore {
     //    id numérico menor que isso → não dá para escrever além do declarado
     //  - cada documento passa pela mesma validação do original (tamanhos e campos) e o caminho tem o
     //    formato de um caminho do app (é com ele que a restauração monta o nome do documento)
-    //  - tudo expira: expireAt (até 91 dias) é o campo da política de TTL do Firestore
+    //  - tudo expira: expireAt (até 91 dias); scripts/purge-backups.mjs apaga o que venceu (no plano pago,
+    //    dá para trocar por uma política de TTL do Firestore nesse campo)
     function backupId(bid) {
       return bid.matches('^[0-9]{8}-[1-3]$')
         && int(bid.split('-')[0]) == request.time.year() * 10000 + request.time.month() * 100 + request.time.day();

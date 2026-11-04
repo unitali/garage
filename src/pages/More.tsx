@@ -52,7 +52,7 @@ export default function More() {
           />
         </SettingsGroup>
 
-        <InstallCard />
+        <InstallCard persistent />
 
         <DeleteAccount />
 
