@@ -2,6 +2,30 @@
 
 Todas as versões do Unitali Garage, geradas a partir dos commits.
 
+## [0.6.0](https://github.com/unitali/garage/compare/v0.5.0...v0.6.0) (2026-11-04)
+
+### ✨ Novidades
+
+- **marca:** só o logo.png arredondado; ícone do app instalado igual a ele ([d273633](https://github.com/unitali/garage/commit/d27363362a94503cc1c0aa4411f73e50acf98403))
+- **marca:** logo com os cantos arredondados do desenho ([6334bd7](https://github.com/unitali/garage/commit/6334bd71aa50641a3df1516f766ea11881b36a60))
+- **marca:** logo novo inteiro, sem fundo, padding nem margem ([402505a](https://github.com/unitali/garage/commit/402505a4692e6649ed9a2130314254c496336629))
+- **lembretes:** cores calculadas pelo aviso — amarelo em 50%, vermelho em 10% e vencido ([736a83a](https://github.com/unitali/garage/commit/736a83a39cce3e623cc032b35e3bf73d6e25900a))
+- **lembretes:** aviso com 100/200/500/1.000 km e 2 semanas, 1, 3 ou 6 meses ([2fd3973](https://github.com/unitali/garage/commit/2fd397376cafa018cdb1190c23cbb7495a90fe84))
+- **ui:** pop-up do app no lugar de confirm()/alert() do navegador ([10673a9](https://github.com/unitali/garage/commit/10673a91d76b80d5798e322ac25ee046b6f4881f))
+- **veiculos:** máscara de placa — Mercosul e antiga (Brasil), pronta para outros países ([6b5d4eb](https://github.com/unitali/garage/commit/6b5d4ebd2776437960a63ba2bc4848036b8a3b0e))
+- **select:** busca opcional e ação fixa no rodapé ("Adicionar…" sempre visível) ([2505152](https://github.com/unitali/garage/commit/2505152fdb7adb0802ca709c397d66d5a00942af))
+- **ui:** componente Select no lugar do <select> nativo; tipo de veículo com ícones ([2bd581a](https://github.com/unitali/garage/commit/2bd581acee6a85989c3332d41612f472cf3bbeda))
+
+### 🐛 Correções
+
+- update logo ([b7f91d1](https://github.com/unitali/garage/commit/b7f91d1dd9d7317da191bacdbb8f4e463de2f915))
+- **adicionar:** painel abre acima da barra de baixo; o + vira × para fechar ([30d6845](https://github.com/unitali/garage/commit/30d6845f60759de445fb9642cb1029a48dfb9814))
+
+### 🔧 Manutenção
+
+- **css:** tokens.css junto no styles.css ([e57c55f](https://github.com/unitali/garage/commit/e57c55f6af3b8414b59f1852379d149f24a7a032))
+- **alertas:** amarelo (amber) no lugar do laranja — verde, amarelo e vermelho ([928cfb5](https://github.com/unitali/garage/commit/928cfb5beec9c32e8252d359384d84031c23fbd0))
+
 ## [0.5.0](https://github.com/unitali/garage/compare/v0.4.0...v0.5.0) (2026-11-03)
 
 ### ✨ Novidades
