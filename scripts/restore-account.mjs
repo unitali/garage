@@ -7,19 +7,28 @@
 //   opções: --backup <id>  escolhe o backup · --to <uid>  restaura em outro usuário (ex: conta Google nova)
 //
 // Acesso: GOOGLE_ACCESS_TOKEN ou o login do Firebase CLI (scripts/google-auth.mjs).
-// O backup não é apagado — dá para restaurar de novo.
+// O backup não é apagado pelo script — dá para restaurar de novo —, mas expira sozinho (TTL no campo
+// expireAt, 90 dias depois da exclusão).
 
 import { fileURLToPath } from 'node:url';
 import { accessToken, projectId } from './google-auth.mjs';
 
 const API = 'https://firestore.googleapis.com/v1';
 
+// Caminhos que o app grava (os mesmos de src/lib/backup.ts e firestore.rules). Qualquer outro — "..",
+// barra a mais, outra coleção — é recusado: é com ele que se monta o nome do documento restaurado.
+const ID = '[A-Za-z0-9_-]{1,40}';
+const VALID_PATH = new RegExp(`^(\\.|vehicles/${ID}(/(entries|reminders)/${ID})?)$`);
+const VALID_UID = /^[A-Za-z0-9]{1,128}$/;
+
 /** Gravações (API REST :commit) que recriam cada documento em users/{to}/{path}; "." é o próprio users/{to}. */
 export function toWrites(docs, project, to) {
+  if (!VALID_UID.test(to)) throw new Error(`uid inválido: ${to}`);
   const base = `projects/${project}/databases/(default)/documents/users/${to}`;
-  return docs.map(({ path, data }) => ({
-    update: { name: path === '.' ? base : `${base}/${path}`, fields: data?.mapValue?.fields ?? {} },
-  }));
+  return docs.map(({ path, data }) => {
+    if (typeof path !== 'string' || !VALID_PATH.test(path)) throw new Error(`Caminho inválido no backup: ${JSON.stringify(path)}`);
+    return { update: { name: path === '.' ? base : `${base}/${path}`, fields: data?.mapValue?.fields ?? {} } };
+  });
 }
 
 /** "vehicles/a/entries/b" → "entries" (resumo do que será restaurado) */
@@ -34,6 +43,7 @@ async function main() {
     process.exit(1);
   }
   const to = opt('--to') ?? uid;
+  if (!VALID_UID.test(uid) || !VALID_UID.test(to)) throw new Error('uid inválido.');
   const project = projectId();
   const auth = { Authorization: `Bearer ${await accessToken()}` };
   const docsUrl = `${API}/projects/${project}/databases/(default)/documents`;
@@ -57,6 +67,7 @@ async function main() {
       deletedAt: Number(d.fields.deletedAt?.integerValue ?? d.fields.deletedAt?.doubleValue ?? 0),
       email: d.fields.email?.stringValue ?? '',
       count: Number(d.fields.docs?.integerValue ?? 0),
+      expireAt: d.fields.expireAt?.timestampValue,
     }))
     .sort((a, b) => b.deletedAt - a.deletedAt);
   if (backups.length === 0) {
@@ -64,7 +75,10 @@ async function main() {
     return;
   }
   console.log('Backups (mais recente primeiro):');
-  for (const b of backups) console.log(`  ${b.id}  ${new Date(b.deletedAt).toLocaleString('pt-BR')}  ${b.email}  ${b.count} documentos`);
+  for (const b of backups) {
+    const expires = b.expireAt ? `  expira em ${new Date(b.expireAt).toLocaleDateString('pt-BR')}` : '';
+    console.log(`  ${b.id}  ${new Date(b.deletedAt).toLocaleString('pt-BR')}  ${b.email}  ${b.count} documentos${expires}`);
+  }
 
   const chosen = opt('--backup') ? backups.find((b) => b.id === opt('--backup')) : backups[0];
   if (!chosen) throw new Error(`Backup ${opt('--backup')} não encontrado.`);

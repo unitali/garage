@@ -23,3 +23,9 @@ test('restaurar: cada cópia volta para o mesmo caminho em users/{uid}', () => {
   assert.deepEqual(writes[2].update.fields, {}); // documento vazio continua existindo
   assert.deepEqual(['.', 'vehicles/v1', 'vehicles/v1/reminders/r1'].map(kindOf), ['perfil', 'vehicles', 'reminders']);
 });
+
+test('restaurar: recusa caminho que não é do app', () => {
+  const bad = ['..', '../outro/vehicles/v1', 'vehicles/v1/../../x', 'segredos/x', 'vehicles/v1/fotos/f1', 'vehicles//entries/e', '/vehicles/v1', '', 'vehicles/v1/entries/e1/x/y'];
+  for (const path of bad) assert.throws(() => toWrites([{ path, data: {} }], 'p', 'novo'), /Caminho inválido/, path);
+  assert.throws(() => toWrites([{ path: '.', data: {} }], 'p', '../x'), /uid inválido/);
+});

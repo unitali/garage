@@ -26,7 +26,16 @@ const parcel = {
 const reminder = { title: 'Troca de óleo', intervalKm: 10000, intervalMonths: 12, lastKm: 196300, lastDate: '2026-10-05', createdAt: 1 };
 const prefs = { alertKm: 1000, alertDays: 14, alertMonths: 1, urgentKm: 200, urgentDays: 7, serviceCategories: ['Lavagem'], expenseCategories: [] };
 
-/** [descrição, esperado, uid (null = sem login), caminho, método, dados novos?, dados atuais?] */
+// "agora" de todos os casos (request.time): o id do backup precisa ser a data de hoje
+const NOW = '2026-11-04T12:00:00Z';
+const B = `trash/${U}/backups/20261104-1`;
+const expireAt = '2027-02-01T12:00:00Z'; // ~89 dias depois de NOW
+const meta = { uid: U, email: 'a@b.c', name: 'A', deletedAt: 1762257600000, docs: 3, expireAt };
+// get() da capa do backup, simulado (a API de testes não tem banco)
+const withMeta = { mocks: [{ function: 'get', args: [{ exactValue: `/databases/(default)/documents/${B}` }], result: { value: { data: meta } } }] };
+const backupDoc = (path, data, extra = {}) => ({ path, data, expireAt, ...extra });
+
+/** [descrição, esperado, uid (null = sem login), caminho, método, dados novos?, dados atuais?, { mocks }?] */
 const CASES = [
   // o dono usa o app normalmente
   ['cria veículo', 'ALLOW', U, V, 'create', vehicle],
@@ -40,8 +49,11 @@ const CASES = [
   ['cria lembrete', 'ALLOW', U, `${V}/reminders/r1`, 'create', reminder],
   ['lembrete só por tempo', 'ALLOW', U, `${V}/reminders/r2`, 'create', { ...reminder, intervalKm: null, lastKm: null, lastDate: null }],
   ['salva preferências', 'ALLOW', U, `users/${U}`, 'create', prefs],
-  ['guarda backup ao excluir conta', 'ALLOW', U, `trash/${U}/backups/b1`, 'create', { uid: U, email: 'a@b.c', name: 'A', deletedAt: 1, docs: 3 }],
-  ['guarda documento do backup', 'ALLOW', U, `trash/${U}/backups/b1/docs/d1`, 'create', { path: 'vehicles/v1', data: vehicle }],
+  ['guarda a capa do backup ao excluir conta', 'ALLOW', U, B, 'create', meta],
+  ['guarda o veículo no backup', 'ALLOW', U, `${B}/docs/0`, 'create', backupDoc('vehicles/v1', vehicle), null, withMeta],
+  ['guarda um registro no backup', 'ALLOW', U, `${B}/docs/1`, 'create', backupDoc('vehicles/v1/entries/e1', fuel), null, withMeta],
+  ['guarda as preferências no backup', 'ALLOW', U, `${B}/docs/2`, 'create', backupDoc('.', prefs), null, withMeta],
+  ['edita registro mantendo createdAt', 'ALLOW', U, `${V}/entries/e1`, 'update', { ...fuel, amount: 210 }, fuel],
 
   // ninguém mexe nos dados de outra pessoa
   ['outro usuário lê o veículo', 'DENY', 'intruso', V, 'get'],
@@ -56,6 +68,11 @@ const CASES = [
   ['registro com campo a mais', 'DENY', U, `${V}/entries/x`, 'create', { ...fuel, admin: true }],
   ['tipo de registro inválido', 'DENY', U, `${V}/entries/x`, 'create', { ...fuel, kind: 'hack' }],
   ['data inválida', 'DENY', U, `${V}/entries/x`, 'create', { ...fuel, date: 'ontem' }],
+  ['data com mês 99', 'DENY', U, `${V}/entries/x`, 'create', { ...fuel, date: '9999-99-99' }],
+  ['data com dia 32', 'DENY', U, `${V}/entries/x`, 'create', { ...fuel, date: '2026-01-32' }],
+  ['muda o createdAt do registro', 'DENY', U, `${V}/entries/e1`, 'update', { ...fuel, createdAt: 1 }, fuel],
+  ['muda o createdAt do veículo', 'DENY', U, V, 'update', { ...vehicle, createdAt: 1 }, vehicle],
+  ['muda o createdAt do lembrete', 'DENY', U, `${V}/reminders/r1`, 'update', { ...reminder, createdAt: 2 }, reminder],
   ['valor negativo', 'DENY', U, `${V}/entries/x`, 'create', { ...fuel, amount: -5 }],
   ['valor como texto', 'DENY', U, `${V}/entries/x`, 'create', { ...fuel, amount: '100' }],
   ['título com mais de 60', 'DENY', U, `${V}/entries/x`, 'create', { ...service, title: 'x'.repeat(61) }],
@@ -68,20 +85,42 @@ const CASES = [
   ['coleção inventada no usuário', 'DENY', U, `users/${U}/segredos/x`, 'create', { a: 1 }],
   ['coleção inventada no veículo', 'DENY', U, `${V}/fotos/x`, 'create', { a: 1 }],
   ['coleção na raiz', 'DENY', U, 'config/x', 'create', { a: 1 }],
-  ['ler o backup', 'DENY', U, `trash/${U}/backups/b1`, 'get'],
-  ['apagar o backup', 'DENY', U, `trash/${U}/backups/b1`, 'delete'],
-  ['backup em nome de outro', 'DENY', U, 'trash/outro/backups/b1', 'create', { uid: 'outro', docs: 1 }],
+  ['ler o backup', 'DENY', U, B, 'get'],
+  ['apagar o backup', 'DENY', U, B, 'delete'],
+  ['alterar o backup', 'DENY', U, B, 'update', { ...meta, docs: 5000 }, meta],
+  ['backup em nome de outro', 'DENY', U, 'trash/outro/backups/20261104-1', 'create', { ...meta, uid: 'outro' }],
+
+  // backup com limites: data de hoje, até 3 por dia, até 5.000 documentos, expira, formato do original
+  ['backup com id que não é a data de hoje', 'DENY', U, `trash/${U}/backups/20261103-1`, 'create', meta],
+  ['4º backup no mesmo dia', 'DENY', U, `trash/${U}/backups/20261104-4`, 'create', meta],
+  ['backup com id livre', 'DENY', U, `trash/${U}/backups/qualquer`, 'create', meta],
+  ['backup com mais de 5.000 documentos', 'DENY', U, B, 'create', { ...meta, docs: 5001 }],
+  ['backup vazio', 'DENY', U, B, 'create', { ...meta, docs: 0 }],
+  ['backup sem expiração', 'DENY', U, B, 'create', (({ expireAt: _, ...m }) => m)(meta)],
+  ['backup que expira em 1 ano', 'DENY', U, B, 'create', { ...meta, expireAt: '2027-11-04T12:00:00Z' }],
+  ['backup com campo a mais', 'DENY', U, B, 'create', { ...meta, extra: 'x'.repeat(1000) }],
+  ['documento além do declarado na capa', 'DENY', U, `${B}/docs/3`, 'create', backupDoc('vehicles/v1', vehicle), null, withMeta],
+  ['documento com id não numérico', 'DENY', U, `${B}/docs/abc`, 'create', backupDoc('vehicles/v1', vehicle), null, withMeta],
+  ['documento com caminho "../"', 'DENY', U, `${B}/docs/0`, 'create', backupDoc('../outro/vehicles/v1', vehicle), null, withMeta],
+  ['documento com caminho fora do app', 'DENY', U, `${B}/docs/0`, 'create', backupDoc('segredos/x', vehicle), null, withMeta],
+  ['documento com caminho de registro e dados de veículo', 'DENY', U, `${B}/docs/0`, 'create', backupDoc('vehicles/v1/entries/e1', vehicle), null, withMeta],
+  ['documento com dados enormes', 'DENY', U, `${B}/docs/0`, 'create', backupDoc('vehicles/v1', { ...vehicle, name: 'x'.repeat(5000) }), null, withMeta],
+  ['documento com dados livres', 'DENY', U, `${B}/docs/0`, 'create', backupDoc('vehicles/v1', { qualquer: 'coisa' }), null, withMeta],
+  ['documento com outra expiração', 'DENY', U, `${B}/docs/0`, 'create', backupDoc('vehicles/v1', vehicle, { expireAt: '2027-03-01T00:00:00Z' }), null, withMeta],
+  ['documento de backup de outro', 'DENY', 'intruso', `${B}/docs/0`, 'create', backupDoc('vehicles/v1', vehicle), null, withMeta],
 ];
 
-const testCases = CASES.map(([, expectation, uid, path, method, data, existing]) => ({
+const testCases = CASES.map(([, expectation, uid, path, method, data, existing, opts]) => ({
   expectation,
   request: {
     auth: uid ? { uid } : null,
     path: `/databases/(default)/documents/${path}`,
     method,
+    time: NOW,
     ...(data ? { resource: { data } } : {}),
   },
   ...(existing ? { resource: { data: existing } } : {}),
+  ...(opts?.mocks ? { functionMocks: opts.mocks } : {}),
 }));
 
 const res = await fetch(`https://firebaserules.googleapis.com/v1/projects/${projectId()}:test`, {
