@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Smartphone } from 'lucide-react';
 import { useInstall } from '../pwa';
 import { avatarSmall, btn, cardRow, grow } from '../ui';
 
@@ -29,13 +30,19 @@ export default function InstallCard({ className = '' }: { className?: string }) 
 
   return (
     <div className={`${cardRow} ${className}`}>
-      <span className={avatarSmall}>📲</span>
+      <span className={`${avatarSmall} text-brand`}>
+        <Smartphone className="size-5" aria-hidden />
+      </span>
       <span className={grow}>
         <strong>Instalar o app</strong>
         <span className="text-sm text-slate-600 dark:text-slate-400">
           {install.kind === 'ios' ? (
             <>
               No Safari, toque em <b>Compartilhar</b> e depois em <b>Adicionar à Tela de Início</b>.
+            </>
+          ) : install.kind === 'menu' ? (
+            <>
+              Se não abriu, toque no menu <b>⋮</b> do navegador e escolha <b>Instalar app</b>.
             </>
           ) : (
             'Abre direto da tela inicial e funciona sem internet.'
