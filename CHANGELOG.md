@@ -2,6 +2,12 @@
 
 Todas as versões do Unitali Garage, geradas a partir dos commits.
 
+## [0.6.3](https://github.com/unitali/garage/compare/v0.6.2...v0.6.3) (2026-11-04)
+
+### 🐛 Correções
+
+- **pwa:** × do aviso de instalar esconde por 30 dias, não para sempre ([aa4e93e](https://github.com/unitali/garage/commit/aa4e93eba5b38282a7dfcc90181fd4923d30a1f7))
+
 ## [0.6.2](https://github.com/unitali/garage/compare/v0.6.1...v0.6.2) (2026-11-04)
 
 ### 🐛 Correções
