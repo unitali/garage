@@ -99,5 +99,3 @@ export const OIL_MONTH_OPTIONS = [6, 12, 18];
 export const ALERT_KM_OPTIONS = [100, 200, 500, 1000];
 /** em dias: 2 semanas, 1 mês, 3 meses, 6 meses */
 export const ALERT_DAY_OPTIONS = [14, 30, 90, 180];
-export const URGENT_KM_OPTIONS = [100, 200, 500, 1000];
-export const URGENT_DAY_OPTIONS = [3, 7, 15, 30];

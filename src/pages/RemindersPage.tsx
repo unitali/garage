@@ -5,6 +5,7 @@ import BillRow from '../components/BillRow';
 import SeriesCard from '../components/SeriesCard';
 import { markReminderDone } from '../db';
 import { useGarage } from '../hooks/useGarage';
+import { LEVEL_ORDER } from '../lib/calc';
 import { today } from '../lib/dates';
 import { date, dueText, km } from '../lib/format';
 import { isPaid, proximaAcao, seriesDe } from '../lib/summary';
@@ -24,7 +25,7 @@ export default function RemindersPage() {
 
   // o mais urgente (o mesmo do card "Próxima manutenção") primeiro; depois vencido > próximo > o resto
   const top = proximaAcao(reminders, current, today(), rate, alert);
-  const rest = due.filter((d) => d.r.id !== top?.r.id).sort((a, b) => rank(a.s.level) - rank(b.s.level));
+  const rest = due.filter((d) => d.r.id !== top?.r.id).sort((a, b) => LEVEL_ORDER[a.s.level] - LEVEL_ORDER[b.s.level]);
   const ordered = top ? [top, ...rest] : rest;
   // séries com alguma parcela ainda em aberto (as já quitadas só aparecem no Histórico)
   const openSeries = seriesDe(entries).filter((parcelas) => parcelas.some((e) => !isPaid(e)));
@@ -117,4 +118,3 @@ export default function RemindersPage() {
   );
 }
 
-const rank = (level: string) => (level === 'overdue' ? 0 : level === 'soon' ? 1 : 2);

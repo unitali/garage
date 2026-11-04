@@ -73,9 +73,6 @@ export interface UserPrefs {
   alertDays?: number;
   /** versão antiga do aviso, em meses: lida só quando não há `alertDays` */
   alertMonths?: number;
-  /** urgente (amarelo): faltando até X km ou Y dias */
-  urgentKm?: number;
-  urgentDays?: number;
 }
 
 export interface EntrySeries {

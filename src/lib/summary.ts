@@ -1,6 +1,6 @@
 // Cálculos de exibição da tela inicial e do histórico (funções puras, testadas em tests/summary.test.ts).
 
-import { DEFAULT_ALERT, isPaid, remindersByDue, type AlertWindow, type DueBill, type DueReminder, type ReminderStatus } from './calc.ts';
+import { DEFAULT_ALERT, isPaid, LEVEL_ORDER, remindersByDue, type AlertWindow, type DueBill, type DueReminder, type ReminderStatus } from './calc.ts';
 import { addDays, addMonths, today } from './dates.ts';
 import type { Entry, Reminder } from '../types';
 
@@ -74,11 +74,11 @@ export function seriesDe(entries: Entry[]): Entry[][] {
 type Urgencia = { s: ReminderStatus; date: string | null };
 
 /**
- * Do mais urgente para o menos: vencido > próximo > em dia. Entre vencidos, por data antes de só por km
+ * Do mais urgente para o menos: vencido > urgente > próximo > em dia. Entre vencidos, por data antes de só por km
  * (prazo legal costuma pesar mais); depois o que venceu há mais tempo / vence antes.
  */
 function urgencia(a: Urgencia, b: Urgencia): number {
-  const rank = (x: Urgencia) => (x.s.level === 'overdue' ? 0 : x.s.level === 'soon' ? 1 : 2);
+  const rank = (x: Urgencia) => LEVEL_ORDER[x.s.level];
   const byDate = (x: Urgencia) => (x.s.daysLeft != null && x.s.daysLeft <= 0 ? 0 : 1);
   return (
     rank(a) - rank(b) ||

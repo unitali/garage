@@ -72,14 +72,17 @@ export const REMINDER_ICON = Bell;
 export const REMINDER_SOFT = 'bg-violet-50 dark:bg-violet-950 text-violet-700 dark:text-violet-300';
 export const iconCircle = 'grid size-10 shrink-0 place-items-center rounded-full';
 
-// ---------- status: vermelho vencido, amarelo próximo (janela urgente), verde/neutro em dia ----------
+// ---------- status: vermelho vencido/urgente (últimos 10%), amarelo próximo (até 50%), verde/neutro em dia ----------
 
-export const LEVEL_TEXT: Record<ReminderLevel, string> = { ok: 'text-slate-600 dark:text-slate-400', soon: 'text-amber-700 dark:text-amber-400', overdue: 'text-red-700 dark:text-red-400' };
-export const LEVEL_LABEL: Record<ReminderLevel, string> = { ok: 'Em dia', soon: 'Próximo', overdue: 'Vencido' };
+const RED_TEXT = 'text-red-700 dark:text-red-400';
+const RED_BADGE = 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400';
+export const LEVEL_TEXT: Record<ReminderLevel, string> = { ok: 'text-slate-600 dark:text-slate-400', soon: 'text-amber-700 dark:text-amber-400', urgent: RED_TEXT, overdue: RED_TEXT };
+export const LEVEL_LABEL: Record<ReminderLevel, string> = { ok: 'Em dia', soon: 'Próximo', urgent: 'Urgente', overdue: 'Vencido' };
 export const LEVEL_BADGE: Record<ReminderLevel, string> = {
   ok: 'bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400',
   soon: 'bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-400',
-  overdue: 'bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-400',
+  urgent: RED_BADGE,
+  overdue: RED_BADGE,
 };
 export const badge = 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold';
 

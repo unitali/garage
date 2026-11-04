@@ -71,16 +71,16 @@ test('próxima ação: vencido por data antes de vencido por km', () => {
 test('cards da tela inicial: lembretes e contas dentro do aviso, com a cor de cada janela', () => {
   const vencido = rem({ title: 'Óleo', intervalKm: 10000, lastKm: 180000 }); // venceu em 190.000
   const urgente = rem({ title: 'Pneus', intervalKm: 20000, lastKm: 174600 }); // faltam 100 km
-  const aviso = rem({ title: 'Revisão', intervalKm: 20000, lastKm: 175000 }); // faltam 500 km
+  const aviso = rem({ title: 'Revisão', intervalKm: 20000, lastKm: 175000 }); // faltam 500 km: metade do aviso
   const longe = rem({ title: 'Correia', intervalKm: 50000, lastKm: 160000 }); // faltam 15.500 km
   const due = remindersByDue([longe, aviso, urgente, vencido], 194500, null, ref);
   const bills = billsDue(serie, ref); // parcela de 19/11 (16 dias: verde); a de 19/12 fica fora de 1 mês
   const cards = cardsDoInicio(due, bills);
   const title = (c: (typeof cards)[number]) => (c.type === 'bill' ? `Seguro ${c.bill.e.series?.index}` : c.due.r.title);
   const level = (c: (typeof cards)[number]) => (c.type === 'bill' ? c.bill.s.level : c.due.s.level);
-  assert.deepEqual(cards.map(title), ['Óleo', 'Pneus', 'Seguro 4', 'Revisão']); // em dia: com data antes de só km
-  assert.deepEqual(cards.map(level), ['overdue', 'soon', 'ok', 'ok']); // vermelho, amarelo, verde
-  const largo = remindersByDue([longe], 194500, null, ref, { km: 20000, days: 30, urgentKm: 200, urgentDays: 7 });
+  assert.deepEqual(cards.map(title), ['Óleo', 'Pneus', 'Revisão', 'Seguro 4']);
+  assert.deepEqual(cards.map(level), ['overdue', 'urgent', 'soon', 'ok']); // vencido, vermelho (≤ 100 km), amarelo (≤ 500 km), verde
+  const largo = remindersByDue([longe], 194500, null, ref, { km: 20000, days: 30 });
   assert.equal(cardsDoInicio(largo, []).length, 1); // aviso de 20.000 km: a correia entra
 });
 
