@@ -22,7 +22,8 @@ export default function BottomNav() {
     <>
       <nav
         aria-label="Navegação principal"
-        className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-3xl border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pb-[env(safe-area-inset-bottom)] md:border-x"
+        // com o "Adicionar" aberto, a barra fica por cima do fundo escuro (o + vira × para fechar)
+        className={`fixed inset-x-0 bottom-0 ${adding ? 'z-50' : 'z-10'} mx-auto max-w-3xl border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pb-[env(safe-area-inset-bottom)] md:border-x`}
       >
         <ul className="grid h-16 grid-cols-5">
           <Item to={paths.home()} icon={House} label="Início" active={pathname === paths.home()} />
@@ -33,13 +34,14 @@ export default function BottomNav() {
               className="flex flex-col items-center gap-0.5 text-xs font-medium text-slate-600 dark:text-slate-400"
               aria-haspopup="dialog"
               aria-expanded={adding}
-              onClick={() => setAdding(true)}
+              aria-label={adding ? 'Fechar Adicionar' : undefined}
+              onClick={() => setAdding(!adding)}
             >
               {/* 56px, 24px acima da barra, borda de 4px na cor da superfície */}
               <span className="-mt-6 grid size-14 place-items-center rounded-full border-4 border-white dark:border-slate-900 bg-brand text-brand-contrast shadow-lg">
-                <Plus className="size-7" aria-hidden />
+                <Plus className={`size-7 transition-transform ${adding ? 'rotate-45' : ''}`} aria-hidden />
               </span>
-              Adicionar
+              {adding ? 'Fechar' : 'Adicionar'}
             </button>
           </li>
           <Item

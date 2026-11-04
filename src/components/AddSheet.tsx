@@ -36,7 +36,7 @@ export default function AddSheet({
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt)[0];
 
   return (
-    <Sheet open={open} onClose={onClose} title="Adicionar" subtitle={vehicle && `${vehicle.name} · ${km(odometer)}`}>
+    <Sheet open={open} onClose={onClose} aboveNav title="Adicionar" subtitle={vehicle && `${vehicle.name} · ${km(odometer)}`}>
       <div className="grid grid-cols-2 gap-3">
         <Tile
           icon={KIND_ICON.fuel}
