@@ -7,11 +7,9 @@ import { DEFAULT_CATEGORIES, categoryOptions, normalizeCategory } from '../const
 import type { CategoryKind } from '../types';
 import { btn, input } from '../ui';
 
-const ADD = '__add__';
-
 const NOUN: Record<CategoryKind, { add: string; placeholder: string }> = {
-  service: { add: '+ Adicionar serviço…', placeholder: 'Ex: Troca de pastilhas' },
-  expense: { add: '+ Adicionar despesa…', placeholder: 'Ex: Rastreador' },
+  service: { add: 'Adicionar serviço…', placeholder: 'Ex: Troca de pastilhas' },
+  expense: { add: 'Adicionar despesa…', placeholder: 'Ex: Rastreador' },
 };
 
 /**
@@ -59,8 +57,18 @@ export default function CategorySelect({
   const select = (
     <Select
       value={value}
-      options={[...options.map((c) => ({ value: c, label: c })), { value: ADD, label: NOUN[kind].add, icon: Plus }]}
-      onChange={(v) => (v === ADD ? setAdding(true) : onChange(v))}
+      options={options.map((c) => ({ value: c, label: c }))}
+      onChange={onChange}
+      searchable
+      // sempre visível no rodapé; com algo buscado que não existe, já vem com o nome preenchido
+      action={{
+        label: (q) => (q && !options.some((o) => normalizeCategory(o) === normalizeCategory(q)) ? `Adicionar "${q}"` : NOUN[kind].add),
+        icon: Plus,
+        onSelect: (q) => {
+          setName(q);
+          setAdding(true);
+        },
+      }}
       label={compact ? undefined : label}
       ariaLabel={compact ? label : undefined}
       compact={compact}
