@@ -1,0 +1,11 @@
+# Atualizações automáticas: as actions são fixadas por SHA nos workflows e o Dependabot abre PR
+# (para a develop) quando sai versão nova, já com o SHA novo.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
