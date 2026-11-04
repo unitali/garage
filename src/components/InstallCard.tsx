@@ -3,11 +3,13 @@ import { Smartphone } from 'lucide-react';
 import { touchDevice, useInstall } from '../pwa';
 import { avatarSmall, btn, cardRow, grow } from '../ui';
 
-const DISMISSED_KEY = 'install-dismissed';
+// × no aviso da tela inicial: some por 30 dias (antes era para sempre, na chave 'install-dismissed')
+const DISMISSED_KEY = 'install-dismissed-at';
+const DISMISS_DAYS = 30;
 
 function readDismissed() {
   try {
-    return localStorage.getItem(DISMISSED_KEY) === '1';
+    return Date.now() - Number(localStorage.getItem(DISMISSED_KEY) ?? 0) < DISMISS_DAYS * 86_400_000;
   } catch {
     return false;
   }
@@ -29,7 +31,7 @@ function MenuSteps() {
 
 /**
  * Convite para instalar o app.
- * - na tela inicial: só quando o navegador oferece; dá para dispensar (×) e não volta
+ * - na tela inicial: só quando o navegador oferece; o × esconde por 30 dias
  * - `persistent` (tela Mais): sempre que estiver no navegador, sem dispensar — é o caminho garantido
  */
 export default function InstallCard({ className = '', persistent = false }: { className?: string; persistent?: boolean }) {
@@ -41,7 +43,8 @@ export default function InstallCard({ className = '', persistent = false }: { cl
   function dismiss() {
     setDismissed(true);
     try {
-      localStorage.setItem(DISMISSED_KEY, '1');
+      localStorage.setItem(DISMISSED_KEY, String(Date.now()));
+      localStorage.removeItem('install-dismissed');
     } catch {
       // sem storage: some só nesta sessão
     }
