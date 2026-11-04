@@ -1,15 +1,55 @@
 @import 'tailwindcss';
-@import './styles/tokens.css';
 
 /*
- * Cores da marca (src/styles/tokens.css) como classes: bg-brand, text-bar-ink, bg-flag-green…
- * `inline`: as classes usam var(--…), então o modo escuro só troca os tokens.
+ * Estilos do Unitali Garage. Aqui fica só o que não existe na paleta do Tailwind: a fonte e as cores da
+ * marca. O resto (status, superfícies, texto, bordas, cores por tipo) usa as classes do Tailwind direto
+ * no código, com a variante dark: (ex: text-red-700 dark:text-red-400).
+ */
+
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* cores da marca; no modo escuro só estes valores mudam */
+:root {
+  /* azul-marinho do logo */
+  --primary: #0f2747;
+  --primary-600: var(--color-blue-800);
+  --on-primary: var(--color-white);
+  --primary-soft: var(--color-blue-50);
+
+  /* barra do topo (azul-marinho da marca nos dois temas) */
+  --bar: #0f2747;
+  --bar-ink: var(--color-white);
+
+  /* faixa tricolor (cores da bandeira italiana) */
+  --flag-green: #009246;
+  --flag-white: var(--color-white);
+  --flag-red: #ce2b37;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* um azul claro, para ter contraste no fundo escuro */
+    --primary: var(--color-blue-300);
+    --primary-600: var(--color-blue-200);
+    --on-primary: var(--color-blue-950);
+    --primary-soft: var(--color-blue-950);
+
+    --bar: #0b1b33;
+
+    --flag-green: #2fbf71;
+    --flag-red: #ef5a63;
+  }
+}
+
+/*
+ * As mesmas cores como classes: bg-brand, text-bar-ink, bg-flag-green…
+ * `inline`: as classes usam var(--…), então o modo escuro funciona sem classes extras.
  */
 @theme inline {
-  --font-sans: var(--font-sans);
-
-  --color-brand: var(--color-primary);
-  --color-brand-600: var(--color-primary-600);
+  --color-brand: var(--primary);
+  --color-brand-600: var(--primary-600);
   --color-brand-contrast: var(--on-primary);
   --color-brand-soft: var(--primary-soft);
   --color-bar: var(--bar);

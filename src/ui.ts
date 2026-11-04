@@ -3,7 +3,7 @@ import type { ReminderLevel } from './lib/calc';
 import type { Entry, EntryKind, VehicleType } from './types';
 
 // Classes Tailwind repetidas em várias telas. Cores da paleta do Tailwind com a variante dark:; só a marca
-// (brand, bar, flag) vem dos tokens (src/styles/tokens.css).
+// (brand, bar, flag) vem de src/styles.css.
 // Regras: alvos de toque ≥ 44px (min-h-11), cards com raio 16 e padding 14, sem borda colorida à esquerda.
 
 export const splash = 'grid min-h-dvh place-items-center text-slate-600 dark:text-slate-400';
