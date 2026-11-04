@@ -8,7 +8,7 @@ import { useUid } from '../auth';
 import { useVehicles } from '../hooks';
 import { useSelectedVehicle } from '../selection';
 import type { Vehicle } from '../types';
-import logoUrl from '../assets/logo.png';
+import logoUrl from '../assets/logo-288.png';
 
 interface Props {
   /** nome da tela aberta */
@@ -46,8 +46,8 @@ export default function Header({ title, back, right, vehicle, odometer, children
               <ChevronLeft className="size-7" aria-hidden />
             </button>
           )}
-          {/* fundo branco: o U azul-marinho sumiria na barra da mesma cor */}
-          <img src={logoUrl} alt="" className="size-9 shrink-0 rounded-xl bg-white object-contain p-1" />
+          {/* o logo inteiro, como está no arquivo (já vem no formato de ícone) */}
+          <img src={logoUrl} alt="" className="size-9 shrink-0" />
           <h1 className="min-w-0 flex-1 text-xl font-bold wrap-break-words">{title}</h1>
           {right}
         </div>

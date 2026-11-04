@@ -47,7 +47,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // inclui o logo (src/assets) e a fonte Inter para aparecerem também offline
+        // inclui o logo (src/assets/logo-288.png) e a fonte Inter para aparecerem também offline
         globPatterns: ['**/*.{js,css,html,png,svg,ico,woff2}'],
         // da Inter só o latim (português); os outros alfabetos ficam fora do cache
         globIgnores: ['**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2'],
