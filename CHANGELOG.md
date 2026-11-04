@@ -2,6 +2,18 @@
 
 Todas as versões do Unitali Garage, geradas a partir dos commits.
 
+## [0.6.2](https://github.com/unitali/garage/compare/v0.6.1...v0.6.2) (2026-11-04)
+
+### 🐛 Correções
+
+- **pwa:** opção de instalar sempre em Mais; caminho pelo menu no computador e no celular ([58d1894](https://github.com/unitali/garage/commit/58d189455a4c6fd91a8034d635ec390209369fa5))
+
+### 🔧 Manutenção
+
+- **seguranca:** expurgo das cópias vencidas por script (TTL exige plano pago) ([ea85546](https://github.com/unitali/garage/commit/ea85546301a14465028d9255b901748888bd0aea))
+- bump actions/setup-node from 4.4.0 to 7.1.0 ([581b70e](https://github.com/unitali/garage/commit/581b70e2deca09e341c0033cb1dd4299c151025f))
+- bump actions/checkout from 4.4.0 to 7.0.1 ([1ad2102](https://github.com/unitali/garage/commit/1ad21022df36caed3aa4d0b344c56965fb706d68))
+
 ## [0.6.1](https://github.com/unitali/garage/compare/v0.6.0...v0.6.1) (2026-11-04)
 
 ### 🐛 Correções
