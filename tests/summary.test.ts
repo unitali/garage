@@ -80,7 +80,7 @@ test('cards da tela inicial: lembretes e contas dentro do aviso, com a cor de ca
   const level = (c: (typeof cards)[number]) => (c.type === 'bill' ? c.bill.s.level : c.due.s.level);
   assert.deepEqual(cards.map(title), ['Óleo', 'Pneus', 'Seguro 4', 'Revisão']); // em dia: com data antes de só km
   assert.deepEqual(cards.map(level), ['overdue', 'soon', 'ok', 'ok']); // vermelho, amarelo, verde
-  const largo = remindersByDue([longe], 194500, null, ref, { km: 20000, months: 1, urgentKm: 200, urgentDays: 7 });
+  const largo = remindersByDue([longe], 194500, null, ref, { km: 20000, days: 30, urgentKm: 200, urgentDays: 7 });
   assert.equal(cardsDoInicio(largo, []).length, 1); // aviso de 20.000 km: a correia entra
 });
 

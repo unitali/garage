@@ -9,6 +9,12 @@ export const num = (n: number, decimals = 0) =>
 export const km = (n: number) => `${num(n)} km`;
 export const monthsLabel = (m: number) => `${m} ${m === 1 ? 'mês' : 'meses'}`;
 export const daysLabel = (d: number) => `${d} ${d === 1 ? 'dia' : 'dias'}`;
+/** prazo em dias no jeito de falar: 14 → "2 semanas", 30 → "1 mês", 90 → "3 meses" */
+export function periodLabel(d: number): string {
+  if (d % 30 === 0) return monthsLabel(d / 30);
+  if (d % 7 === 0) return `${d / 7} ${d === 7 ? 'semana' : 'semanas'}`;
+  return daysLabel(d);
+}
 
 export function date(s: string): string {
   const [y, m, d] = s.split('-');

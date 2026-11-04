@@ -108,17 +108,18 @@ export interface ReminderStatus {
 
 /**
  * Janelas dos lembretes (Configurações → Lembretes):
- * - aviso: faltando até `km` ou `months` meses → aparece em card na tela inicial
+ * - aviso: faltando até `km` ou `days` dias → aparece em card na tela inicial
  * - urgente: faltando até `urgentKm` ou `urgentDays` dias → amarelo
  */
 export interface AlertWindow {
   km: number;
-  months: number;
+  /** antecedência em dias (2 semanas = 14, 1 mês = 30…) */
+  days: number;
   urgentKm: number;
   urgentDays: number;
 }
 
-export const DEFAULT_ALERT: AlertWindow = { km: 1000, months: 1, urgentKm: 200, urgentDays: 7 };
+export const DEFAULT_ALERT: AlertWindow = { km: 1000, days: 30, urgentKm: 200, urgentDays: 7 };
 
 /** Vencido: passou do km ou da data. Urgente: dentro da janela urgente. Em dia: o resto. */
 export function reminderStatus(r: Reminder, current: number, ref = today(), alert = DEFAULT_ALERT): ReminderStatus {
@@ -134,7 +135,7 @@ export function reminderStatus(r: Reminder, current: number, ref = today(), aler
   const near =
     level !== 'ok' ||
     (kmLeft != null && kmLeft <= alert.km) ||
-    (nextDate != null && nextDate <= addMonths(ref, alert.months));
+    (nextDate != null && nextDate <= addDays(ref, alert.days));
 
   return { nextKm, nextDate, kmLeft, daysLeft, level, near };
 }
@@ -259,7 +260,7 @@ export interface DueBill {
  * lembrete até "Pago", com as mesmas cores (amarelo na janela urgente, vermelho vencida).
  */
 export function billsDue(entries: Entry[], ref = today(), alert = DEFAULT_ALERT): DueBill[] {
-  const until = addMonths(ref, alert.months);
+  const until = addDays(ref, alert.days);
   return entries
     .filter((e) => isOpenBill(e, ref) && e.date <= until)
     .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)

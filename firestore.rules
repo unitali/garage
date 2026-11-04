@@ -27,9 +27,9 @@ service cloud.firestore {
 
     // users/{uid}: preferências da conta
     function validPrefs(d) {
-      return d.keys().hasOnly(['serviceCategories', 'expenseCategories', 'alertKm', 'alertMonths', 'urgentKm', 'urgentDays'])
+      return d.keys().hasOnly(['serviceCategories', 'expenseCategories', 'alertKm', 'alertDays', 'alertMonths', 'urgentKm', 'urgentDays'])
         && optList(d, 'serviceCategories', 200) && optList(d, 'expenseCategories', 200)
-        && optInt(d, 'alertKm') && optInt(d, 'alertMonths') && optInt(d, 'urgentKm') && optInt(d, 'urgentDays');
+        && optInt(d, 'alertKm') && optInt(d, 'alertDays') && optInt(d, 'alertMonths') && optInt(d, 'urgentKm') && optInt(d, 'urgentDays');
     }
 
     function validVehicle(d) {

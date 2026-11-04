@@ -61,7 +61,7 @@ test('lembrete: em dia, perto, urgente por km, vencido por data', () => {
 });
 
 test('janelas configuráveis: aviso (aparece) e urgente (amarelo)', () => {
-  const custom = { km: 2000, months: 3, urgentKm: 500, urgentDays: 15 };
+  const custom = { km: 2000, days: 90, urgentKm: 500, urgentDays: 15 };
   const r = rem({ intervalKm: 50000, intervalMonths: null, lastKm: 10000 }); // vence em 60.000 km
   assert.equal(reminderStatus(r, 58500, '2026-06-01').near, false); // faltam 1.500 > 1.000 (padrão)
   assert.equal(reminderStatus(r, 59100, '2026-06-01').near, true); // faltam 900
@@ -175,8 +175,8 @@ test('contas: só em aberto dentro do aviso, vencidas incluídas', () => {
   const due = billsDue(list, '2026-11-03'); // aviso de 1 mês: até 03/12
   assert.deepEqual(due.map((x) => x.e.id), ['vencida', 'urgente', 'mes', 'legado']);
   assert.deepEqual(due.map((x) => x.s.level), ['overdue', 'soon', 'ok', 'ok']);
-  const dois = billsDue(list, '2026-11-03', { km: 1000, months: 2, urgentKm: 200, urgentDays: 7 });
-  assert.equal(dois.at(-1)?.e.id, 'futura'); // aviso de 2 meses: a de 10/12 entra
+  const dois = billsDue(list, '2026-11-03', { km: 1000, days: 60, urgentKm: 200, urgentDays: 7 });
+  assert.equal(dois.at(-1)?.e.id, 'futura'); // aviso de 60 dias: a de 10/12 entra
   assert.equal(endOfMonth('2028-02-10'), '2028-02-29');
 });
 

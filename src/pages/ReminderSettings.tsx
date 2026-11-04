@@ -4,9 +4,9 @@ import Header from '../components/Header';
 import { useUid } from '../auth';
 import { savePrefs } from '../db';
 import { useAlertWindow } from '../hooks';
-import { ALERT_KM_OPTIONS, ALERT_MONTH_OPTIONS, URGENT_DAY_OPTIONS, URGENT_KM_OPTIONS } from '../constants';
+import { ALERT_DAY_OPTIONS, ALERT_KM_OPTIONS, URGENT_DAY_OPTIONS, URGENT_KM_OPTIONS } from '../constants';
 import type { AlertWindow } from '../lib/calc';
-import { daysLabel, km, monthsLabel } from '../lib/format';
+import { daysLabel, km, periodLabel } from '../lib/format';
 import { paths } from '../routes/paths';
 import type { UserPrefs } from '../types';
 import { btn, card, chip, main, sectionTitle } from '../ui';
@@ -14,7 +14,7 @@ import { btn, card, chip, main, sectionTitle } from '../ui';
 
 const FIELD: Record<keyof AlertWindow, keyof UserPrefs> = {
   km: 'alertKm',
-  months: 'alertMonths',
+  days: 'alertDays',
   urgentKm: 'urgentKm',
   urgentDays: 'urgentDays',
 };
@@ -48,17 +48,17 @@ export default function ReminderSettings() {
           <Chips label="Faltando até" options={ALERT_KM_OPTIONS} value={alert.km} format={km} onChange={(v) => setDraft({ ...alert, km: v })} />
           <Chips
             label="ou até"
-            options={ALERT_MONTH_OPTIONS}
-            value={alert.months}
-            format={monthsLabel}
-            onChange={(v) => setDraft({ ...alert, months: v })}
+            options={ALERT_DAY_OPTIONS}
+            value={alert.days}
+            format={periodLabel}
+            onChange={(v) => setDraft({ ...alert, days: v })}
           />
         </section>
 
         <section className={`${card} flex flex-col gap-3`}>
           <h2 className={sectionTitle}>Cores do card</h2>
           <ul className="flex flex-col gap-1.5 text-sm">
-            <Legend color="bg-emerald-700 dark:bg-emerald-400" label="Verde" text={`em dia: faltando até ${km(alert.km)} ou ${monthsLabel(alert.months)}`} />
+            <Legend color="bg-emerald-700 dark:bg-emerald-400" label="Verde" text={`em dia: faltando até ${km(alert.km)} ou ${periodLabel(alert.days)}`} />
             <Legend color="bg-amber-400" label="Amarelo" text={`próximo: faltando até ${km(alert.urgentKm)} ou ${daysLabel(alert.urgentDays)}`} />
             <Legend color="bg-red-700 dark:bg-red-400" label="Vermelho" text="vencido: passou do km ou da data" />
           </ul>

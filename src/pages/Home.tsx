@@ -9,7 +9,7 @@ import { markPaid, syncVehicleOdometer } from '../db';
 import { useGarage } from '../hooks/useGarage';
 import { fuelStats, type AlertWindow, type DueBill, type DueReminder, type ReminderLevel } from '../lib/calc';
 import { today } from '../lib/dates';
-import { brl, date, dueIn, dueText, km, monthsLabel, num } from '../lib/format';
+import { brl, date, dueIn, dueText, km, num, periodLabel } from '../lib/format';
 import {
   cardsDoInicio,
   gastoPagoNoAno,
@@ -202,7 +202,7 @@ function Upcoming({
         <span className="flex min-w-0 flex-1 flex-col">
           <strong>Tudo em dia</strong>
           <span className="text-sm text-slate-600 dark:text-slate-400">
-            Nada vence nos próximos {km(alert.km)} ou {monthsLabel(alert.months)}. Próximo: {next.r.title}
+            Nada vence em até {km(alert.km)} ou {periodLabel(alert.days)}. Próximo: {next.r.title}
             {dueText(next.s) ? ` (${dueText(next.s)})` : ''}.
           </span>
         </span>
