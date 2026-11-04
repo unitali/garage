@@ -10,6 +10,7 @@ import { DEFAULT_CATEGORIES, categoryOptions, normalizeCategory } from '../const
 import { CATEGORY_SLUG, paths } from '../routes/paths';
 import type { CategoryKind } from '../types';
 import { btn, input, main } from '../ui';
+import { ask } from '../dialog';
 
 const META: Record<CategoryKind, { title: string; one: string; placeholder: string }> = {
   service: { title: 'Serviços', one: 'um serviço', placeholder: 'Novo serviço' },
@@ -87,7 +88,14 @@ function Group({
           <button
             className="grid size-9 place-items-center rounded-lg text-red-700 dark:text-red-400 active:bg-slate-100 dark:active:bg-slate-950"
             aria-label={`Remover ${c}`}
-            onClick={() => confirm(`Remover "${c}" da lista?`) && removeCategory(uid, kind, c)}
+            onClick={async () => {
+              const ok = await ask({
+                title: `Remover "${c}"?`,
+                message: 'Sai da lista de opções. Os registros que já usam esse tipo continuam com ele.',
+                confirmLabel: 'Remover',
+              });
+              if (ok) removeCategory(uid, kind, c);
+            }}
           >
             <Trash2 className="size-5" />
           </button>
@@ -111,7 +119,7 @@ function Group({
         </button>
       </li>
       {message && (
-        <li className={`px-4 pb-3 text-sm ${message.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'}`} role="status">
+        <li className={`px-4 pb-3 text-sm ${message.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}`} role="status">
           {message.text}
         </li>
       )}

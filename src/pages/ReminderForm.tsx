@@ -11,6 +11,7 @@ import { digitsOnly, MAX_KM_DIGITS, maskKm, parseInteger } from '../lib/format';
 import type { Reminder, Vehicle } from '../types';
 import { btn, chip, chips, error as errorText, field, fieldset, form, grid2, hint, input, legend, main, splash } from '../ui';
 import { paths } from '../routes/paths';
+import { ask } from '../dialog';
 
 export default function ReminderFormPage() {
   const { vid, rid } = useParams();
@@ -88,8 +89,14 @@ function ReminderForm({ uid, vid, vehicle, current, reminder }: Props) {
     navigate(back, { replace: true });
   }
 
-  function remove() {
-    if (!reminder || !confirm(`Excluir o lembrete "${reminder.title}"?`)) return;
+  async function remove() {
+    if (!reminder) return;
+    const ok = await ask({
+      title: `Excluir o lembrete "${reminder.title}"?`,
+      message: 'Ele deixa de avisar. Os serviços já registrados continuam no histórico.',
+      confirmLabel: 'Excluir',
+    });
+    if (!ok) return;
     deleteReminder(uid, vid, reminder.id);
     navigate(back, { replace: true });
   }

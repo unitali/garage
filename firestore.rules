@@ -25,11 +25,11 @@ service cloud.firestore {
       return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
     }
 
-    // users/{uid}: preferências da conta
+    // users/{uid}: preferências da conta (alertMonths, urgentKm e urgentDays: campos antigos, ainda aceitos)
     function validPrefs(d) {
-      return d.keys().hasOnly(['serviceCategories', 'expenseCategories', 'alertKm', 'alertMonths', 'urgentKm', 'urgentDays'])
+      return d.keys().hasOnly(['serviceCategories', 'expenseCategories', 'alertKm', 'alertDays', 'alertMonths', 'urgentKm', 'urgentDays'])
         && optList(d, 'serviceCategories', 200) && optList(d, 'expenseCategories', 200)
-        && optInt(d, 'alertKm') && optInt(d, 'alertMonths') && optInt(d, 'urgentKm') && optInt(d, 'urgentDays');
+        && optInt(d, 'alertKm') && optInt(d, 'alertDays') && optInt(d, 'alertMonths') && optInt(d, 'urgentKm') && optInt(d, 'urgentDays');
     }
 
     function validVehicle(d) {

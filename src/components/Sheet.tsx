@@ -8,6 +8,8 @@ interface Props {
   title: string;
   subtitle?: ReactNode;
   children: ReactNode;
+  /** abre acima da barra de baixo (que continua visível): o painel termina em cima dela */
+  aboveNav?: boolean;
 }
 
 /**
@@ -18,14 +20,15 @@ export default function Sheet({ open, ...props }: Props) {
   return open ? <Panel {...props} /> : null;
 }
 
-function Panel({ onClose, title, subtitle, children }: Omit<Props, 'open'>) {
+function Panel({ onClose, title, subtitle, children, aboveNav = false }: Omit<Props, 'open'>) {
   const sheet = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const onKeyDown = useModal(sheet, onClose);
 
   return (
     <div
-      className="fixed inset-0 z-40 flex items-end bg-[rgba(15,23,42,.5)]"
+      // barra de baixo: 64px + área segura (mesma altura do BottomNav)
+      className={`fixed inset-x-0 top-0 z-40 flex items-end bg-[rgba(15,23,42,.5)] ${aboveNav ? 'bottom-[calc(64px+env(safe-area-inset-bottom))]' : 'bottom-0'}`}
       onClick={(e) => e.target === e.currentTarget && onClose()}
       onKeyDown={onKeyDown}
     >
@@ -34,7 +37,7 @@ function Panel({ onClose, title, subtitle, children }: Omit<Props, 'open'>) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="mx-auto max-h-[90dvh] w-full max-w-3xl overflow-y-auto rounded-t-3xl bg-white dark:bg-slate-900 px-4 pt-3 pb-[calc(16px+env(safe-area-inset-bottom))] text-slate-900 dark:text-slate-100 shadow-2xl"
+        className={`mx-auto max-h-[90%] w-full max-w-3xl overflow-y-auto rounded-t-3xl bg-white px-4 pt-3 text-slate-900 shadow-2xl dark:bg-slate-900 dark:text-slate-100 ${aboveNav ? 'pb-6' : 'pb-[calc(16px+env(safe-area-inset-bottom))]'}`}
       >
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-200 dark:bg-slate-800" aria-hidden />
         <div className="mb-4 flex items-start justify-between gap-3">

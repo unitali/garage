@@ -1,15 +1,17 @@
 import { Link } from 'react-router-dom';
-import { Plus, Settings2 } from 'lucide-react';
+import { CircleCheck, Plus, Settings2 } from 'lucide-react';
 import Header from '../components/Header';
 import BillRow from '../components/BillRow';
 import SeriesCard from '../components/SeriesCard';
 import { markReminderDone } from '../db';
 import { useGarage } from '../hooks/useGarage';
+import { LEVEL_ORDER } from '../lib/calc';
 import { today } from '../lib/dates';
 import { date, dueText, km } from '../lib/format';
 import { isPaid, proximaAcao, seriesDe } from '../lib/summary';
 import { paths } from '../routes/paths';
 import { badge, btn, card, emptyText, iconCircle, LEVEL_BADGE, LEVEL_LABEL, LEVEL_TEXT, main, REMINDER_ICON, REMINDER_SOFT, splash } from '../ui';
+import { ask } from '../dialog';
 
 const groupTitle = 'mb-2 px-1 text-xs font-bold tracking-wider text-slate-600 dark:text-slate-400 uppercase';
 
@@ -23,7 +25,7 @@ export default function RemindersPage() {
 
   // o mais urgente (o mesmo do card "Próxima manutenção") primeiro; depois vencido > próximo > o resto
   const top = proximaAcao(reminders, current, today(), rate, alert);
-  const rest = due.filter((d) => d.r.id !== top?.r.id).sort((a, b) => rank(a.s.level) - rank(b.s.level));
+  const rest = due.filter((d) => d.r.id !== top?.r.id).sort((a, b) => LEVEL_ORDER[a.s.level] - LEVEL_ORDER[b.s.level]);
   const ordered = top ? [top, ...rest] : rest;
   // séries com alguma parcela ainda em aberto (as já quitadas só aparecem no Histórico)
   const openSeries = seriesDe(entries).filter((parcelas) => parcelas.some((e) => !isPaid(e)));
@@ -71,7 +73,7 @@ export default function RemindersPage() {
                       </span>
                       <Link to={paths.reminder(vehicle.id, r.id)} className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <span className="flex flex-wrap items-center gap-2">
-                          <strong className="break-words">{r.title}</strong>
+                          <strong className="wrap-break-words">{r.title}</strong>
                           {s.level !== 'ok' && <span className={`${badge} ${LEVEL_BADGE[s.level]}`}>{LEVEL_LABEL[s.level]}</span>}
                         </span>
                         <span className={`text-sm ${LEVEL_TEXT[s.level]}`}>{dueText(s)}</span>
@@ -82,8 +84,15 @@ export default function RemindersPage() {
                       </Link>
                       <button
                         className={`${btn('default', 'sm')} shrink-0`}
-                        onClick={() => {
-                          if (confirm(`Marcar "${r.title}" como feito hoje com ${km(current)}?`)) markReminderDone(uid, vehicle.id, r.id, current, today(), r);
+                        onClick={async () => {
+                          const ok = await ask({
+                            title: `Marcar "${r.title}" como feito?`,
+                            message: `A contagem recomeça hoje, com ${km(current)}.`,
+                            confirmLabel: 'Marcar como feito',
+                            tone: 'primary',
+                            icon: CircleCheck,
+                          });
+                          if (ok) markReminderDone(uid, vehicle.id, r.id, current, today(), r);
                         }}
                       >
                         Feito
@@ -109,4 +118,3 @@ export default function RemindersPage() {
   );
 }
 
-const rank = (level: string) => (level === 'overdue' ? 0 : level === 'soon' ? 1 : 2);

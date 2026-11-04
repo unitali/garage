@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { buildSchedule, sumItems, type ScheduleMode } from '../lib/calc';
 import { brl, maskMoney, parseDecimal, toInput } from '../lib/format';
 import { chip, field, grid2, input } from '../ui';
+import Select from './Select';
 
 export type PayMode = 'single' | ScheduleMode;
 
@@ -94,16 +95,12 @@ export default function ExpensePaymentField({
               {mode === 'installments' ? 'Valor total (R$)' : 'Valor por mês (R$)'}
               <input className={input} value={amount} onChange={(e) => onAmount(e.target.value)} inputMode="numeric" placeholder="0,00" />
             </label>
-            <label className={field}>
-              {mode === 'installments' ? 'Parcelas' : 'Quantos meses'}
-              <select className={input} value={count} onChange={(e) => onCount(Number(e.target.value))}>
-                {COUNTS.map((n) => (
-                  <option key={n} value={n}>
-                    {mode === 'installments' ? `${n}x` : `${n} meses`}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Select
+              label={mode === 'installments' ? 'Parcelas' : 'Quantos meses'}
+              value={String(count)}
+              options={COUNTS.map((n) => ({ value: String(n), label: mode === 'installments' ? `${n}x` : `${n} meses` }))}
+              onChange={(v) => onCount(Number(v))}
+            />
           </div>
 
           <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 dark:border-slate-800 p-3">
@@ -135,7 +132,7 @@ export default function ExpensePaymentField({
               <strong>{brl(total)}</strong>
             </div>
             {mode === 'installments' && typedTotal > 0 && Math.abs(total - typedTotal) >= 0.01 && (
-              <small className="text-xs text-orange-700 dark:text-orange-400">A soma das parcelas difere do valor total informado ({brl(typedTotal)}).</small>
+              <small className="text-xs text-amber-700 dark:text-amber-400">A soma das parcelas difere do valor total informado ({brl(typedTotal)}).</small>
             )}
           </div>
         </>

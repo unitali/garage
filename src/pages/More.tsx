@@ -8,6 +8,7 @@ import { SettingsAction, SettingsGroup, SettingsLink } from '../components/Setti
 import { logout, useAuth } from '../auth';
 import { paths } from '../routes/paths';
 import { card, KIND_ICON, main, REMINDER_ICON } from '../ui';
+import { ask } from '../dialog';
 
 /** Mais: perfil e um menu só com as configurações (Veículos, Lembretes, Serviços, Despesas) e Sair. */
 export default function More() {
@@ -34,7 +35,21 @@ export default function More() {
           <SettingsLink to={paths.reminderSettings()} icon={REMINDER_ICON} label="Lembretes" />
           <SettingsLink to={paths.categories('service')} icon={KIND_ICON.service} label="Serviços" />
           <SettingsLink to={paths.categories('expense')} icon={KIND_ICON.expense} label="Despesas" />
-          <SettingsAction icon={LogOut} label="Sair" danger onClick={() => confirm('Sair da conta?') && logout()} />
+          <SettingsAction
+            icon={LogOut}
+            label="Sair"
+            danger
+            onClick={async () => {
+              const ok = await ask({
+                title: 'Sair da conta?',
+                message: 'Seus dados continuam salvos. Para voltar, é só entrar com o Google de novo.',
+                confirmLabel: 'Sair',
+                tone: 'primary',
+                icon: LogOut,
+              });
+              if (ok) logout();
+            }}
+          />
         </SettingsGroup>
 
         <InstallCard />

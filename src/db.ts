@@ -16,6 +16,7 @@ import { db } from './firebase';
 import { trackWrite } from './sync';
 import { sameDoc } from './lib/same';
 import type { CategoryKind, Data, Entry, EntrySeries, Reminder, UserPrefs, Vehicle } from './types';
+import { notify } from './dialog';
 
 // Estrutura:
 //   users/{uid}/vehicles/{vid}
@@ -37,7 +38,7 @@ function fire(p: Promise<unknown>) {
   trackWrite(p);
   p.catch((err: Error) => {
     console.error(err);
-    alert(`Não foi possível salvar: ${err.message}`);
+    notify('Não foi possível salvar', err.message);
   });
 }
 

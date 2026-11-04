@@ -9,7 +9,7 @@ import { markPaid, syncVehicleOdometer } from '../db';
 import { useGarage } from '../hooks/useGarage';
 import { fuelStats, type AlertWindow, type DueBill, type DueReminder, type ReminderLevel } from '../lib/calc';
 import { today } from '../lib/dates';
-import { brl, date, dueIn, dueText, km, monthsLabel, num } from '../lib/format';
+import { brl, date, dueIn, dueText, km, num, periodLabel } from '../lib/format';
 import {
   cardsDoInicio,
   gastoPagoNoAno,
@@ -154,10 +154,13 @@ function SectionHead({ title, count, to, link }: { title: string; count?: number
   );
 }
 
-/** Cores dos cards: verde em dia, laranja próximo, vermelho vencido (Configurações → Lembretes). */
+/** Cores dos cards: verde em dia, amarelo próximo (até 50% do aviso), vermelho urgente (até 10%) e vencido. */
+const RED = { box: 'border-red-700/30 dark:border-red-400/30 bg-red-50 dark:bg-red-950', text: 'text-red-700 dark:text-red-400', badge: 'bg-red-700 dark:bg-red-400 text-slate-100 dark:text-slate-950', button: 'bg-red-700 dark:bg-red-400 text-slate-100 dark:text-slate-950' };
 const TONE: Record<ReminderLevel, { box: string; text: string; badge: string; button: string }> = {
-  overdue: { box: 'border-red-700/30 dark:border-red-400/30 bg-red-50 dark:bg-red-950', text: 'text-red-700 dark:text-red-400', badge: 'bg-red-700 dark:bg-red-400 text-slate-100 dark:text-slate-950', button: 'bg-red-700 dark:bg-red-400 text-slate-100 dark:text-slate-950' },
-  soon: { box: 'border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950', text: 'text-orange-700 dark:text-orange-400', badge: 'bg-orange-700 dark:bg-orange-400 text-slate-100 dark:text-slate-950', button: 'bg-orange-700 dark:bg-orange-400 text-slate-100 dark:text-slate-950' },
+  overdue: RED,
+  urgent: RED,
+  // amarelo de verdade (amber-400) no selo e no botão, com texto escuro; texto solto em amber-700 para ler bem no fundo claro
+  soon: { box: 'border-amber-400/50 dark:border-amber-400/30 bg-amber-50 dark:bg-amber-950', text: 'text-amber-700 dark:text-amber-400', badge: 'bg-amber-400 text-slate-950', button: 'bg-amber-400 text-slate-950' },
   ok: { box: 'border-emerald-700/30 dark:border-emerald-400/30 bg-emerald-50 dark:bg-emerald-950', text: 'text-emerald-700 dark:text-emerald-400', badge: 'bg-emerald-700 dark:bg-emerald-400 text-slate-100 dark:text-slate-950', button: 'bg-emerald-700 dark:bg-emerald-400 text-slate-100 dark:text-slate-950' },
 };
 
@@ -201,7 +204,7 @@ function Upcoming({
         <span className="flex min-w-0 flex-1 flex-col">
           <strong>Tudo em dia</strong>
           <span className="text-sm text-slate-600 dark:text-slate-400">
-            Nada vence nos próximos {km(alert.km)} ou {monthsLabel(alert.months)}. Próximo: {next.r.title}
+            Nada vence em até {km(alert.km)} ou {periodLabel(alert.days)}. Próximo: {next.r.title}
             {dueText(next.s) ? ` (${dueText(next.s)})` : ''}.
           </span>
         </span>
@@ -254,7 +257,7 @@ function ToneCard({
         </span>
         <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
           <span className={`${badge} ${tone.badge}`}>{LEVEL_LABEL[level]}</span>
-          <h3 className="text-lg font-bold break-words">{title}</h3>
+          <h3 className="text-lg font-bold wrap-break-words">{title}</h3>
           <p className={`text-sm font-semibold ${tone.text}`}>{status}</p>
           {detail && <p className="text-sm text-slate-600 dark:text-slate-400">{detail}</p>}
         </div>

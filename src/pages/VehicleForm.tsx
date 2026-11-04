@@ -1,15 +1,24 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../components/Header';
+import Select from '../components/Select';
 import { useUid } from '../auth';
 import { useVehicle } from '../hooks';
 import { deleteVehicle, saveVehicle } from '../db';
 import { VEHICLE_TYPES } from '../constants';
 import { MAX_KM_DIGITS, maskKm, parseInteger } from '../lib/format';
+import { maskPlate, plateFormat, plateHint, plateMaxLength } from '../lib/plates';
 import { selectVehicle } from '../selection';
 import type { Vehicle, VehicleType } from '../types';
-import { btn, error as errorText, field, form, hint, input, main, opt, splash } from '../ui';
+import { btn, error as errorText, field, form, hint, input, main, opt, splash, VEHICLE_ICON } from '../ui';
 import { paths } from '../routes/paths';
+import { ask } from '../dialog';
+
+const TYPE_OPTIONS = (Object.keys(VEHICLE_TYPES) as VehicleType[]).map((value) => ({
+  value,
+  label: VEHICLE_TYPES[value].label,
+  icon: VEHICLE_ICON[value],
+}));
 
 export default function VehicleFormPage() {
   const { vid } = useParams();
@@ -26,7 +35,8 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
   const navigate = useNavigate();
   const [name, setName] = useState(initial?.name ?? '');
   const [type, setType] = useState<VehicleType>(initial?.type ?? 'carro');
-  const [plate, setPlate] = useState(initial?.plate ?? '');
+  const [plate, setPlate] = useState(maskPlate(initial?.plate ?? ''));
+  const format = plateFormat(plate);
   const [odo, setOdo] = useState(initial ? String(initial.initialOdometer) : '');
   const [error, setError] = useState('');
 
@@ -35,6 +45,8 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
     const initialOdometer = parseInteger(odo);
     if (!name.trim()) return setError('Dê um nome ao veículo.');
     if (initialOdometer == null) return setError('Informe a quilometragem atual.');
+    // placa é opcional; preenchida (e mudada), precisa estar completa num dos formatos
+    if (plate && plate !== initial?.plate && !format) return setError(`Placa incompleta ou inválida. Use ${plateHint()}.`);
 
     const id = saveVehicle(
       uid,
@@ -42,7 +54,7 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
       {
         name: name.trim(),
         type,
-        plate: plate.trim().toUpperCase(),
+        plate,
         initialOdometer,
         odometer: Math.max(initial?.odometer ?? 0, initialOdometer),
         createdAt: initial?.createdAt ?? Date.now(),
@@ -56,14 +68,16 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
   }
 
   async function remove() {
-    if (!vid || !confirm(`Excluir "${initial?.name}" e todo o histórico dele? Não dá para desfazer.`)) return;
-    try {
-      await deleteVehicle(uid, vid);
-      navigate(paths.home(), { replace: true });
-    } catch (err) {
-      console.error(err);
-      setError('Não foi possível excluir agora. Verifique a internet e tente de novo.');
-    }
+    if (!vid) return;
+    const ok = await ask({
+      title: `Excluir "${initial?.name}"?`,
+      message: 'O veículo e todo o histórico dele (abastecimentos, serviços, despesas e lembretes) serão excluídos. Não dá para desfazer.',
+      confirmLabel: 'Excluir veículo',
+      // exclui no servidor: o pop-up espera e, sem internet, avisa sem fechar
+      action: () => deleteVehicle(uid, vid),
+      errorText: 'Não foi possível excluir agora. Verifique a internet e tente de novo.',
+    });
+    if (ok) navigate(paths.home(), { replace: true });
   }
 
   return (
@@ -76,20 +90,21 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
             <input className={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Palio 2011" maxLength={60} autoFocus={!vid} />
           </label>
 
-          <label className={field}>
-            Tipo
-            <select className={input} value={type} onChange={(e) => setType(e.target.value as VehicleType)}>
-              {Object.entries(VEHICLE_TYPES).map(([k, t]) => (
-                <option key={k} value={k}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select label="Tipo" value={type} options={TYPE_OPTIONS} onChange={setType} />
 
           <label className={field}>
             Placa <span className={opt}>(opcional)</span>
-            <input className={input} value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="ABC1D23" maxLength={10} autoCapitalize="characters" />
+            <input
+              className={input}
+              value={plate}
+              onChange={(e) => setPlate(maskPlate(e.target.value))}
+              placeholder="ABC1D23"
+              maxLength={plateMaxLength()}
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <small className={hint}>{format ? `Placa ${format.label}` : plateHint()}</small>
           </label>
 
           <label className={field}>

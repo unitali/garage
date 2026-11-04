@@ -93,53 +93,64 @@ export function costSummary(entries: Entry[], v: Pick<Vehicle, 'initialOdometer'
   };
 }
 
-export type ReminderLevel = 'overdue' | 'soon' | 'ok';
+/** vencido e urgente (últimos 10%) são vermelhos; próximo (até 50%) amarelo; em dia verde */
+export type ReminderLevel = 'overdue' | 'urgent' | 'soon' | 'ok';
+
+/** do mais urgente para o menos */
+export const LEVEL_ORDER: Record<ReminderLevel, number> = { overdue: 0, urgent: 1, soon: 2, ok: 3 };
 
 export interface ReminderStatus {
   nextKm: number | null;
   nextDate: string | null;
   kmLeft: number | null;
   daysLeft: number | null;
-  /** cor: vencido (vermelho), urgente (laranja) ou em dia (verde) */
   level: ReminderLevel;
-  /** dentro da antecedência de aviso (ou urgente/vencido): aparece em cards na tela inicial */
+  /** dentro da antecedência de aviso (ou vencido): aparece em cards na tela inicial */
   near: boolean;
 }
 
-/**
- * Janelas dos lembretes (Configurações → Lembretes):
- * - aviso: faltando até `km` ou `months` meses → aparece em card na tela inicial
- * - urgente: faltando até `urgentKm` ou `urgentDays` dias → laranja
- */
+/** Antecedência do aviso (Configurações → Lembretes): faltando até `km` ou `days` → aparece em card na tela inicial. */
 export interface AlertWindow {
   km: number;
-  months: number;
-  urgentKm: number;
-  urgentDays: number;
+  /** em dias (2 semanas = 14, 1 mês = 30…) */
+  days: number;
 }
 
-export const DEFAULT_ALERT: AlertWindow = { km: 1000, months: 1, urgentKm: 200, urgentDays: 7 };
+export const DEFAULT_ALERT: AlertWindow = { km: 1000, days: 30 };
 
-/** Vencido: passou do km ou da data. Urgente: dentro da janela urgente. Em dia: o resto. */
+/** As cores saem do aviso: amarelo faltando até 50% dele, vermelho até 10% (e vencido). */
+export const SOON_SHARE = 0.5;
+export const URGENT_SHARE = 0.1;
+
+/** Km e dias faltando em que o card fica amarelo e vermelho (dias inteiros, iguais aos da tela de configuração). */
+export function colorLimits(alert: AlertWindow) {
+  const at = (share: number) => ({ km: Math.round(alert.km * share), days: Math.floor(alert.days * share) });
+  return { soon: at(SOON_SHARE), urgent: at(URGENT_SHARE) };
+}
+
+/** Cor de algo que ainda não venceu, pelo que falta (km, dias ou os dois: vale o que chegar primeiro). */
+function colorOf(kmLeft: number | null, daysLeft: number | null, alert: AlertWindow): ReminderLevel {
+  const { soon, urgent } = colorLimits(alert);
+  const within = (l: { km: number; days: number }) => (kmLeft != null && kmLeft <= l.km) || (daysLeft != null && daysLeft <= l.days);
+  return within(urgent) ? 'urgent' : within(soon) ? 'soon' : 'ok';
+}
+
+/** Vencido: passou do km ou da data. Antes disso, a cor pelo que falta (colorLimits). */
 export function reminderStatus(r: Reminder, current: number, ref = today(), alert = DEFAULT_ALERT): ReminderStatus {
   const nextKm = r.intervalKm && r.lastKm != null ? r.lastKm + r.intervalKm : null;
   const nextDate = r.intervalMonths && r.lastDate ? addMonths(r.lastDate, r.intervalMonths) : null;
   const kmLeft = nextKm != null ? nextKm - current : null;
   const daysLeft = nextDate ? diffDays(ref, nextDate) : null;
 
-  let level: ReminderLevel = 'ok';
-  if ((kmLeft != null && kmLeft <= 0) || (daysLeft != null && daysLeft <= 0)) level = 'overdue';
-  else if ((kmLeft != null && kmLeft <= alert.urgentKm) || (daysLeft != null && daysLeft <= alert.urgentDays)) level = 'soon';
-
+  const overdue = (kmLeft != null && kmLeft <= 0) || (daysLeft != null && daysLeft <= 0);
+  const level = overdue ? 'overdue' : colorOf(kmLeft, daysLeft, alert);
   const near =
-    level !== 'ok' ||
+    overdue ||
     (kmLeft != null && kmLeft <= alert.km) ||
-    (nextDate != null && nextDate <= addMonths(ref, alert.months));
+    (nextDate != null && nextDate <= addDays(ref, alert.days));
 
   return { nextKm, nextDate, kmLeft, daysLeft, level, near };
 }
-
-const LEVEL_ORDER: Record<ReminderLevel, number> = { overdue: 0, soon: 1, ok: 2 };
 
 /**
  * Média de km rodados por dia, do registro mais antigo ao mais recente (o cadastro conta como um ponto).
@@ -256,16 +267,16 @@ export interface DueBill {
 
 /**
  * Contas em aberto dentro da antecedência de aviso (e as vencidas), por vencimento: aparecem como
- * lembrete até "Pago", com as mesmas cores (laranja na janela urgente, vermelho vencida).
+ * lembrete até "Pago", com as mesmas cores (amarelo até 50% do aviso, vermelho até 10% e vencida).
  */
 export function billsDue(entries: Entry[], ref = today(), alert = DEFAULT_ALERT): DueBill[] {
-  const until = addMonths(ref, alert.months);
+  const until = addDays(ref, alert.days);
   return entries
     .filter((e) => isOpenBill(e, ref) && e.date <= until)
     .sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt)
     .map((e) => {
       const daysLeft = diffDays(ref, e.date);
-      const level: ReminderLevel = daysLeft < 0 ? 'overdue' : daysLeft <= alert.urgentDays ? 'soon' : 'ok';
+      const level = daysLeft < 0 ? 'overdue' : colorOf(null, daysLeft, alert);
       return { e, s: { nextKm: null, nextDate: e.date, kmLeft: null, daysLeft, level, near: true } };
     });
 }

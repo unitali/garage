@@ -45,7 +45,7 @@ export default function Login() {
 
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center gap-3 p-6 text-center">
-      <img src={logoUrl} alt="" className="h-24 w-auto" />
+      <img src={logoUrl} alt="" className="size-24" />
       <h1 className="text-3xl font-bold">
         Unitali <span className="text-brand">Garage</span>
       </h1>

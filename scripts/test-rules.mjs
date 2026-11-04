@@ -24,7 +24,7 @@ const parcel = {
   createdAt: 1762190000002, series: { id: 's1', type: 'recurring', index: 2, count: 24 }, paid: false,
 };
 const reminder = { title: 'Troca de óleo', intervalKm: 10000, intervalMonths: 12, lastKm: 196300, lastDate: '2026-10-05', createdAt: 1 };
-const prefs = { alertKm: 1000, alertMonths: 1, urgentKm: 200, urgentDays: 7, serviceCategories: ['Lavagem'], expenseCategories: [] };
+const prefs = { alertKm: 1000, alertDays: 14, alertMonths: 1, urgentKm: 200, urgentDays: 7, serviceCategories: ['Lavagem'], expenseCategories: [] };
 
 /** [descrição, esperado, uid (null = sem login), caminho, método, dados novos?, dados atuais?] */
 const CASES = [

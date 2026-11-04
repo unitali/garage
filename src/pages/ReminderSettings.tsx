@@ -4,9 +4,9 @@ import Header from '../components/Header';
 import { useUid } from '../auth';
 import { savePrefs } from '../db';
 import { useAlertWindow } from '../hooks';
-import { ALERT_KM_OPTIONS, ALERT_MONTH_OPTIONS, URGENT_DAY_OPTIONS, URGENT_KM_OPTIONS } from '../constants';
-import type { AlertWindow } from '../lib/calc';
-import { daysLabel, km, monthsLabel } from '../lib/format';
+import { ALERT_DAY_OPTIONS, ALERT_KM_OPTIONS } from '../constants';
+import { colorLimits, type AlertWindow } from '../lib/calc';
+import { km, periodLabel } from '../lib/format';
 import { paths } from '../routes/paths';
 import type { UserPrefs } from '../types';
 import { btn, card, chip, main, sectionTitle } from '../ui';
@@ -14,12 +14,10 @@ import { btn, card, chip, main, sectionTitle } from '../ui';
 
 const FIELD: Record<keyof AlertWindow, keyof UserPrefs> = {
   km: 'alertKm',
-  months: 'alertMonths',
-  urgentKm: 'urgentKm',
-  urgentDays: 'urgentDays',
+  days: 'alertDays',
 };
 
-/** Configurações → Lembretes: quando o card aparece na tela inicial (verde) e quando fica laranja. */
+/** Configurações → Lembretes: quando o card aparece na tela inicial; as cores saem dessa antecedência. */
 export default function ReminderSettings() {
   const uid = useUid();
   const saved = useAlertWindow(uid);
@@ -28,6 +26,8 @@ export default function ReminderSettings() {
   const [draft, setDraft] = useState<AlertWindow | null>(null);
   const alert = draft ?? saved;
   const changed = (Object.keys(saved) as (keyof AlertWindow)[]).filter((k) => alert[k] !== saved[k]);
+  const { soon, urgent } = colorLimits(alert);
+  const until = (l: AlertWindow) => `faltando até ${km(l.km)} ou ${periodLabel(l.days)}`;
 
   function save() {
     // uma escrita só, com os campos que mudaram
@@ -48,34 +48,21 @@ export default function ReminderSettings() {
           <Chips label="Faltando até" options={ALERT_KM_OPTIONS} value={alert.km} format={km} onChange={(v) => setDraft({ ...alert, km: v })} />
           <Chips
             label="ou até"
-            options={ALERT_MONTH_OPTIONS}
-            value={alert.months}
-            format={monthsLabel}
-            onChange={(v) => setDraft({ ...alert, months: v })}
+            options={ALERT_DAY_OPTIONS}
+            value={alert.days}
+            format={periodLabel}
+            onChange={(v) => setDraft({ ...alert, days: v })}
           />
         </section>
 
         <section className={`${card} flex flex-col gap-3`}>
           <h2 className={sectionTitle}>Cores do card</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Calculadas a partir do aviso acima: metade do prazo fica amarelo; os últimos 10%, vermelho.</p>
           <ul className="flex flex-col gap-1.5 text-sm">
-            <Legend color="bg-emerald-700 dark:bg-emerald-400" label="Verde" text={`em dia: faltando até ${km(alert.km)} ou ${monthsLabel(alert.months)}`} />
-            <Legend color="bg-orange-700 dark:bg-orange-400" label="Laranja" text={`próximo: faltando até ${km(alert.urgentKm)} ou ${daysLabel(alert.urgentDays)}`} />
-            <Legend color="bg-red-700 dark:bg-red-400" label="Vermelho" text="vencido: passou do km ou da data" />
+            <Legend color="bg-emerald-700 dark:bg-emerald-400" label="Verde" text={`em dia: ${until(alert)}`} />
+            <Legend color="bg-amber-400" label="Amarelo" text={`próximo (50%): ${until(soon)}`} />
+            <Legend color="bg-red-700 dark:bg-red-400" label="Vermelho" text={`urgente (10%): ${until(urgent)}, ou vencido`} />
           </ul>
-          <Chips
-            label="Laranja faltando até"
-            options={URGENT_KM_OPTIONS}
-            value={alert.urgentKm}
-            format={km}
-            onChange={(v) => setDraft({ ...alert, urgentKm: v })}
-          />
-          <Chips
-            label="ou até"
-            options={URGENT_DAY_OPTIONS}
-            value={alert.urgentDays}
-            format={daysLabel}
-            onChange={(v) => setDraft({ ...alert, urgentDays: v })}
-          />
         </section>
 
         <button className={`${btn('primary')} w-full`} onClick={save} disabled={changed.length === 0}>

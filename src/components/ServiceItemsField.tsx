@@ -36,7 +36,7 @@ export const findReminder = (reminders: Reminder[], category: string) =>
   reminders.find((r) => normalizeCategory(r.title) === normalizeCategory(category));
 
 /** Colunas de cada linha: serviço (resto) · valor · remover */
-const row = 'grid grid-cols-[minmax(0,1fr)_7.5rem_2.25rem] gap-2';
+const row = 'grid grid-cols-[minmax(0,1fr)_6.5rem_2.25rem] gap-2';
 
 /** Se o veículo já tem lembrete para este serviço, o item vem com ele ligado e o intervalo atual. */
 export function withExistingReminder(item: ItemDraft, reminders: Reminder[]): ItemDraft {

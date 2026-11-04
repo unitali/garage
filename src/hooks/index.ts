@@ -87,8 +87,6 @@ export function useAlertWindow(uid: string): AlertWindow {
   const { data } = useUserPrefs(uid);
   return {
     km: data?.alertKm ?? DEFAULT_ALERT.km,
-    months: data?.alertMonths ?? DEFAULT_ALERT.months,
-    urgentKm: data?.urgentKm ?? DEFAULT_ALERT.urgentKm,
-    urgentDays: data?.urgentDays ?? DEFAULT_ALERT.urgentDays,
+    days: data?.alertDays ?? (data?.alertMonths ? data.alertMonths * 30 : DEFAULT_ALERT.days),
   };
 }

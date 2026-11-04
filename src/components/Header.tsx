@@ -46,8 +46,8 @@ export default function Header({ title, back, right, vehicle, odometer, children
               <ChevronLeft className="size-7" aria-hidden />
             </button>
           )}
-          {/* fundo branco: o U azul-marinho sumiria na barra da mesma cor */}
-          <img src={logoUrl} alt="" className="size-9 shrink-0 rounded-xl bg-white object-contain p-1" />
+          {/* o logo inteiro, sem padding nem margem; os cantos fora do arredondado já vêm transparentes */}
+          <img src={logoUrl} alt="" className="size-9 shrink-0" />
           <h1 className="min-w-0 flex-1 text-xl font-bold wrap-break-words">{title}</h1>
           {right}
         </div>
