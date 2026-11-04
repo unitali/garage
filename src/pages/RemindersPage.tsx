@@ -73,7 +73,7 @@ export default function RemindersPage() {
                       </span>
                       <Link to={paths.reminder(vehicle.id, r.id)} className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <span className="flex flex-wrap items-center gap-2">
-                          <strong className="break-words">{r.title}</strong>
+                          <strong className="wrap-break-words">{r.title}</strong>
                           {s.level !== 'ok' && <span className={`${badge} ${LEVEL_BADGE[s.level]}`}>{LEVEL_LABEL[s.level]}</span>}
                         </span>
                         <span className={`text-sm ${LEVEL_TEXT[s.level]}`}>{dueText(s)}</span>

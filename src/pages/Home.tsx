@@ -257,7 +257,7 @@ function ToneCard({
         </span>
         <div className="flex min-w-0 flex-1 flex-col items-start gap-0.5">
           <span className={`${badge} ${tone.badge}`}>{LEVEL_LABEL[level]}</span>
-          <h3 className="text-lg font-bold break-words">{title}</h3>
+          <h3 className="text-lg font-bold wrap-break-words">{title}</h3>
           <p className={`text-sm font-semibold ${tone.text}`}>{status}</p>
           {detail && <p className="text-sm text-slate-600 dark:text-slate-400">{detail}</p>}
         </div>

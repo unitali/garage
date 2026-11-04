@@ -155,7 +155,7 @@ export default function Select<T extends string>({
             <CurrentIcon className="size-5" aria-hidden />
           </span>
         )}
-        <span id={`${id}-value`} className={`min-w-0 flex-1 break-words ${current ? '' : 'text-slate-600 dark:text-slate-400'}`}>
+        <span id={`${id}-value`} className={`min-w-0 flex-1 wrap-break-words ${current ? '' : 'text-slate-600 dark:text-slate-400'}`}>
           {current?.label ?? placeholder}
         </span>
         <ChevronDown className={`${compact ? 'size-4' : 'size-5'} shrink-0 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} aria-hidden />
@@ -217,7 +217,7 @@ export default function Select<T extends string>({
                         <Icon className="size-5" aria-hidden />
                       </span>
                     )}
-                    <span className="min-w-0 flex-1 break-words">{o.label}</span>
+                    <span className="min-w-0 flex-1 wrap-break-words">{o.label}</span>
                     {o.value === value && <Check className="size-5 shrink-0 text-brand" aria-hidden />}
                   </li>
                 );
@@ -234,7 +234,7 @@ export default function Select<T extends string>({
                   onClick={() => choose(actionIndex)}
                 >
                   {ActionIcon && <ActionIcon className="size-5 shrink-0" aria-hidden />}
-                  <span className="min-w-0 flex-1 break-words">{action.label(query.trim())}</span>
+                  <span className="min-w-0 flex-1 wrap-break-words">{action.label(query.trim())}</span>
                 </li>
               )}
             </ul>
