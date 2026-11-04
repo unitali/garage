@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
+import Select from './Select';
 import { addCategory } from '../db';
 import { useUserPrefs } from '../hooks';
 import { DEFAULT_CATEGORIES, categoryOptions, normalizeCategory } from '../constants';
 import type { CategoryKind } from '../types';
-import { btn, field, input } from '../ui';
+import { btn, input } from '../ui';
 
 const ADD = '__add__';
 
@@ -56,22 +57,14 @@ export default function CategorySelect({
   }
 
   const select = (
-    <select
-      className={`${input} min-w-0`}
+    <Select
       value={value}
-      onChange={(e) => (e.target.value === ADD ? setAdding(true) : onChange(e.target.value))}
-      aria-label={compact ? label : undefined}
-    >
-      {value === '' && (
-        <option value="" disabled>
-          Selecione…
-        </option>
-      )}
-      {options.map((c) => (
-        <option key={c}>{c}</option>
-      ))}
-      <option value={ADD}>{NOUN[kind].add}</option>
-    </select>
+      options={[...options.map((c) => ({ value: c, label: c })), { value: ADD, label: NOUN[kind].add, icon: Plus }]}
+      onChange={(v) => (v === ADD ? setAdding(true) : onChange(v))}
+      label={compact ? undefined : label}
+      ariaLabel={compact ? label : undefined}
+      compact={compact}
+    />
   );
 
   const addRow = adding && (
@@ -114,10 +107,7 @@ export default function CategorySelect({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className={field}>
-        {label}
-        {select}
-      </label>
+      {select}
       {addRow}
     </div>
   );

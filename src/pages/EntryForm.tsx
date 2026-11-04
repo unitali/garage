@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Calculator } from 'lucide-react';
 import Header from '../components/Header';
 import FuelCalculator from '../components/FuelCalculator';
+import Select from '../components/Select';
 import Sheet from '../components/Sheet';
 import CategorySelect from '../components/CategorySelect';
 import ServiceItemsField, { findReminder, isOilChange, newItem, withExistingReminder, type ItemDraft } from '../components/ServiceItemsField';
@@ -66,6 +67,8 @@ interface Props {
   /** serviço novo já com este lembrete como item */
   preset?: Reminder;
 }
+
+const FUEL_OPTIONS = FUEL_TYPES.map((f) => ({ value: f, label: f }));
 
 function lastFuelType(others: Entry[]) {
   const fuels = others.filter((e) => e.kind === 'fuel' && e.fuelType).sort((a, b) => b.date.localeCompare(a.date));
@@ -329,14 +332,7 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
                   Etanol ou gasolina? Calcular
                 </button>
               )}
-              <label className={field}>
-                Combustível
-                <select className={input} value={fuelType} onChange={(e) => setFuelType(e.target.value)}>
-                  {FUEL_TYPES.map((f) => (
-                    <option key={f}>{f}</option>
-                  ))}
-                </select>
-              </label>
+              <Select label="Combustível" value={fuelType} options={FUEL_OPTIONS} onChange={setFuelType} />
               <div className={grid2}>
                 <label className={field}>
                   Valor total (R$)
@@ -440,18 +436,17 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
           )}
 
           {kind === 'service' && !entry && otherReminders.length > 0 && (
-            <label className={field}>
-              Concluir lembrete <span className={opt}>(opcional)</span>
-              <select className={input} value={reminderId} onChange={(e) => setReminderId(e.target.value)}>
-                <option value="">— nenhum —</option>
-                {otherReminders.map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.title}
-                  </option>
-                ))}
-              </select>
-              <small className={hint}>Reinicia a contagem do lembrete a partir desta data e km.</small>
-            </label>
+            <Select
+              label={
+                <>
+                  Concluir lembrete <span className={opt}>(opcional)</span>
+                </>
+              }
+              value={reminderId}
+              options={[{ value: '', label: '— nenhum —' }, ...otherReminders.map((r) => ({ value: r.id, label: r.title }))]}
+              onChange={setReminderId}
+              hint="Reinicia a contagem do lembrete a partir desta data e km."
+            />
           )}
 
           <label className={field}>

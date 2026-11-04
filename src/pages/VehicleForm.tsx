@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Header from '../components/Header';
+import Select from '../components/Select';
 import { useUid } from '../auth';
 import { useVehicle } from '../hooks';
 import { deleteVehicle, saveVehicle } from '../db';
@@ -8,8 +9,14 @@ import { VEHICLE_TYPES } from '../constants';
 import { MAX_KM_DIGITS, maskKm, parseInteger } from '../lib/format';
 import { selectVehicle } from '../selection';
 import type { Vehicle, VehicleType } from '../types';
-import { btn, error as errorText, field, form, hint, input, main, opt, splash } from '../ui';
+import { btn, error as errorText, field, form, hint, input, main, opt, splash, VEHICLE_ICON } from '../ui';
 import { paths } from '../routes/paths';
+
+const TYPE_OPTIONS = (Object.keys(VEHICLE_TYPES) as VehicleType[]).map((value) => ({
+  value,
+  label: VEHICLE_TYPES[value].label,
+  icon: VEHICLE_ICON[value],
+}));
 
 export default function VehicleFormPage() {
   const { vid } = useParams();
@@ -76,16 +83,7 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
             <input className={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Palio 2011" maxLength={60} autoFocus={!vid} />
           </label>
 
-          <label className={field}>
-            Tipo
-            <select className={input} value={type} onChange={(e) => setType(e.target.value as VehicleType)}>
-              {Object.entries(VEHICLE_TYPES).map(([k, t]) => (
-                <option key={k} value={k}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select label="Tipo" value={type} options={TYPE_OPTIONS} onChange={setType} />
 
           <label className={field}>
             Placa <span className={opt}>(opcional)</span>
