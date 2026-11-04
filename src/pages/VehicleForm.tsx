@@ -7,6 +7,7 @@ import { useVehicle } from '../hooks';
 import { deleteVehicle, saveVehicle } from '../db';
 import { VEHICLE_TYPES } from '../constants';
 import { MAX_KM_DIGITS, maskKm, parseInteger } from '../lib/format';
+import { maskPlate, plateFormat, plateHint, plateMaxLength } from '../lib/plates';
 import { selectVehicle } from '../selection';
 import type { Vehicle, VehicleType } from '../types';
 import { btn, error as errorText, field, form, hint, input, main, opt, splash, VEHICLE_ICON } from '../ui';
@@ -33,7 +34,8 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
   const navigate = useNavigate();
   const [name, setName] = useState(initial?.name ?? '');
   const [type, setType] = useState<VehicleType>(initial?.type ?? 'carro');
-  const [plate, setPlate] = useState(initial?.plate ?? '');
+  const [plate, setPlate] = useState(maskPlate(initial?.plate ?? ''));
+  const format = plateFormat(plate);
   const [odo, setOdo] = useState(initial ? String(initial.initialOdometer) : '');
   const [error, setError] = useState('');
 
@@ -42,6 +44,8 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
     const initialOdometer = parseInteger(odo);
     if (!name.trim()) return setError('Dê um nome ao veículo.');
     if (initialOdometer == null) return setError('Informe a quilometragem atual.');
+    // placa é opcional; preenchida (e mudada), precisa estar completa num dos formatos
+    if (plate && plate !== initial?.plate && !format) return setError(`Placa incompleta ou inválida. Use ${plateHint()}.`);
 
     const id = saveVehicle(
       uid,
@@ -49,7 +53,7 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
       {
         name: name.trim(),
         type,
-        plate: plate.trim().toUpperCase(),
+        plate,
         initialOdometer,
         odometer: Math.max(initial?.odometer ?? 0, initialOdometer),
         createdAt: initial?.createdAt ?? Date.now(),
@@ -87,7 +91,17 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
 
           <label className={field}>
             Placa <span className={opt}>(opcional)</span>
-            <input className={input} value={plate} onChange={(e) => setPlate(e.target.value)} placeholder="ABC1D23" maxLength={10} autoCapitalize="characters" />
+            <input
+              className={input}
+              value={plate}
+              onChange={(e) => setPlate(maskPlate(e.target.value))}
+              placeholder="ABC1D23"
+              maxLength={plateMaxLength()}
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <small className={hint}>{format ? `Placa ${format.label}` : plateHint()}</small>
           </label>
 
           <label className={field}>
