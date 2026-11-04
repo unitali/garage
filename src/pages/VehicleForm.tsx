@@ -12,6 +12,7 @@ import { selectVehicle } from '../selection';
 import type { Vehicle, VehicleType } from '../types';
 import { btn, error as errorText, field, form, hint, input, main, opt, splash, VEHICLE_ICON } from '../ui';
 import { paths } from '../routes/paths';
+import { ask } from '../dialog';
 
 const TYPE_OPTIONS = (Object.keys(VEHICLE_TYPES) as VehicleType[]).map((value) => ({
   value,
@@ -67,14 +68,16 @@ function VehicleForm({ uid, vid, initial }: { uid: string; vid?: string; initial
   }
 
   async function remove() {
-    if (!vid || !confirm(`Excluir "${initial?.name}" e todo o histórico dele? Não dá para desfazer.`)) return;
-    try {
-      await deleteVehicle(uid, vid);
-      navigate(paths.home(), { replace: true });
-    } catch (err) {
-      console.error(err);
-      setError('Não foi possível excluir agora. Verifique a internet e tente de novo.');
-    }
+    if (!vid) return;
+    const ok = await ask({
+      title: `Excluir "${initial?.name}"?`,
+      message: 'O veículo e todo o histórico dele (abastecimentos, serviços, despesas e lembretes) serão excluídos. Não dá para desfazer.',
+      confirmLabel: 'Excluir veículo',
+      // exclui no servidor: o pop-up espera e, sem internet, avisa sem fechar
+      action: () => deleteVehicle(uid, vid),
+      errorText: 'Não foi possível excluir agora. Verifique a internet e tente de novo.',
+    });
+    if (ok) navigate(paths.home(), { replace: true });
   }
 
   return (

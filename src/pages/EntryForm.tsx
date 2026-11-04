@@ -20,6 +20,7 @@ import { km, MAX_KM_DIGITS, maskKm, maskMoney, parseDecimal, parseInteger, toInp
 import type { Entry, EntryKind, Reminder, Vehicle } from '../types';
 import { btn, checkbox, checkField, error as errorText, field, form, grid2, hint, input, main, opt, splash } from '../ui';
 import { paths } from '../routes/paths';
+import { ask } from '../dialog';
 
 export default function EntryFormPage() {
   const { vid, eid } = useParams();
@@ -287,14 +288,25 @@ function EntryForm({ uid, vid, vehicle, kind, entry, others, reminders, preset }
     navigate(back, { replace: true });
   }
 
-  function remove() {
-    if (!entry || !confirm('Excluir este registro?')) return;
+  async function remove() {
+    if (!entry) return;
+    const ok = await ask({
+      title: entry.series ? 'Excluir esta parcela?' : 'Excluir registro?',
+      message: entry.series ? 'Só esta parcela sai; as outras continuam. Não dá para desfazer.' : 'Ele sai do histórico e dos totais. Não dá para desfazer.',
+      confirmLabel: 'Excluir',
+    });
+    if (!ok) return;
     deleteEntry(uid, vid, entry.id);
     navigate(back, { replace: true });
   }
 
-  function removeSeries() {
-    if (!confirm(`Excluir todas as ${seriesIds.length} parcelas desta despesa?`)) return;
+  async function removeSeries() {
+    const ok = await ask({
+      title: `Excluir as ${seriesIds.length} parcelas?`,
+      message: 'Todas as parcelas desta despesa saem, pagas ou não. Não dá para desfazer.',
+      confirmLabel: 'Excluir todas',
+    });
+    if (!ok) return;
     deleteEntries(uid, vid, seriesIds);
     navigate(back, { replace: true });
   }

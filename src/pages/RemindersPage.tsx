@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Plus, Settings2 } from 'lucide-react';
+import { CircleCheck, Plus, Settings2 } from 'lucide-react';
 import Header from '../components/Header';
 import BillRow from '../components/BillRow';
 import SeriesCard from '../components/SeriesCard';
@@ -10,6 +10,7 @@ import { date, dueText, km } from '../lib/format';
 import { isPaid, proximaAcao, seriesDe } from '../lib/summary';
 import { paths } from '../routes/paths';
 import { badge, btn, card, emptyText, iconCircle, LEVEL_BADGE, LEVEL_LABEL, LEVEL_TEXT, main, REMINDER_ICON, REMINDER_SOFT, splash } from '../ui';
+import { ask } from '../dialog';
 
 const groupTitle = 'mb-2 px-1 text-xs font-bold tracking-wider text-slate-600 dark:text-slate-400 uppercase';
 
@@ -82,8 +83,15 @@ export default function RemindersPage() {
                       </Link>
                       <button
                         className={`${btn('default', 'sm')} shrink-0`}
-                        onClick={() => {
-                          if (confirm(`Marcar "${r.title}" como feito hoje com ${km(current)}?`)) markReminderDone(uid, vehicle.id, r.id, current, today(), r);
+                        onClick={async () => {
+                          const ok = await ask({
+                            title: `Marcar "${r.title}" como feito?`,
+                            message: `A contagem recomeça hoje, com ${km(current)}.`,
+                            confirmLabel: 'Marcar como feito',
+                            tone: 'primary',
+                            icon: CircleCheck,
+                          });
+                          if (ok) markReminderDone(uid, vehicle.id, r.id, current, today(), r);
                         }}
                       >
                         Feito
