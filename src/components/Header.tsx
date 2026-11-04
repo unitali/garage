@@ -8,7 +8,7 @@ import { useUid } from '../auth';
 import { useVehicles } from '../hooks';
 import { useSelectedVehicle } from '../selection';
 import type { Vehicle } from '../types';
-import logoUrl from '../assets/logo-288.png';
+import logoUrl from '../assets/logo.png';
 
 interface Props {
   /** nome da tela aberta */
